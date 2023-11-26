@@ -3,8 +3,8 @@
 bl_info = {
 	"name": "Hydra",
 	"author": "Ondrej Vlcek",
-	"version": (0, 2, 1),
-	"blender": (3, 3, 0),
+	"version": (1, 0, 1),
+	"blender": (4, 0, 0),
 	"location": "View3D > Sidebar > Hydra Tab",
 	"description": "Blender addon for hydraulic erosion using textures.",
 	"warning": "Requires external dependencies. See Preferences below.",
