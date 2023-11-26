@@ -23,7 +23,7 @@ def getOrMakeImage(size: tuple[int,int], name: str)->bpy.types.Image:
 	img.use_generated_float = True
 	if tuple(img.size) != size:
 		img.scale(size[0], size[1])
-	img.hydra.is_generated = True
+	img.hydra_erosion.is_generated = True
 
 	return img
 

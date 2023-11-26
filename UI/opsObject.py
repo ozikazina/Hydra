@@ -16,7 +16,7 @@ class DefaultPanel:
 		ob = bpy.context.active_object
 		if not ob:
 			return
-		if ob.hydra.is_generated:
+		if ob.hydra_erosion.is_generated:
 			return False
 		return ob.type == "MESH" and len(ob.data.vertices) != 0
 
@@ -25,7 +25,7 @@ class DefaultHeightmapPanel:
 	def draw(self, ctx):
 		container = self.layout.column()
 		act = ctx.object
-		hyd = act.hydra
+		hyd = act.hydra_erosion
 		hasAny = False
 
 		if common.data.hasMap(hyd.map_base):
@@ -82,7 +82,7 @@ def fragmentSize(container, obj: bpy.types.Object):
 	:param container: Containing UI element.
 	:param obj: Object the settings apply to.
 	:type obj: :class:`bpy.types.Object`"""
-	hyd = obj.hydra
+	hyd = obj.hydra_erosion
 	if common.data.hasMap(hyd.map_base):
 		split = container.split(factor=0.5)
 		split.label(text=f"Size:")
@@ -119,11 +119,11 @@ class HeightmapPanel(bpy.types.Panel, DefaultPanel):
 	def draw(self, ctx):
 		obj = ctx.object
 		data = common.data
-		hyd = obj.hydra
+		hyd = obj.hydra_erosion
 		
 		col = self.layout.column()
 		col.operator('hydra.genheight', text="Generate", icon="SEQ_HISTOGRAM")
-		col.prop(ctx.scene.hydra, "heightmap_size")
+		col.prop(ctx.scene.hydra_erosion, "heightmap_size")
 
 		col.separator()
 
@@ -162,12 +162,12 @@ class HeightmapOp(bpy.types.Operator):
 		common.data.clear()
 		act = ctx.object
 
-		size = tuple(act.hydra.img_size)
-		act.hydra.img_size = tuple(ctx.scene.hydra.heightmap_size)
+		size = tuple(act.hydra_erosion.img_size)
+		act.hydra_erosion.img_size = tuple(ctx.scene.hydra_erosion.heightmap_size)
 		txt = heightmap.genHeightmap(act)
 		img = texture.writeImage(f"HYD_{act.name}_Heightmap", txt)
 		txt.release()
-		act.hydra.img_size = size
+		act.hydra_erosion.img_size = size
 		nav.gotoImage(img)
 		self.report({'INFO'}, f"Successfuly created heightmap: {img.name}")
 		return {'FINISHED'}
@@ -187,7 +187,7 @@ class ErodePanel(bpy.types.Panel, DefaultPanel):
 	def draw(self, ctx):
 		layout = self.layout
 		act = ctx.object
-		hyd = act.hydra
+		hyd = act.hydra_erosion
 		
 		main = layout.column()
 		
@@ -220,7 +220,7 @@ class ErodeExtraPanel(bpy.types.Panel):
 	def draw(self, ctx):
 		p = self.layout.box()
 		act = ctx.object
-		hyd = act.hydra
+		hyd = act.hydra_erosion
 		p.prop(hyd, "out_color")
 		if (hyd.out_color):
 			p.prop_search(hyd, "color_src", bpy.data, "images")
@@ -247,7 +247,7 @@ class ErodeParticlePanel(bpy.types.Panel):
 
 	def draw(self, ctx):
 		p = self.layout.box()
-		hyd = ctx.object.hydra
+		hyd = ctx.object.hydra_erosion
 		p.prop(hyd, "part_iter_num")
 		p.prop(hyd, "part_lifetime")
 		p.prop(hyd, "part_acceleration", slider=True)
@@ -268,7 +268,7 @@ class ErodeAdvancedPanel(bpy.types.Panel):
 
 	def draw(self, ctx):
 		p = self.layout.box()
-		hyd = ctx.object.hydra
+		hyd = ctx.object.hydra_erosion
 		p.prop(hyd, "interpolate_erosion")
 		split = p.split()
 		split.label(text="Chunk size")
@@ -283,7 +283,7 @@ class ErodeOp(bpy.types.Operator):
 	bl_options = {'REGISTER', 'UNDO'}
 			
 	def invoke(self, ctx, event):
-		hyd = ctx.object.hydra
+		hyd = ctx.object.hydra_erosion
 		data = common.data
 		data.clear()
 		data.running = True
@@ -317,7 +317,7 @@ class FlowPanel(bpy.types.Panel, DefaultPanel):
 	bl_description = "Generate flow data into an image"
 
 	def draw(self, ctx):
-		hyd = ctx.object.hydra
+		hyd = ctx.object.hydra_erosion
 		
 		col = self.layout.column()
 		col.operator('hydra.genflow', text="Generate Flowmap", icon="MATFLUID")
@@ -379,7 +379,7 @@ class ThermalPanel(bpy.types.Panel, DefaultPanel):
 
 	def draw(self, ctx):
 		act = ctx.object
-		hyd = act.hydra
+		hyd = act.hydra_erosion
 		
 		col = self.layout.column()
 		col.operator('hydra.thermal', text="Erode", icon="RNDCURVE")
@@ -415,7 +415,7 @@ class ThermalOp(bpy.types.Operator):
 	def invoke(self, ctx, event):
 		data = common.data
 		data.clear()
-		hyd = ctx.object.hydra
+		hyd = ctx.object.hydra_erosion
 		apply.removePreview()
 
 		thermal.thermalPrepare(ctx.object)
@@ -495,7 +495,7 @@ class InfoPanel(bpy.types.Panel):
 		obj = ctx.object
 		if startup.invalid or not obj:
 			return False
-		return obj.hydra.is_generated
+		return obj.hydra_erosion.is_generated
 #-------------------------------------------- Exports
 
 EXPORTS = [

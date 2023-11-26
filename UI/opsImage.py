@@ -15,14 +15,14 @@ class DefaultPanel:
 		img = ctx.area.spaces.active.image
 		if startup.invalid or not img or tuple(img.size) == (0,0):
 			return False
-		return not img.hydra.is_generated
+		return not img.hydra_erosion.is_generated
 
 class DefaultHeightmapPanel:
 	"""Heightmap subpanel for displaying the heightmap stack."""
 	def draw(self, ctx):
 		container = self.layout.column()
 		act = ctx.area.spaces.active.image
-		hyd = act.hydra
+		hyd = act.hydra_erosion
 		hasAny = False
 
 		if common.data.hasMap(hyd.map_base):
@@ -95,7 +95,7 @@ class FlowPanel(bpy.types.Panel, DefaultPanel):
 
 	def draw(self, ctx):
 		img = ctx.area.spaces.active.image
-		hyd = img.hydra
+		hyd = img.hydra_erosion
 
 		col = self.layout.column()
 		col.operator('hydra.imggenflow', text="Generate Flowmap", icon="MATFLUID")
@@ -130,7 +130,7 @@ class FlowOp(bpy.types.Operator):
 	def invoke(self, ctx, event):
 		common.data.clear()
 		img = ctx.area.spaces.active.image
-		img.hydra.img_size = img.size
+		img.hydra_erosion.img_size = img.size
 		img = flow.genFlow(img)
 		nav.gotoImage(img)
 		self.report({"INFO"}, f"Successfuly created image: {img.name}")
@@ -150,7 +150,7 @@ class ErodePanel(bpy.types.Panel, DefaultPanel):
 	def draw(self, ctx):
 		layout = self.layout
 		act = ctx.area.spaces.active.image
-		hyd = act.hydra
+		hyd = act.hydra_erosion
 		
 		main = layout.column()
 		
@@ -183,7 +183,7 @@ class ErodeExtraPanel(bpy.types.Panel):
 	def draw(self, ctx):
 		p = self.layout.box()
 		act = ctx.area.spaces.active.image
-		hyd = act.hydra
+		hyd = act.hydra_erosion
 		p.prop(hyd, "out_color")
 		if (hyd.out_color):
 			p.prop_search(hyd, "color_src", bpy.data, "images")
@@ -210,7 +210,7 @@ class ErodeParticlePanel(bpy.types.Panel):
 
 	def draw(self, ctx):
 		p = self.layout.box()
-		hyd = ctx.area.spaces.active.image.hydra
+		hyd = ctx.area.spaces.active.image.hydra_erosion
 		p.prop(hyd, "part_iter_num")
 		p.prop(hyd, "part_lifetime")
 		p.prop(hyd, "part_acceleration", slider=True)
@@ -231,7 +231,7 @@ class ErodeAdvancedPanel(bpy.types.Panel):
 
 	def draw(self, ctx):
 		p = self.layout.box()
-		hyd = ctx.area.spaces.active.image.hydra
+		hyd = ctx.area.spaces.active.image.hydra_erosion
 		p.prop(hyd, "interpolate_erosion")
 		split = p.split()
 		split.label(text="Chunk size")
@@ -247,7 +247,7 @@ class ErodeOp(bpy.types.Operator):
 			
 	def invoke(self, ctx, event):
 		img = ctx.area.spaces.active.image
-		hyd = img.hydra
+		hyd = img.hydra_erosion
 		data = common.data
 		data.clear()
 		data.running = True
@@ -275,7 +275,7 @@ class ThermalPanel(bpy.types.Panel, DefaultPanel):
 
 	def draw(self, ctx):
 		act = ctx.area.spaces.active.image
-		hyd = act.hydra
+		hyd = act.hydra_erosion
 		
 		col = self.layout.column()
 		box = col.box()
@@ -313,7 +313,7 @@ class ThermalOp(bpy.types.Operator):
 		data = common.data
 		data.clear()
 		img = ctx.area.spaces.active.image
-		hyd = img.hydra
+		hyd = img.hydra_erosion
 
 		thermal.thermalPrepare(img)
 		thermal.thermalRun(img)
@@ -384,7 +384,7 @@ class InfoPanel(bpy.types.Panel):
 		img = ctx.area.spaces.active.image
 		if startup.invalid or not img:
 			return False
-		return img.hydra.is_generated
+		return img.hydra_erosion.is_generated
 
 #-------------------------------------------- Generate
 
@@ -399,10 +399,10 @@ class LandscapePanel(bpy.types.Panel, DefaultPanel):
 
 	def draw(self, ctx):
 		act = ctx.area.spaces.active.image
-		hyd = act.hydra
+		hyd = act.hydra_erosion
 		
 		col = self.layout.column()
-		col.prop(ctx.scene.hydra, "gen_subscale")
+		col.prop(ctx.scene.hydra_erosion, "gen_subscale")
 		col.operator('hydra.landscape', text="Generate", icon="RNDCURVE")
 
 
@@ -416,7 +416,7 @@ class LandscapeOp(bpy.types.Operator):
 	def invoke(self, ctx, event):
 		data = common.data
 		img = ctx.area.spaces.active.image
-		hyd = img.hydra
+		hyd = img.hydra_erosion
 
 		if not data.hasMap(hyd.map_base):
 			heightmap.prepareHeightmap(img)

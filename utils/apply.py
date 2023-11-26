@@ -219,7 +219,7 @@ def addDisplacement(obj: bpy.types.Object, src: mgl.Texture):
 
 	if not out.inputs["Displacement"].is_linked:
 		disp = nodes.nodes.new("ShaderNodeDisplacement")
-		disp.inputs["Scale"].default_value = obj.hydra.org_scale * 0.5
+		disp.inputs["Scale"].default_value = obj.hydra_erosion.org_scale * 0.5
 		nodes.links.new(out.inputs["Displacement"], disp.outputs["Displacement"])
 		norm = setupVectorNode(nodes, disp)
 	else:
@@ -264,7 +264,7 @@ def addModifier(obj: bpy.types.Object, src: mgl.Texture):
 	mod.texture = txt
 	mod.direction = 'Z'
 	mod.texture_coords = "OBJECT"
-	mod.strength = obj.hydra.org_scale
+	mod.strength = obj.hydra_erosion.org_scale
 	
 	coll = obj.users_collection[0]	#always exists
 	emptyName = "HYD_" + obj.name + "_Guide"
@@ -355,7 +355,7 @@ def addPreview(obj: bpy.types.Object, src: mgl.Texture):
 	mod.texture = txt
 	mod.direction = 'Z'
 	mod.texture_coords = "OBJECT"
-	mod.strength = obj.hydra.org_scale
+	mod.strength = obj.hydra_erosion.org_scale
 	
 	coll = obj.users_collection[0]	#always exists
 

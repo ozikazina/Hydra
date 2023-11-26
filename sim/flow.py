@@ -17,7 +17,7 @@ def genFlow(obj: bpy.types.Image | bpy.types.Object)->bpy.types.Image:
 	:return: Flow map.
 	:rtype: :class:`bpy.types.Image`"""
 	data = common.data
-	hyd = obj.hydra
+	hyd = obj.hydra_erosion
 	if not data.hasMap(hyd.map_base):
 		heightmap.prepareHeightmap(obj)
 

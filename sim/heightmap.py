@@ -30,7 +30,7 @@ def genHeightmap(obj: bpy.types.Object)->mgl.Texture:
 		inds = [i.index for face in mesh.faces for i in face.verts]
 		vao = model.createVAO(ctx, data.programs["heightmap"], vertices=verts, indices=inds)
 
-	size = obj.hydra.getSize()
+	size = obj.hydra_erosion.getSize()
 	txt = ctx.texture(size, 1, dtype="f4")
 	dpth = ctx.depth_texture(size)
 
@@ -69,7 +69,7 @@ def prepareHeightmap(obj: bpy.types.Image | bpy.types.Object):
 
 	:param obj: Object or image to generate from.
 	:type obj: :class:`bpy.types.Object` or :class:`bpy.types.Image`"""
-	hyd = obj.hydra
+	hyd = obj.hydra_erosion
 	data = common.data
 
 	reload = not data.hasMap(hyd.map_base)	#no base or invalid data -> reload completely
@@ -132,11 +132,11 @@ def setCurrentAsSource(obj: bpy.types.Object | bpy.types.Image, asBase: bool = F
 	:type obj: :class:`bpy.types.Object` or :class:`bpy.types.Image`
 	:param asBase: Applies as base as well if `True`.
 	:type asBase: :class:`bool`"""
-	common.data.releaseMap(obj.hydra.map_source)
-	obj.hydra.map_source = obj.hydra.map_current
-	obj.hydra.map_current = ""
+	common.data.releaseMap(obj.hydra_erosion.map_source)
+	obj.hydra_erosion.map_source = obj.hydra_erosion.map_current
+	obj.hydra_erosion.map_current = ""
 	if asBase:
-		common.data.releaseMap(obj.hydra.map_base)
-		src = common.data.maps[obj.hydra.map_source]
+		common.data.releaseMap(obj.hydra_erosion.map_base)
+		src = common.data.maps[obj.hydra_erosion.map_source]
 		target = texture.clone(src.texture)
-		obj.hydra.map_base = common.data.createMap(src.name, target)
+		obj.hydra_erosion.map_base = common.data.createMap(src.name, target)

@@ -124,7 +124,7 @@ class HMMoveBackOp(bpy.types.Operator):
 
 	def invoke(self, ctx, event):
 		obj = ctx.area.spaces.active.image if self.useImage else ctx.object
-		hyd = obj.hydra
+		hyd = obj.hydra_erosion
 		data = common.data
 		data.releaseMap(hyd.map_current)
 		src = data.maps[hyd.map_source]
@@ -150,7 +150,7 @@ class HMDeleteOp(bpy.types.Operator):
 
 	def invoke(self, ctx, event):
 		obj = ctx.area.spaces.active.image if self.useImage else ctx.object
-		hyd = obj.hydra
+		hyd = obj.hydra_erosion
 		if not self.useImage:
 			apply.removePreview()
 		common.data.releaseMap(hyd.map_current)
@@ -167,7 +167,7 @@ class HMClearOp(bpy.types.Operator):
 
 	def invoke(self, ctx, event):
 		obj = ctx.area.spaces.active.image if self.useImage else ctx.object
-		hyd = obj.hydra
+		hyd = obj.hydra_erosion
 		if not self.useImage:
 			apply.removePreview()
 		common.data.releaseMap(hyd.map_base)
@@ -187,7 +187,7 @@ class HMModifierOp(bpy.types.Operator):
 	bl_description = "Apply texture as a modifier"; bl_options = {'REGISTER'}
 
 	def invoke(self, ctx, event):
-		hyd = ctx.object.hydra
+		hyd = ctx.object.hydra_erosion
 		data = common.data
 		apply.removePreview()
 		target = heightmap.subtract(data.maps[hyd.map_current].texture, data.maps[hyd.map_base].texture)
@@ -203,7 +203,7 @@ class HMDisplaceOp(bpy.types.Operator):
 	bl_description = "Apply texture as a displacement node in the object's shader"; bl_options = {'REGISTER'}
 
 	def invoke(self, ctx, event):
-		hyd = ctx.object.hydra
+		hyd = ctx.object.hydra_erosion
 		data = common.data
 		apply.removePreview()
 		target = heightmap.subtract(data.maps[hyd.map_current].texture, data.maps[hyd.map_base].texture)
@@ -219,7 +219,7 @@ class HMBumpOp(bpy.types.Operator):
 	bl_description = "Apply texture as a bumpmap node in the object's shader"; bl_options = {'REGISTER'}
 
 	def invoke(self, ctx, event):
-		hyd = ctx.object.hydra
+		hyd = ctx.object.hydra_erosion
 		data = common.data
 		apply.removePreview()
 		target = heightmap.subtract(data.maps[hyd.map_current].texture, data.maps[hyd.map_base].texture)
@@ -258,7 +258,7 @@ class HMReloadOp(bpy.types.Operator):
 
 	def invoke(self, ctx, event):
 		obj = ctx.area.spaces.active.image if self.useImage else ctx.object
-		hyd = obj.hydra
+		hyd = obj.hydra_erosion
 		data = common.data
 		data.releaseMap(hyd.map_source)
 		base = data.maps[hyd.map_base]
@@ -277,7 +277,7 @@ class HMForceReloadOp(bpy.types.Operator):
 
 	def invoke(self, ctx, event):
 		obj = ctx.area.spaces.active.image if self.useImage else ctx.object
-		hyd = obj.hydra
+		hyd = obj.hydra_erosion
 		data = common.data
 		data.releaseMap(hyd.map_base)
 		data.releaseMap(hyd.map_source)
@@ -329,7 +329,7 @@ class InstantiateOp(bpy.types.Operator):
 			target = context.area.spaces.active.image
 
 		target.name = target.name[4:]
-		target.hydra.is_generated = False
+		target.hydra_erosion.is_generated = False
 
 		if self.object:
 			self.report({"INFO"}, "Object decoupled.")

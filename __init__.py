@@ -70,9 +70,9 @@ def register():
 		opengl.initContext()
 		startup.invalid = False
 
-		bpy.types.Scene.hydra = PointerProperty(type=props.HydraGlobalGroup)
-		bpy.types.Object.hydra = PointerProperty(type=props.ErosionGroup)
-		bpy.types.Image.hydra = PointerProperty(type=props.ErosionGroup)
+		bpy.types.Object.hydra_erosion = PointerProperty(type=props.ErosionGroup)
+		bpy.types.Image.hydra_erosion = PointerProperty(type=props.ErosionGroup)
+		bpy.types.Scene.hydra_erosion = PointerProperty(type=props.HydraGlobalGroup)
 
 def unregister():
 	"""Blender Addon unregister function.
@@ -82,9 +82,9 @@ def unregister():
 	for cls in reversed(_classes):
 			bpy.utils.unregister_class(cls)
 	if not _hydra_invalid:
-		del bpy.types.Object.hydra
-		del bpy.types.Scene.hydra
-		del bpy.types.Image.hydra
+		del bpy.types.Object.hydra_erosion
+		del bpy.types.Scene.hydra_erosion
+		del bpy.types.Image.hydra_erosion
 
 		common.data.freeAll()
 		common.data = None

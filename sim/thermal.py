@@ -21,11 +21,11 @@ def thermalPrepare(obj: bpy.types.Image | bpy.types.Object):
 	:type obj: :class:`bpy.types.Object` or :class:`bpy.types.Image`"""
 	print("Preparing for thermal erosion")
 	data = common.data
-	hyd = obj.hydra
+	hyd = obj.hydra_erosion
 	if not data.hasMap(hyd.map_base):
 		heightmap.prepareHeightmap(obj)
 
-	size = obj.hydra.getSize()
+	size = obj.hydra_erosion.getSize()
 
 	data.active = [
 		texture.clone(data.maps[hyd.map_source].texture),
@@ -40,7 +40,7 @@ def thermalRun(obj: bpy.types.Image | bpy.types.Object):
 	:type obj: :class:`bpy.types.Object` or :class:`bpy.types.Image`"""
 	data = common.data
 	ctx = data.context
-	opts = obj.hydra
+	opts = obj.hydra_erosion
 	size = opts.getSize()
 
 	height = data.active[_MAP_HEIGHT]
@@ -91,7 +91,7 @@ def thermalFinish(obj: bpy.types.Image | bpy.types.Object):
 	:param obj: Object or image that was eroded.
 	:type obj: :class:`bpy.types.Object` or :class:`bpy.types.Image`"""
 	data = common.data
-	opts = obj.hydra
+	opts = obj.hydra_erosion
 	
 	data.releaseMap(opts.map_current)
 	

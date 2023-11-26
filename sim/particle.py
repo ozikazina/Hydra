@@ -3,7 +3,7 @@
 import moderngl
 
 def setUniformsFromOptions(program: moderngl.Program, options):
-	"""Sets particle shared particle settings.
+	"""Sets shared particle settings.
 	
 	:param program: Shader program to configure.
 	:type program: :class:`moderngl.Program`

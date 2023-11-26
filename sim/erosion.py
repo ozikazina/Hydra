@@ -25,7 +25,7 @@ def erosionPrepare(obj: bpy.types.Object | bpy.types.Image):
 	:type obj: :class:`bpy.types.Object` or :class:`bpy.types.Image`"""
 	print("Preparing for water erosion")
 	data = common.data
-	hyd = obj.hydra
+	hyd = obj.hydra_erosion
 	if not data.hasMap(hyd.map_base):
 		heightmap.prepareHeightmap(obj)
 
@@ -50,7 +50,7 @@ def erosionRun(obj: bpy.types.Object | bpy.types.Image):
 	:param obj: Object or image to erode.
 	:type obj: :class:`bpy.types.Object` or :class:`bpy.types.Image`"""
 	data = common.data
-	hyd = obj.hydra
+	hyd = obj.hydra_erosion
 	ctx = data.context
 
 	subdiv = int(hyd.part_subdiv)
@@ -107,7 +107,7 @@ def erosionFinish(obj: bpy.types.Object | bpy.types.Image)->list[bpy.types.Image
 	data.running = False
 	data.iteration = 0
 
-	opts = obj.hydra
+	opts = obj.hydra_erosion
 	data.releaseMap(opts.map_current)
 	
 	name = common.incrementLayer(data.maps[opts.map_source].name, "Particle 1")
