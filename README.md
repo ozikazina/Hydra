@@ -56,7 +56,7 @@ Objects with overlapping geometry are supported, but the resulting heightmap mig
 
 Once erosion starts, the object or image is converted into a heightmap. In the case of objects, the chosen image resolution becomes locked.
 
-    To pick a different resolution, you first have to clear generated textures for the current object.
+> To pick a different resolution, you first have to clear generated textures for the current object.
 
 Two heightmaps are created - **Source** and **Current**.
 
