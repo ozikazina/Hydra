@@ -49,13 +49,19 @@ class DefaultHeightmapPanel:
 				op.base = hyd.map_base
 			cols.operator('hydra.hmmove', text="", icon="TRIA_DOWN_BAR")
 			cols.operator('hydra.hmdelete', text="", icon="PANEL_CLOSE")
+
 			cols = box.column_flow(columns=4, align=True)
-			cols.operator('hydra.hmapplybump', text="", icon="MOD_NOISE")
-			cols.operator('hydra.hmapplydisp', text="", icon="RNDCURVE")
-			cols.operator('hydra.hmapplymod', text="", icon="MOD_DISPLACE")
 			op = cols.operator('hydra.hmapplyimg', text="", icon="IMAGE_DATA")
 			op.save_target = hyd.map_current
 			op.name = f"HYD_{act.name}_Eroded"
+			cols.operator('hydra.hmapplymod', text="", icon="MOD_DISPLACE")
+			cols.operator('hydra.hmapplydisp', text="", icon="RNDCURVE")
+			cols.operator('hydra.hmapplybump', text="", icon="MOD_NOISE")
+
+			cols = box.column_flow(columns=2, align=True)
+			cols.operator('hydra.hmapplygeo', text="", icon="OUTLINER_OB_POINTCLOUD")
+			cols.operator('hydra.hmapplygeoinsert', text="", icon="GEOMETRY_NODES")
+			
 			if any(m.name.startswith("HYD_") for m in act.modifiers):
 				cols = box.column_flow(columns=2, align=True)
 				cols.operator('hydra.hmmerge', text="", icon="MESH_DATA")
@@ -69,7 +75,7 @@ class DefaultHeightmapPanel:
 			split.label(text="Source:")
 			split.label(text=name)
 			cols = box.column_flow(columns=3, align=True)
-			cols.operator('hydra.hmforcereload', text="", icon="RNDCURVE")
+			cols.operator('hydra.hmforcereload', text="", icon="GRAPH")
 			cols.operator('hydra.hmback', text="", icon="TRIA_UP_BAR")
 			cols.operator('hydra.hmreload', text="", icon="FILE_REFRESH")
 		

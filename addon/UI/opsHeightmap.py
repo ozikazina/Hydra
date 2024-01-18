@@ -196,6 +196,39 @@ class HMModifierOp(bpy.types.Operator):
 		nav.gotoModifier()
 		self.report({'INFO'}, f"Successfuly applied map as a modifier")
 		return {'FINISHED'}
+	
+class HMGeometryOp(bpy.types.Operator):
+	"""Apply as modifier operator."""
+	bl_idname = "hydra.hmapplygeo"; bl_label = "As Geometry Modifier"
+	bl_description = "Apply texture as a Geometry Nodes modifier"; bl_options = {'REGISTER'}
+
+	def invoke(self, ctx, event):
+		hyd = ctx.object.hydra_erosion
+		data = common.data
+		apply.removePreview()
+		target = heightmap.subtract(data.maps[hyd.map_current].texture, data.maps[hyd.map_base].texture)
+		apply.addGeometryNode(ctx.object, target)
+		target.release()
+		nav.gotoModifier()
+		return {'FINISHED'}
+	
+class HMGeometryInsertOp(bpy.types.Operator):
+	"""Apply as modifier operator."""
+	bl_idname = "hydra.hmapplygeoinsert"; bl_label = "Into Geometry Modifier"
+	bl_description = "Apply texture into an existing Geometry Nodes modifier"; bl_options = {'REGISTER'}
+
+	def invoke(self, ctx, event):
+		hyd = ctx.object.hydra_erosion
+		data = common.data
+		data.clear()
+		apply.removePreview()
+		target = heightmap.subtract(data.maps[hyd.map_current].texture, data.maps[hyd.map_base].texture)
+		apply.addIntoGeometryNodes(ctx.object, target)
+		target.release()
+		nav.gotoModifier()
+		nav.gotoGeometry(ctx.object)
+		data.report(self, callerName="Erosion")
+		return {'FINISHED'}
 
 class HMDisplaceOp(bpy.types.Operator):
 	"""Apply as displacement map operator."""
@@ -349,6 +382,8 @@ EXPORTS = [
 	HMMoveBackOp,
 	HMDeleteOp,
 	HMModifierOp,
+	HMGeometryOp,
+	HMGeometryInsertOp,
 	HMImageOp,
 	HMDisplaceOp,
 	HMBumpOp,

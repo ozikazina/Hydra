@@ -248,8 +248,14 @@ def addModifier(obj: bpy.types.Object, src: mgl.Texture):
 	data = common.data
 	img = texture.writeImage(f"HYD_{obj.name}_DISPLACE", src)
 
-	if len(obj.modifiers) == 0 or not obj.modifiers[-1].name.startswith("HYD_"):
+	if len(obj.modifiers) == 0:
 		mod = obj.modifiers.new("HYD_" + obj.name, "DISPLACE")
+	elif obj.modifiers[-1].name.startswith("HYD_"):
+		if obj.modifiers[-1].type == "DISPLACE":
+			mod = obj.modifiers[-1]
+		else:
+			obj.modifiers.remove(obj.modifiers[-1])
+			mod = obj.modifiers.new("HYD_" + obj.name, "DISPLACE")
 	else:
 		mod = obj.modifiers[-1]
 	
@@ -289,8 +295,6 @@ def addModifier(obj: bpy.types.Object, src: mgl.Texture):
 
 P_MOD_NAME = "HYD_Preview_Modifier"
 """Preview modifier name."""
-P_GUIDE_NAME = "HYD_Preview_Guide"
-"""Preview guide Empty object name."""
 P_IMG_NAME = "HYD_Preview_Image"
 """Preview temporary image name."""
 P_VIEW_NAME = "HYD_Image_Preview"	#different from object preview heightmap
@@ -323,7 +327,7 @@ def removeImagePreview():
 		bpy.data.images.remove(img)
 
 def addPreview(obj: bpy.types.Object, src: mgl.Texture):
-	"""Previews the specified texture as a modifier on the specified object.
+	"""Previews the specified texture as a geometry node on the specified object.
 	
 	:param obj: Object to add to.
 	:type obj: :class:`bpy.types.Object`
@@ -332,49 +336,22 @@ def addPreview(obj: bpy.types.Object, src: mgl.Texture):
 	data = common.data
 	if data.lastPreview and data.lastPreview in bpy.data.objects:
 		last = bpy.data.objects[data.lastPreview]
-		if P_MOD_NAME in last.modifiers:
+		if last != obj and P_MOD_NAME in last.modifiers:
 			last.modifiers.remove(last.modifiers[P_MOD_NAME])
 
 	showGenModifier(obj, False)
 
 	if P_MOD_NAME in obj.modifiers:
 		mod = obj.modifiers[P_MOD_NAME]
+		common.data.info += ["Updated existing preview."]
 	else:
-		mod = obj.modifiers.new(P_MOD_NAME, "DISPLACE")
+		mod = obj.modifiers.new(P_MOD_NAME, "NODES")
+		common.data.info += ["Created preview modifier."]
 	
-	if P_MOD_NAME in bpy.data.textures:
-		txt = bpy.data.textures[P_MOD_NAME]
-		common.data.info += ["Updated existing displacement."]
-	else:
-		txt = bpy.data.textures.new(P_MOD_NAME, "IMAGE")
-		common.data.info += ["Created new displacement."]
-
 	img = texture.writeImage(P_IMG_NAME, src)
-
-	txt.image = img
-	mod.texture = txt
-	mod.direction = 'Z'
-	mod.texture_coords = "OBJECT"
-	mod.strength = obj.hydra_erosion.org_scale
-	
-	coll = obj.users_collection[0]	#always exists
-
-	if P_GUIDE_NAME in bpy.data.objects:
-		empty = bpy.data.objects[P_GUIDE_NAME]
-	else:
-		empty = bpy.data.objects.new(P_GUIDE_NAME, None)
-		coll.objects.link(empty)
-	empty.parent = obj
-	
-	ar = np.array(obj.bound_box)
-	cx = (ar[4][0] + ar[0][0]) * 0.5
-	cy = (ar[2][1] + ar[0][1]) * 0.5
-	cz = (ar[1][2] + ar[0][2]) * 0.5
-	sx = 0.5*(ar[4][0] - ar[0][0])
-	sy = 0.5*(ar[2][1] - ar[0][1])
-	empty.location = (cx,cy,cz)
-	empty.scale = (sx,sy,1)
-	mod.texture_coords_object = empty
+	mod.node_group = getOrMakeDisplaceGroup()
+	mod["Socket_1"] = img
+	mod["Socket_2"] = obj.hydra_erosion.org_scale
 
 	common.data.lastPreview = obj.name
 
@@ -395,10 +372,6 @@ def removePreview():
 	if P_MOD_NAME in bpy.data.textures:
 		txt = bpy.data.textures[P_MOD_NAME]
 		bpy.data.textures.remove(txt)
-	
-	if P_GUIDE_NAME in bpy.data.objects:
-		guide = bpy.data.objects[P_GUIDE_NAME]
-		bpy.data.objects.remove(guide)
 	
 	if P_IMG_NAME in bpy.data.images:
 		img = bpy.data.images[P_IMG_NAME]
@@ -429,3 +402,205 @@ def configureLandscape(obj: bpy.types.Object, src: mgl.Texture):
 
 	bpy.data.textures.remove(txt)
 	bpy.data.images.remove(img)
+
+# -------------------------------------------------- Geometry Nodes
+	
+
+H_NAME_GEO = "HYD_Displace"
+
+def getOrMakeDisplaceGroup():
+	if H_NAME_GEO not in bpy.data.node_groups:
+		valid = False
+	else:
+		valid = True
+		g = bpy.data.node_groups[H_NAME_GEO]
+		i = g.interface.items_tree
+		if "Geometry" in i:
+			valid &= i["Geometry"].in_out == "INPUT"
+			valid &= i["Geometry"].socket_type == "NodeSocketGeometry"
+		else:
+			valid = False
+
+		if "Displacement" in i:
+			valid &= i["Displacement"].in_out == "INPUT"
+			valid &= i["Displacement"].socket_type == "NodeSocketImage"
+		else:
+			valid = False
+
+		if "Scale" in i:
+			i_scale = i["Scale"]
+			valid &= i_scale.in_out == "INPUT"
+			valid &= i_scale.socket_type == "NodeSocketFloat"
+			valid &= i_scale.default_value == 1
+			valid &= i_scale.min_value == 0
+			valid &= i_scale.max_value == 100
+			valid &= i_scale.force_non_field == True
+		else:
+			valid = False
+		
+		if "Displaced" in i:
+			valid &= i["Displaced"].in_out == "OUTPUT"
+			valid &= i["Displaced"].socket_type == "NodeSocketGeometry"
+		else:
+			valid = False
+
+		if not valid:
+			bpy.data.node_groups.remove(bpy.data.node_groups[H_NAME_GEO])
+		else:
+			return g
+
+	if not valid:
+		g = bpy.data.node_groups.new(H_NAME_GEO, type='GeometryNodeTree')
+		g.is_modifier = True
+		g.interface.new_socket("Geometry", in_out="INPUT", socket_type="NodeSocketGeometry")
+		g.interface.new_socket("Displacement", in_out="INPUT", socket_type="NodeSocketImage")
+		i_scale = g.interface.new_socket("Scale", in_out="INPUT", socket_type="NodeSocketFloat")
+		i_scale.default_value = 1
+		i_scale.min_value = 0
+		i_scale.max_value = 100
+		i_scale.force_non_field = True
+		g.interface.new_socket("Displaced", in_out="OUTPUT", socket_type="NodeSocketGeometry")
+
+		nodes = g.nodes
+
+		n_input = nodes.new("NodeGroupInput")
+		n_output = nodes.new("NodeGroupOutput")
+
+		n_bounds = nodes.new("GeometryNodeBoundBox")
+		n_pos = nodes.new("GeometryNodeInputPosition")
+
+		n_subpos = nodes.new("ShaderNodeVectorMath")
+		n_subpos.label = "Remove Offset"
+		n_subpos.operation = "SUBTRACT"
+		n_subbound = nodes.new("ShaderNodeVectorMath")
+		n_subbound.label = "Width and Height"
+		n_subbound.operation = "SUBTRACT"
+		n_normalize = nodes.new("ShaderNodeVectorMath")
+		n_normalize.label = "Normalize"
+		n_normalize.operation = "DIVIDE"
+
+		n_image = nodes.new("GeometryNodeImageTexture")
+		n_image.label = "Displacement"
+		n_image.extension = "EXTEND"
+		n_image.interpolation = "Cubic"
+
+		n_offset = nodes.new("ShaderNodeMath")
+		n_offset.label = "Offset"
+		n_offset.operation = "SUBTRACT"
+		n_offset.inputs[1].default_value = 0.5
+
+		n_scale = nodes.new("ShaderNodeMath")
+		n_scale.label = "Scale"
+		n_scale.operation = "MULTIPLY"
+
+		n_combine = nodes.new("ShaderNodeCombineXYZ")
+		n_combine.label = "Z Only"
+		n_displace = nodes.new("GeometryNodeSetPosition")
+		n_displace.label = "Displace"
+
+		links = g.links
+
+		links.new(n_input.outputs["Geometry"], n_bounds.inputs[0])
+
+		links.new(n_pos.outputs[0], n_subpos.inputs[0])
+		links.new(n_bounds.outputs["Min"], n_subpos.inputs[1])
+
+		links.new(n_bounds.outputs["Max"], n_subbound.inputs[0])
+		links.new(n_bounds.outputs["Min"], n_subbound.inputs[1])
+
+		links.new(n_subpos.outputs[0], n_normalize.inputs[0])
+		links.new(n_subbound.outputs[0], n_normalize.inputs[1])
+
+		links.new(n_input.outputs["Displacement"], n_image.inputs["Image"])
+		links.new(n_normalize.outputs[0], n_image.inputs["Vector"])
+
+		links.new(n_image.outputs["Color"], n_offset.inputs[0])
+		links.new(n_offset.outputs[0], n_scale.inputs[0])
+		links.new(n_input.outputs["Scale"], n_scale.inputs[1])
+
+		links.new(n_scale.outputs[0], n_combine.inputs["Z"])
+
+		links.new(n_input.outputs["Geometry"], n_displace.inputs["Geometry"])
+		links.new(n_combine.outputs[0], n_displace.inputs["Offset"])
+
+		links.new(n_displace.outputs["Geometry"], n_output.inputs["Displaced"])
+
+		staggerNodes(n_output, [n_displace], [n_combine], [n_scale], [n_offset], [n_image], [n_normalize], [n_subpos, n_subbound], [n_pos, n_bounds], [n_input], forwards=False)
+
+		return g
+
+def addGeometryNode(obj: bpy.types.Object, src: mgl.Texture):
+	"""Adds a Geometry Nodes modifier to the specified object.
+
+	:param obj: Object to add to.
+	:type obj: :class:`bpy.types.Object`
+	:param src: Source texture to add.
+	:type src: :class:`moderngl.Texture`"""
+	img = texture.writeImage(f"HYD_{obj.name}_DISPLACE", src)
+
+	if len(obj.modifiers) == 0:
+		mod = obj.modifiers.new("HYD_" + obj.name, "NODES")
+	elif obj.modifiers[-1].name.startswith("HYD_"):
+		if obj.modifiers[-1].type == "NODES":
+			mod = obj.modifiers[-1]
+		else:
+			obj.modifiers.remove(obj.modifiers[-1])
+			mod = obj.modifiers.new("HYD_" + obj.name, "NODES")
+	else:
+		mod = obj.modifiers[-1]
+	
+	mod.node_group = getOrMakeDisplaceGroup()
+	mod["Socket_1"] = img
+	mod["Socket_2"] = obj.hydra_erosion.org_scale
+
+def addIntoGeometryNodes(obj: bpy.types.Object, src: mgl.Texture):
+	"""Adds the texture into an existing Geometry Nodes modifier.
+
+	:param obj: Object to add to.
+	:type obj: :class:`bpy.types.Object`
+	:param src: Source texture to add.
+	:type src: :class:`moderngl.Texture`"""
+	data = common.data
+	img = texture.writeImage(f"HYD_{obj.name}_DISPLACE", src)
+
+	mod = None
+	for m in obj.modifiers:
+		if m.type == "NODES":
+			mod = m
+
+	if mod is None or not mod.node_group:
+		data.error += ["No Geometry Nodes found."]
+		return
+	
+	links = mod.node_group.links
+	nodes = mod.node_group.nodes
+	outputs = [node for node in nodes if node.type == "GROUP_OUTPUT"]
+	outputs.sort(key=lambda x: x.name)
+	if len(outputs) == 0:
+		output = nodes.new("NodeGroupOutput")
+	else:
+		output = outputs[0]
+
+	displace_group = getOrMakeDisplaceGroup()
+
+	connected = None
+	if output.inputs[0].is_linked:
+		connected = output.inputs[0].links[0].from_node
+
+		if connected.type == "GROUP" and connected.node_tree == displace_group:
+			connected.inputs[1].default_value = img
+			connected.inputs[2].default_value = obj.hydra_erosion.org_scale
+			data.info += ["Updated existing displacement."]
+			return
+	
+	g = nodes.new("GeometryNodeGroup")
+	g.node_tree = displace_group
+	g.inputs[1].default_value = img
+	g.inputs[2].default_value = obj.hydra_erosion.org_scale
+
+	links.new(g.outputs[0], output.inputs[0])
+
+	if connected:
+		links.new(connected.outputs[0], g.inputs[0])
+
+	staggerNodes(output, [g], forwards=True)
