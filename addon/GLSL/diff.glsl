@@ -7,6 +7,6 @@ layout (r32f) uniform image2D B;//base
 
 void main() {
 	ivec2 base = ivec2(gl_GlobalInvocationID.xy);
-	vec4 dif = 0.5*(imageLoad(A,base) - imageLoad(B,base));
-	imageStore(A, base, vec4(0.5) + dif);
+	vec4 dif = imageLoad(A,base) - imageLoad(B,base);
+	imageStore(A, base, dif);
 }

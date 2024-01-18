@@ -170,7 +170,7 @@ class HeightmapOp(bpy.types.Operator):
 
 		size = tuple(act.hydra_erosion.img_size)
 		act.hydra_erosion.img_size = tuple(ctx.scene.hydra_erosion.heightmap_size)
-		txt = heightmap.genHeightmap(act)
+		txt = heightmap.genHeightmap(act, normalized=True)
 		img = texture.writeImage(f"HYD_{act.name}_Heightmap", txt)
 		txt.release()
 		act.hydra_erosion.img_size = size

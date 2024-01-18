@@ -94,7 +94,12 @@ def makeBSDF(nodes)->bpy.types.ShaderNode:
 	:rtype: :class:`bpy.types.ShaderNode`"""
 	ret = nodes.nodes.new("ShaderNodeBsdfPrincipled")
 	ret.inputs["Roughness"].default_value = 0.8
-	ret.inputs["Specular"].default_value = 0.2
+	
+	if "Specular IOR Level" in ret.inputs:	# Blender 4.0
+		ret.inputs["Specular IOR Level"].default_value = 0.2
+	elif "Specular":	# Older versions
+		ret.inputs["Specular"].default_value = 0.2
+
 	return ret
 
 def getOrMakeOutputNode(nodes):
@@ -219,7 +224,8 @@ def addDisplacement(obj: bpy.types.Object, src: mgl.Texture):
 
 	if not out.inputs["Displacement"].is_linked:
 		disp = nodes.nodes.new("ShaderNodeDisplacement")
-		disp.inputs["Scale"].default_value = obj.hydra_erosion.org_scale * 0.5
+		disp.inputs["Midlevel"].default_value = 0
+		disp.inputs["Scale"].default_value = 1
 		nodes.links.new(out.inputs["Displacement"], disp.outputs["Displacement"])
 		norm = setupVectorNode(nodes, disp)
 	else:
@@ -270,7 +276,8 @@ def addModifier(obj: bpy.types.Object, src: mgl.Texture):
 	mod.texture = txt
 	mod.direction = 'Z'
 	mod.texture_coords = "OBJECT"
-	mod.strength = obj.hydra_erosion.org_scale
+	mod.strength = 1
+	mod.mid_level = 0
 	
 	coll = obj.users_collection[0]	#always exists
 	emptyName = "HYD_" + obj.name + "_Guide"
@@ -351,7 +358,6 @@ def addPreview(obj: bpy.types.Object, src: mgl.Texture):
 	img = texture.writeImage(P_IMG_NAME, src)
 	mod.node_group = getOrMakeDisplaceGroup()
 	mod["Socket_1"] = img
-	mod["Socket_2"] = obj.hydra_erosion.org_scale
 
 	common.data.lastPreview = obj.name
 
@@ -431,10 +437,7 @@ def getOrMakeDisplaceGroup():
 			i_scale = i["Scale"]
 			valid &= i_scale.in_out == "INPUT"
 			valid &= i_scale.socket_type == "NodeSocketFloat"
-			valid &= i_scale.default_value == 1
-			valid &= i_scale.min_value == 0
-			valid &= i_scale.max_value == 100
-			valid &= i_scale.force_non_field == True
+			valid &= i_scale.force_non_field == False
 		else:
 			valid = False
 		
@@ -457,8 +460,8 @@ def getOrMakeDisplaceGroup():
 		i_scale = g.interface.new_socket("Scale", in_out="INPUT", socket_type="NodeSocketFloat")
 		i_scale.default_value = 1
 		i_scale.min_value = 0
-		i_scale.max_value = 100
-		i_scale.force_non_field = True
+		i_scale.max_value = 2
+		i_scale.force_non_field = False
 		g.interface.new_socket("Displaced", in_out="OUTPUT", socket_type="NodeSocketGeometry")
 
 		nodes = g.nodes
@@ -484,21 +487,22 @@ def getOrMakeDisplaceGroup():
 		n_image.extension = "EXTEND"
 		n_image.interpolation = "Cubic"
 
-		n_offset = nodes.new("ShaderNodeMath")
-		n_offset.label = "Offset"
-		n_offset.operation = "SUBTRACT"
-		n_offset.inputs[1].default_value = 0.5
-
 		n_scale = nodes.new("ShaderNodeMath")
 		n_scale.label = "Scale"
 		n_scale.operation = "MULTIPLY"
+		n_scale.inputs[1].default_value = 1
 
 		n_combine = nodes.new("ShaderNodeCombineXYZ")
 		n_combine.label = "Z Only"
 		n_displace = nodes.new("GeometryNodeSetPosition")
 		n_displace.label = "Displace"
 
+		n_reroute = nodes.new("NodeReroute")
+		
+
 		links = g.links
+
+		links.new(n_input.outputs["Geometry"], n_reroute.inputs[0])
 
 		links.new(n_input.outputs["Geometry"], n_bounds.inputs[0])
 
@@ -514,8 +518,7 @@ def getOrMakeDisplaceGroup():
 		links.new(n_input.outputs["Displacement"], n_image.inputs["Image"])
 		links.new(n_normalize.outputs[0], n_image.inputs["Vector"])
 
-		links.new(n_image.outputs["Color"], n_offset.inputs[0])
-		links.new(n_offset.outputs[0], n_scale.inputs[0])
+		links.new(n_image.outputs["Color"], n_scale.inputs[0])
 		links.new(n_input.outputs["Scale"], n_scale.inputs[1])
 
 		links.new(n_scale.outputs[0], n_combine.inputs["Z"])
@@ -525,7 +528,7 @@ def getOrMakeDisplaceGroup():
 
 		links.new(n_displace.outputs["Geometry"], n_output.inputs["Displaced"])
 
-		staggerNodes(n_output, [n_displace], [n_combine], [n_scale], [n_offset], [n_image], [n_normalize], [n_subpos, n_subbound], [n_pos, n_bounds], [n_input], forwards=False)
+		staggerNodes(n_output, [n_displace], [n_combine], [n_scale], [n_image], [n_normalize], [n_subpos, n_subbound], [n_pos, n_bounds], [n_input], forwards=False)
 
 		return g
 
@@ -551,7 +554,6 @@ def addGeometryNode(obj: bpy.types.Object, src: mgl.Texture):
 	
 	mod.node_group = getOrMakeDisplaceGroup()
 	mod["Socket_1"] = img
-	mod["Socket_2"] = obj.hydra_erosion.org_scale
 
 def addIntoGeometryNodes(obj: bpy.types.Object, src: mgl.Texture):
 	"""Adds the texture into an existing Geometry Nodes modifier.
@@ -589,14 +591,14 @@ def addIntoGeometryNodes(obj: bpy.types.Object, src: mgl.Texture):
 
 		if connected.type == "GROUP" and connected.node_tree == displace_group:
 			connected.inputs[1].default_value = img
-			connected.inputs[2].default_value = obj.hydra_erosion.org_scale
+			connected.inputs[2].default_value = 1
 			data.info += ["Updated existing displacement."]
 			return
 	
 	g = nodes.new("GeometryNodeGroup")
 	g.node_tree = displace_group
 	g.inputs[1].default_value = img
-	g.inputs[2].default_value = obj.hydra_erosion.org_scale
+	g.inputs[2].default_value = 1
 
 	links.new(g.outputs[0], output.inputs[0])
 

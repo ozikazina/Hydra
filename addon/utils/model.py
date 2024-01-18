@@ -73,7 +73,7 @@ def getResizeMatrix(obj: bpy.types.Object) -> tuple[float]:
 
 	obj.hydra_erosion.scale_ratio = dx / dy
 	obj.hydra_erosion.height_scale = dx / dz
-	obj.hydra_erosion.org_scale = 2 * obj.dimensions.z / obj.scale.z
+	obj.hydra_erosion.org_scale = obj.dimensions.z / obj.scale.z
 	return (dx,0,0,-cx*dx, 0,dy,0,-cy*dy, 0,0,-dz,0.5+cz*dz, 0,0,0,1)
 
 def createLandscape(txt: mgl.Texture, name: str)->bpy.types.Object:
