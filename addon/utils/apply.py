@@ -289,23 +289,29 @@ def addModifier(obj: bpy.types.Object, src: mgl.Texture):
 	empty.parent = obj
 	
 	ar = np.array(obj.bound_box)
+	# bounding box center
 	cx = (ar[4][0] + ar[0][0]) * 0.5
 	cy = (ar[2][1] + ar[0][1]) * 0.5
 	cz = (ar[1][2] + ar[0][2]) * 0.5
+	# bounding box size
 	sx = 0.5*(ar[4][0] - ar[0][0])
 	sy = 0.5*(ar[2][1] - ar[0][1])
+	# Z scale is handled by texture
+
 	empty.location = (cx,cy,cz)
 	empty.scale = (sx,sy,1)
 	mod.texture_coords_object = empty
 
 # --------------------------------------------------
 
-P_MOD_NAME = "HYD_Preview_Modifier"
+P_MOD_NAME = "_HYD_Preview_Modifier"
 """Preview modifier name."""
-P_IMG_NAME = "HYD_Preview_Image"
+P_IMG_NAME = "_HYD_Preview_Image"
 """Preview temporary image name."""
-P_VIEW_NAME = "HYD_Image_Preview"	#different from object preview heightmap
+P_VIEW_NAME = "_HYD_Image_Preview"	#different from object preview heightmap
 """Image preview name."""
+P_GEO_NAME = "_HYD_Preview"
+"""Geometry Nodes group name."""
 
 def showGenModifier(obj: bpy.types.Object, visible: bool):
 	"""Internal. Shows or hides the first modifier created by Hydra belonging to the specified object.
@@ -356,7 +362,7 @@ def addPreview(obj: bpy.types.Object, src: mgl.Texture):
 		common.data.info += ["Created preview modifier."]
 	
 	img = texture.writeImage(P_IMG_NAME, src)
-	mod.node_group = getOrMakeDisplaceGroup()
+	mod.node_group = getOrMakeDisplaceGroup(P_GEO_NAME)
 	mod["Socket_1"] = img
 
 	common.data.lastPreview = obj.name
@@ -383,10 +389,14 @@ def removePreview():
 		img = bpy.data.images[P_IMG_NAME]
 		bpy.data.images.remove(img)
 
+	if P_GEO_NAME in bpy.data.node_groups:
+		g = bpy.data.node_groups[P_GEO_NAME]
+		bpy.data.node_groups.remove(g)
+
 	data.lastPreview = ""
 
 
-P_LAND_TEMP_NAME = "HYD_TEMP_DISPLACE"
+P_LAND_TEMP_NAME = "_HYD_TEMP_DISPLACE"
 
 def configureLandscape(obj: bpy.types.Object, src: mgl.Texture):
 	"""Shapes the specified grid object using the input heightmap texture.
@@ -396,30 +406,26 @@ def configureLandscape(obj: bpy.types.Object, src: mgl.Texture):
 	:param src: Heightmap texture.
 	:type src: :class:`moderngl.Texture`"""
 	img = texture.writeImage(P_LAND_TEMP_NAME, src)
-	mod = obj.modifiers.new(P_LAND_TEMP_NAME, "DISPLACE")
-	txt = bpy.data.textures.new(P_LAND_TEMP_NAME, "IMAGE")
+	mod = obj.modifiers.new(P_LAND_TEMP_NAME, "NODES")
 
-	txt.image = img
-	mod.texture = txt
-	mod.direction = 'Z'
-	mod.texture_coords = "OBJECT"
+	
+	mod.node_group = getOrMakeDisplaceGroup(P_LAND_TEMP_NAME)
+	mod["Socket_1"] = img
 
+	bpy.ops.object.mode_set(mode="OBJECT")	# modifiers can't be applied in EDIT mode
 	bpy.ops.object.modifier_apply(modifier=P_LAND_TEMP_NAME)
-
-	bpy.data.textures.remove(txt)
+	
 	bpy.data.images.remove(img)
+	bpy.data.node_groups.remove(bpy.data.node_groups[P_LAND_TEMP_NAME])
 
 # -------------------------------------------------- Geometry Nodes
-	
 
-H_NAME_GEO = "HYD_Displace"
-
-def getOrMakeDisplaceGroup():
-	if H_NAME_GEO not in bpy.data.node_groups:
+def getOrMakeDisplaceGroup(name):
+	if name not in bpy.data.node_groups:
 		valid = False
 	else:
 		valid = True
-		g = bpy.data.node_groups[H_NAME_GEO]
+		g = bpy.data.node_groups[name]
 		i = g.interface.items_tree
 		if "Geometry" in i:
 			valid &= i["Geometry"].in_out == "INPUT"
@@ -448,12 +454,12 @@ def getOrMakeDisplaceGroup():
 			valid = False
 
 		if not valid:
-			bpy.data.node_groups.remove(bpy.data.node_groups[H_NAME_GEO])
+			bpy.data.node_groups.remove(bpy.data.node_groups[name])
 		else:
 			return g
 
 	if not valid:
-		g = bpy.data.node_groups.new(H_NAME_GEO, type='GeometryNodeTree')
+		g = bpy.data.node_groups.new(name, type='GeometryNodeTree')
 		g.is_modifier = True
 		g.interface.new_socket("Geometry", in_out="INPUT", socket_type="NodeSocketGeometry")
 		g.interface.new_socket("Displacement", in_out="INPUT", socket_type="NodeSocketImage")
@@ -552,7 +558,7 @@ def addGeometryNode(obj: bpy.types.Object, src: mgl.Texture):
 	else:
 		mod = obj.modifiers[-1]
 	
-	mod.node_group = getOrMakeDisplaceGroup()
+	mod.node_group = getOrMakeDisplaceGroup("HYD_Displace")
 	mod["Socket_1"] = img
 
 def addIntoGeometryNodes(obj: bpy.types.Object, src: mgl.Texture):
@@ -583,7 +589,7 @@ def addIntoGeometryNodes(obj: bpy.types.Object, src: mgl.Texture):
 	else:
 		output = outputs[0]
 
-	displace_group = getOrMakeDisplaceGroup()
+	displace_group = getOrMakeDisplaceGroup("HYD_Displace")
 
 	connected = None
 	if output.inputs[0].is_linked:

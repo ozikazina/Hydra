@@ -8,7 +8,7 @@ import bpy.types
 import numpy as np
 import platform
 
-def genHeightmap(obj: bpy.types.Object, normalized: bool=False)->mgl.Texture:
+def genHeightmap(obj: bpy.types.Object, normalized: bool=False, proportional: bool=False)->mgl.Texture:
 	"""Creates a heightmap for the specified object and returns it.
 	
 	:param obj: Object to generate from.
@@ -32,17 +32,27 @@ def genHeightmap(obj: bpy.types.Object, normalized: bool=False)->mgl.Texture:
 
 	size = obj.hydra_erosion.getSize()
 	txt = ctx.texture(size, 1, dtype="f4")
-	dpth = ctx.depth_texture(size)
+	depth = ctx.depth_texture(size)
 
-	fbo = ctx.framebuffer(color_attachments=(txt), depth_attachment=dpth)
+	resize_matrix = model.getResizeMatrix(obj)
+
+	if normalized:
+		scale = 1
+	elif proportional:
+		scale = obj.hydra_erosion.height_scale
+	else:
+		scale = obj.hydra_erosion.org_scale
+
+	fbo = ctx.framebuffer(color_attachments=(txt), depth_attachment=depth)
+
 	with ctx.scope(fbo, mgl.DEPTH_TEST):
 		fbo.clear(depth=2.0)
-		vao.program["resize_matrix"].value = model.getResizeMatrix(obj)
-		vao.program["scale"] = 1 if normalized else obj.hydra_erosion.org_scale
+		vao.program["resize_matrix"].value = resize_matrix
+		vao.program["scale"] = scale
 		vao.render()
 		ctx.finish()
 
-	dpth.release()
+	depth.release()
 	fbo.release()
 	vao.release()
 

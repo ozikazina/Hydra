@@ -71,12 +71,12 @@ def getResizeMatrix(obj: bpy.types.Object) -> tuple[float]:
 	dy = 2.0/(ar[2][1] - ar[0][1])
 	dz = 1.0/(ar[1][2] - ar[0][2])
 
-	obj.hydra_erosion.scale_ratio = dx / dy
-	obj.hydra_erosion.height_scale = dx / dz
-	obj.hydra_erosion.org_scale = obj.dimensions.z / obj.scale.z
+	obj.hydra_erosion.scale_ratio = dx / dy if dy > 1e-3 else 1
+	obj.hydra_erosion.height_scale = dx / dz if dz > 1e-3 else 1
+	obj.hydra_erosion.org_scale = abs(obj.dimensions.z / obj.scale.z) if abs(obj.scale.z) > 1e-3 else 1
 	return (dx,0,0,-cx*dx, 0,dy,0,-cy*dy, 0,0,-dz,0.5+cz*dz, 0,0,0,1)
 
-def createLandscape(txt: mgl.Texture, name: str)->bpy.types.Object:
+def createLandscape(txt: mgl.Texture, name: str, subscale: int = 2)->bpy.types.Object:
 	"""Creates a grid object of the given texture resolution. Divides the resolution by global settings. Doesn't write height data!
 	
 	:param txt: Texture of the intended resolution.
@@ -85,9 +85,8 @@ def createLandscape(txt: mgl.Texture, name: str)->bpy.types.Object:
 	:type name: :class:`str`
 	:return: Created grid object.
 	:rtype: :class:`bpy.types.Object`"""
-	sub = bpy.context.scene.hydra_erosion.gen_subscale
-	resX = math.ceil(txt.size[0] / sub)
-	resY = math.ceil(txt.size[1] / sub)
+	resX = math.ceil(txt.size[0] / subscale)
+	resY = math.ceil(txt.size[1] / subscale)
 
 	bpy.ops.mesh.primitive_grid_add(x_subdivisions=resX, y_subdivisions=resY, location=bpy.context.scene.cursor.location)
 	act = bpy.context.active_object

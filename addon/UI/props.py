@@ -15,23 +15,6 @@ from Hydra import common
 
 class HydraGlobalGroup(bpy.types.PropertyGroup):
 	"""Global settings group for Hydra."""
-	heightmap_size: IntVectorProperty(
-		default=(512,512),
-		name="Heightmap size",
-		min=16,
-		max=4096,
-		description="Image size for direct heightmap generation",
-		size=2
-	)
-	"""Image size for direct heightmap generation."""
-
-	gen_subscale: IntProperty(
-		default=2,
-		name="Subscale",
-		min=1, max=16,
-		description="Resolution divisor for landscape generation"
-	)
-	"""Resolution divisor for landscape generation"""
 
 class ErosionGroup(bpy.types.PropertyGroup):
 	"""Individual settings for objects and images."""
@@ -269,6 +252,36 @@ class ErosionGroup(bpy.types.PropertyGroup):
 	map_current: StringProperty(name="Current map", description="Current heightmap")
 	map_source: StringProperty(name="Source map", description="Source heightmap")
 	map_base: StringProperty(name="Base map", description="Base heightmap")
+
+	heightmap_gen_type: EnumProperty(
+		default="normalized",
+		items=(
+			("normalized", "Normalized", "Scales heightmap to the range [0,1], 1 (white) being highest", 0),
+			("proportional", "Proportional", "Preserves object Z size to X size ratio", 1),
+			("real", "World scale", "Preserves real height (without object scale applied)", 2),
+		),
+		name="Heightmap type",
+		description="Heightmap generation type"
+	)
+	"""Heightmap generation type."""
+
+	heightmap_gen_size: IntVectorProperty(
+		default=(512,512),
+		name="Heightmap size",
+		min=16,
+		max=4096,
+		description="Image size for direct heightmap generation",
+		size=2
+	)
+	"""Image size for direct heightmap generation."""
+
+	gen_subscale: IntProperty(
+		default=2,
+		name="Subscale",
+		min=1, max=16,
+		description="Resolution divisor for landscape generation"
+	)
+	"""Resolution divisor for landscape generation"""
 	
 	#------------------------- Funcs
 	

@@ -129,7 +129,11 @@ class HeightmapPanel(bpy.types.Panel, DefaultPanel):
 		
 		col = self.layout.column()
 		col.operator('hydra.genheight', text="Generate", icon="SEQ_HISTOGRAM")
-		col.prop(ctx.scene.hydra_erosion, "heightmap_size")
+		
+		col.label(text="Heightmap type:")
+		col.prop(hyd, "heightmap_gen_type", text="")
+
+		col.prop(hyd, "heightmap_gen_size")
 
 		col.separator()
 
@@ -169,8 +173,12 @@ class HeightmapOp(bpy.types.Operator):
 		act = ctx.object
 
 		size = tuple(act.hydra_erosion.img_size)
-		act.hydra_erosion.img_size = tuple(ctx.scene.hydra_erosion.heightmap_size)
-		txt = heightmap.genHeightmap(act, normalized=True)
+		act.hydra_erosion.img_size = tuple(act.hydra_erosion.heightmap_gen_size)
+
+		normalized = act.hydra_erosion.heightmap_gen_type == "normalized"
+		proportional = act.hydra_erosion.heightmap_gen_type == "proportional"
+		txt = heightmap.genHeightmap(act, normalized=normalized, proportional=proportional)
+
 		img = texture.writeImage(f"HYD_{act.name}_Heightmap", txt)
 		txt.release()
 		act.hydra_erosion.img_size = size

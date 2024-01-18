@@ -402,7 +402,7 @@ class LandscapePanel(bpy.types.Panel, DefaultPanel):
 		hyd = act.hydra_erosion
 		
 		col = self.layout.column()
-		col.prop(ctx.scene.hydra_erosion, "gen_subscale")
+		col.prop(hyd, "gen_subscale")
 		col.operator('hydra.landscape', text="Generate", icon="RNDCURVE")
 
 
@@ -422,7 +422,7 @@ class LandscapeOp(bpy.types.Operator):
 			heightmap.prepareHeightmap(img)
 		
 		txt = data.maps[hyd.map_base].texture
-		obj = model.createLandscape(txt, img.name)
+		obj = model.createLandscape(txt, img.name, subscale=hyd.gen_subscale)
 		apply.configureLandscape(obj, txt)
 		nav.gotoObject(obj)
 		return {'FINISHED'}
