@@ -412,8 +412,7 @@ def configureLandscape(obj: bpy.types.Object, src: mgl.Texture):
 	mod = obj.modifiers.new(P_LAND_TEMP_NAME, "NODES")
 
 	
-	mod.node_group = getOrMakeDisplaceGroup(P_LAND_TEMP_NAME)
-	mod["Socket_1"] = img
+	mod.node_group = getOrMakeDisplaceGroup(P_LAND_TEMP_NAME, image=img)
 
 	bpy.ops.object.mode_set(mode="OBJECT")	# modifiers can't be applied in EDIT mode
 	bpy.ops.object.modifier_apply(modifier=P_LAND_TEMP_NAME)
@@ -423,18 +422,28 @@ def configureLandscape(obj: bpy.types.Object, src: mgl.Texture):
 
 # -------------------------------------------------- Geometry Nodes
 
-def getOrMakeDisplaceGroup(name, image: bpy.types.Image=None, insert: bool=False):
+def getOrMakeDisplaceGroup(name, image: bpy.types.Image=None):
 	if name in bpy.data.node_groups:
 		g = bpy.data.node_groups[name]
 		sockets = g.interface.items_tree
-		if any(i for i in sockets if i.in_out == "OUTPUT" and i.socket_type == "NodeSocketGeometry") and\
-			any(i for i in sockets if i.in_out == "INPUT" and i.socket_type == "NodeSocketGeometry"):
-			common.data.addMessage("Using existing nodes.")
+
+		if not any(i for i in g.nodes if i.type == "IMAGE_TEXTURE" and i.name == "HYD_Displacement"):
+			n_image = g.nodes.new("GeometryNodeImageTexture")
+			n_image.label = "Displacement"
+			n_image.name = "HYD_Displacement"
+			n_image.extension = "EXTEND"
+			n_image.interpolation = "Cubic"
+			n_image.inputs[0].default_value = image
+			common.data.addMessage(f"Existing group {name} was missing HYD_Displacement image node. It has been added, but hasn't been connected.", error=True)
+		elif not any(i for i in sockets if i.in_out == "OUTPUT" and i.socket_type == "NodeSocketGeometry") or\
+			not any(i for i in sockets if i.in_out == "INPUT" and i.socket_type == "NodeSocketGeometry"):
+			common.data.addMessage(f"Updated existing group {name}, but it doesn't have Geometry input/output!", error=True)
 		else:
-			common.data.addMessage("Can't apply: Existing node group is invalid.", error=True)
+			common.data.addMessage(f"Updated existing group {name}.")
 		return g
 	else:
 		g = bpy.data.node_groups.new(name, type='GeometryNodeTree')
+		common.data.addMessage(f"Created new group {name}.")
 		g.is_modifier = True
 		g.interface.new_socket("Geometry", in_out="INPUT", socket_type="NodeSocketGeometry")
 		i_scale = g.interface.new_socket("Scale", in_out="INPUT", socket_type="NodeSocketFloat")
@@ -450,40 +459,45 @@ def getOrMakeDisplaceGroup(name, image: bpy.types.Image=None, insert: bool=False
 		n_output = nodes.new("NodeGroupOutput")
 
 		n_bounds = nodes.new("GeometryNodeBoundBox")
+		n_bounds.name = "HYD_Bounds"
 		n_pos = nodes.new("GeometryNodeInputPosition")
+		n_pos.name = "HYD_Position"
 
 		n_subpos = nodes.new("ShaderNodeVectorMath")
 		n_subpos.label = "Remove Offset"
+		n_subpos.name = "HYD_Get_Offset"
 		n_subpos.operation = "SUBTRACT"
+
 		n_subbound = nodes.new("ShaderNodeVectorMath")
 		n_subbound.label = "Width and Height"
+		n_subpos.name = "HYD_Get_Dimensions"
 		n_subbound.operation = "SUBTRACT"
+
 		n_normalize = nodes.new("ShaderNodeVectorMath")
 		n_normalize.label = "Normalize"
+		n_subpos.name = "HYD_Normalize"
 		n_normalize.operation = "DIVIDE"
 
 		n_image = nodes.new("GeometryNodeImageTexture")
 		n_image.label = "Displacement"
+		n_image.name = "HYD_Displacement"
 		n_image.extension = "EXTEND"
 		n_image.interpolation = "Cubic"
 		n_image.inputs[0].default_value = image
 
 		n_scale = nodes.new("ShaderNodeMath")
 		n_scale.label = "Scale"
+		n_scale.name = "HYD_Scale"
 		n_scale.operation = "MULTIPLY"
 		n_scale.inputs[1].default_value = 1
 
 		n_combine = nodes.new("ShaderNodeCombineXYZ")
 		n_combine.label = "Z Only"
+		n_combine.name = "HYD_Z_Only"
 		n_displace = nodes.new("GeometryNodeSetPosition")
 		n_displace.label = "Displace"
 
-		n_reroute = nodes.new("NodeReroute")
-		
-
 		links = g.links
-
-		links.new(n_input.outputs["Geometry"], n_reroute.inputs[0])
 
 		links.new(n_input.outputs["Geometry"], n_bounds.inputs[0])
 
@@ -496,7 +510,6 @@ def getOrMakeDisplaceGroup(name, image: bpy.types.Image=None, insert: bool=False
 		links.new(n_subpos.outputs[0], n_normalize.inputs[0])
 		links.new(n_subbound.outputs[0], n_normalize.inputs[1])
 
-		# links.new(n_input.outputs["Displacement"], n_image.inputs["Image"])
 		links.new(n_normalize.outputs[0], n_image.inputs["Vector"])
 
 		links.new(n_image.outputs["Color"], n_scale.inputs[0])

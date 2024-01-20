@@ -1,7 +1,7 @@
 """Module responsible for thermal erosion."""
 
 from Hydra.sim import heightmap
-from Hydra.utils import texture
+from Hydra.utils import texture, model
 from Hydra import common
 import bpy.types
 import math
@@ -24,6 +24,8 @@ def thermalPrepare(obj: bpy.types.Image | bpy.types.Object):
 	hyd = obj.hydra_erosion
 	if not data.hasMap(hyd.map_base):
 		heightmap.prepareHeightmap(obj)
+	else:
+		model.recalculateScales(obj)
 
 	size = obj.hydra_erosion.getSize()
 
@@ -60,8 +62,9 @@ def thermalRun(obj: bpy.types.Image | bpy.types.Object):
 
 	progA["requests"].value = 2
 	progA["Ks"] = opts.thermal_strength * 0.5	#0-1 -> 0-0.5, higher is unstable
-	progA["alpha"] = math.tan(math.tau * opts.thermal_angle / 360) / (size[0] * opts.height_scale)#higher scale -> Z shrunk down -> lower alpha
+	progA["alpha"] = math.tan(math.tau * opts.thermal_angle / 360)  * opts.org_width / size[0] #higher scale -> Z shrunk down -> lower alpha
 	progA["by"] = opts.scale_ratio
+
 	progB["requests"].value = 2
 
 	diagonal = opts.thermal_solver == "diagonal"

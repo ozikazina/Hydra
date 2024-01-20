@@ -30,7 +30,7 @@ class DefaultHeightmapPanel:
 
 		if common.data.hasMap(hyd.map_base):
 			hasAny = True
-			container.operator('hydra.hmclear', icon="CANCEL")
+			container.operator('hydra.hmclear', icon="CANCEL").useImage = False
 			container.separator()
 
 		if common.data.hasMap(hyd.map_current):
@@ -47,8 +47,8 @@ class DefaultHeightmapPanel:
 				op = cols.operator('hydra.hmpreview', text="", icon="HIDE_OFF")
 				op.target = hyd.map_current
 				op.base = hyd.map_base
-			cols.operator('hydra.hmmove', text="", icon="TRIA_DOWN_BAR")
-			cols.operator('hydra.hmdelete', text="", icon="PANEL_CLOSE")
+			cols.operator('hydra.hmmove', text="", icon="TRIA_DOWN_BAR").useImage = False
+			cols.operator('hydra.hmdelete', text="", icon="PANEL_CLOSE").useImage = False
 
 			grid = box.grid_flow(columns=1, align=True)
 
@@ -78,9 +78,9 @@ class DefaultHeightmapPanel:
 			split.label(text="Source:")
 			split.label(text=name)
 			cols = box.column_flow(columns=3, align=True)
-			cols.operator('hydra.hmforcereload', text="", icon="GRAPH")
-			cols.operator('hydra.hmback', text="", icon="TRIA_UP_BAR")
-			cols.operator('hydra.hmreload', text="", icon="FILE_REFRESH")
+			cols.operator('hydra.hmforcereload', text="", icon="GRAPH").useImage = False
+			cols.operator('hydra.hmback', text="", icon="TRIA_UP_BAR").useImage = False
+			cols.operator('hydra.hmreload', text="", icon="FILE_REFRESH").useImage = False
 		
 		if not hasAny:
 			container.label(text="No maps have been cached yet.")

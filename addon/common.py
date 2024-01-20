@@ -135,9 +135,9 @@ class HydraData(object):
 		:param callerName: Message box title.
 		:type callerName: :class:`str`"""
 		if len(self.error) != 0:
-			showMessage(";".join(self.error), title=callerName, icon="ERROR")
+			showMessage(" ".join(self.error), title=callerName, icon="ERROR")
 		if len(self.info) != 0:
-			caller.report({"INFO"}, ";".join(self.info))
+			caller.report({"INFO"}, " ".join(self.info))
 	
 	def freeAll(self):
 		"""Frees all allocated textures."""

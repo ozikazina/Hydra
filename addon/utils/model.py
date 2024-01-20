@@ -56,7 +56,6 @@ def evaluateMesh(obj: bpy.types.Object)->tuple[any, any]:
 def getResizeMatrix(obj: bpy.types.Object) -> tuple[float]:
 	"""
 	Creates a resizing matrix that scales the input object into normalized device coordinates, so that 1-Z is the normalized surface height.
-	Also sets :data:`hydra_erosion.scale_ratio` and :data:`hydra_erosion.height_scale` for the object.
 
 	:param obj: Object to be evaluated.
 	:type obj: :class:`bpy.types.Object`
@@ -71,10 +70,26 @@ def getResizeMatrix(obj: bpy.types.Object) -> tuple[float]:
 	dy = 2.0/(ar[2][1] - ar[0][1])
 	dz = 1.0/(ar[1][2] - ar[0][2])
 
+	return (dx,0,0,-cx*dx, 0,dy,0,-cy*dy, 0,0,-dz,0.5+cz*dz, 0,0,0,1)
+
+def recalculateScales(obj: bpy.types.Object) -> None:
+	"""
+	Sets :data:`hydra_erosion.scale_ratio`, `hydra_erosion.org_scale`. `hydra_erosion.org_width` and :data:`hydra_erosion.height_scale` for the object.
+
+	:param obj: Object to be evaluated.
+	:type obj: :class:`bpy.types.Object`
+	:return: Created resizing matrix.
+	:rtype: :class:`tuple[float]`
+	"""
+	ar = np.array(obj.bound_box)
+	dx = 2.0/(ar[4][0] - ar[0][0])
+	dy = 2.0/(ar[2][1] - ar[0][1])
+	dz = 1.0/(ar[1][2] - ar[0][2])
+
 	obj.hydra_erosion.scale_ratio = dx / dy if dy > 1e-3 else 1
 	obj.hydra_erosion.height_scale = dx / dz if dz > 1e-3 else 1
 	obj.hydra_erosion.org_scale = abs(obj.dimensions.z / obj.scale.z) if abs(obj.scale.z) > 1e-3 else 1
-	return (dx,0,0,-cx*dx, 0,dy,0,-cy*dy, 0,0,-dz,0.5+cz*dz, 0,0,0,1)
+	obj.hydra_erosion.org_width = abs(obj.dimensions.x / obj.scale.x) if abs(obj.scale.x) > 1e-3 else 1
 
 def createLandscape(txt: mgl.Texture, name: str, subscale: int = 2)->bpy.types.Object:
 	"""Creates a grid object of the given texture resolution. Divides the resolution by global settings. Doesn't write height data!

@@ -58,14 +58,16 @@ Once erosion starts, the object or image is converted into a heightmap. In the c
 
 > To pick a different resolution, you first have to clear generated textures for the current object.
 
-Two heightmaps are created - **Source** and **Current**.
+> If the height of the object changes (e.g. you apply Scale), you should also first clear existing heightmaps.
+
+Two heightmaps are created - **Source** and **Result**.
 
 - `Source` - Starting point for erosion.
-- `Current` - Result of erosion. It is automatically previewed.
+- `Result` - Result of erosion. It is automatically previewed.
 
 Choosing different parameters and eroding again will start erosion from the source map, giving you the option to test different settings.
 
-To use the current map as a starting point and to exchange maps between thermal and water erosion, apply it as a source in the *Heightmaps* subtab. The source layer can also be set back as Current to be exported or applied.
+To use the Result map as a starting point and to exchange maps between thermal and water erosion, apply it as a Source in the *Heightmaps* subtab. The Source layer can also be set back as Result to be exported or applied.
 
 Additional outputs
 ---------------

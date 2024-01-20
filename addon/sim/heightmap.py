@@ -34,6 +34,7 @@ def genHeightmap(obj: bpy.types.Object, normalized: bool=False, proportional: bo
 	txt = ctx.texture(size, 1, dtype="f4")
 	depth = ctx.depth_texture(size)
 
+	model.recalculateScales(obj)
 	resize_matrix = model.getResizeMatrix(obj)
 
 	if normalized:

@@ -3,7 +3,7 @@
 import moderngl
 
 from Hydra.utils import texture, model
-from Hydra.sim import heightmap, particle
+from Hydra.sim import heightmap
 from Hydra import common
 
 import math, random
@@ -28,6 +28,8 @@ def erosionPrepare(obj: bpy.types.Object | bpy.types.Image):
 	hyd = obj.hydra_erosion
 	if not data.hasMap(hyd.map_base):
 		heightmap.prepareHeightmap(obj)
+	else:
+		model.recalculateScales(obj)
 
 	ctx = data.context
 	size = hyd.getSize()
@@ -73,20 +75,23 @@ def erosionRun(obj: bpy.types.Object | bpy.types.Image):
 			data.active[MAP_COLOR].bind_to_image(4, read=True, write=True)
 			prog["color"].value = 4
 
-		prog["squareSize"] = subdiv
-		prog["useColor"] = hyd.out_color
-		prog["useSideData"] = hyd.out_depth or hyd.out_sediment
+		prog["square_size"] = subdiv
+		prog["use_color"] = hyd.out_color
+		prog["use_side_data"] = hyd.out_depth or hyd.out_sediment
 
-		particle.setUniformsFromOptions(prog, hyd)
 		prog["interpolate"] = hyd.interpolate_erosion
-		prog["interpolateColor"] = hyd.interpolate_color
-		prog["bite"] = hyd.part_fineness
-		prog["release"] = hyd.part_deposition * 0.5
-		prog["colorStrength"] = hyd.color_mixing
-		prog["capacityFactor"] = hyd.part_capacity * 1e-2
-		prog["contrastErode"] = hyd.depth_contrast * 40
-		prog["contrastDeposit"] = hyd.sed_contrast * 30
-		prog["maxJump"] = hyd.part_maxjump
+		prog["interpolate_color"] = hyd.interpolate_color
+		prog["erosion_strength"] = hyd.part_fineness
+		prog["deposition_strength"] = hyd.part_deposition * 0.5
+		prog["color_strength"] = hyd.color_mixing
+		prog["capacity_factor"] = hyd.part_capacity * 1e-2
+		prog["contrast_erode"] = hyd.depth_contrast * 40
+		prog["contrast_deposit"] = hyd.sed_contrast * 30
+		prog["max_jump"] = hyd.part_maxjump
+
+		prog["acceleration"] = hyd.part_acceleration
+		prog["iterations"] = hyd.part_lifetime
+		prog["drag"] = 1-hyd.part_drag	#multiplicative factor
 
 		for i in range(hyd.part_iter_num):
 			for y in range(subdiv):

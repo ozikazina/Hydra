@@ -102,9 +102,9 @@ class HMMergeShapeOp(bpy.types.Operator):
 #-------------------------------------------- Move
 
 class HMMoveOp(bpy.types.Operator):
-	"""Apply current as source operator."""
-	bl_idname = "hydra.hmmove"; bl_label = "Set as source"
-	bl_description = "Sets the current heightmap as the new source map"; bl_options = {'REGISTER'}
+	"""Apply Result as Source operator."""
+	bl_idname = "hydra.hmmove"; bl_label = "Set as Source"
+	bl_description = "Sets the Result heightmap as the new Source map"; bl_options = {'REGISTER'}
 
 	useImage: BoolProperty(default=False)
 	"""Apply to image if `True`. Else apply to object."""
@@ -115,9 +115,9 @@ class HMMoveOp(bpy.types.Operator):
 		return {'FINISHED'}
 
 class HMMoveBackOp(bpy.types.Operator):
-	"""Apply source as current operator."""
-	bl_idname = "hydra.hmback"; bl_label = "Set as current"
-	bl_description = "Sets this source as the current map and previews it"; bl_options = {'REGISTER'}
+	"""Apply Source as Result operator."""
+	bl_idname = "hydra.hmback"; bl_label = "Set as Result"
+	bl_description = "Sets this Source as the Result map and previews it"; bl_options = {'REGISTER'}
 
 	useImage: BoolProperty(default=False)
 	"""Apply to image if `True`. Else apply to object."""
@@ -141,7 +141,7 @@ class HMMoveBackOp(bpy.types.Operator):
 #-------------------------------------------- Delete
 
 class HMDeleteOp(bpy.types.Operator):
-	"""Delete current operator."""
+	"""Delete Result operator."""
 	bl_idname = "hydra.hmdelete"; bl_label = "Delete this layer"
 	bl_description = "Deletes the generated heightmap"; bl_options = {'REGISTER'}
 
@@ -211,6 +211,7 @@ class HMGeometryOp(bpy.types.Operator):
 		apply.addGeometryNode(ctx.object, target)
 		target.release()
 		nav.gotoModifier()
+		nav.gotoGeometry(ctx.object)
 		data.report(self, callerName="Erosion")
 		return {'FINISHED'}
 	

@@ -30,8 +30,6 @@ def initContext():
 		frag = f.read()
 	make_prog("redraw", vert, frag)
 
-	# with open(Path(base, "identity.vert"), "r") as f:
-	# 	vert = f.read()
 	with open(Path(base, "erosion.frag"), "r") as f:
 		frag = f.read()
 	make_prog("erosion", vert, frag)

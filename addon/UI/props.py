@@ -19,22 +19,24 @@ class HydraGlobalGroup(bpy.types.PropertyGroup):
 class ErosionGroup(bpy.types.PropertyGroup):
 	"""Individual settings for objects and images."""
 	height_scale: FloatProperty(
-		name="Height scale", default=1,
-		min = 0.01, max = 10
+		name="Height scale", default=1
 	)
 	"""Height scaling factor after normalization. Value of 1 means same scale as heightmap width."""
 
 	scale_ratio: FloatProperty(
-		name="Scale ratio", default=1,
-		min = 0.01, max = 10
+		name="Scale ratio", default=1
 	)
 	"""Ratio of Y to X scales for non-uniform images."""
 
 	org_scale: FloatProperty(
-		name="Original height scaling", default=1,
-		min = 0.01, max = 10
+		name="Original height scaling", default=1
 	)
 	"""Original height scaling to use with modifiers, which affect it."""
+
+	org_width: FloatProperty(
+		name="Original width", default=1,
+	)
+	"""Original object width for correct angle calculations."""
 
 	img_size: IntVectorProperty(
 		default=(512,512),
