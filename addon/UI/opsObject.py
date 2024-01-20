@@ -38,7 +38,7 @@ class DefaultHeightmapPanel:
 			name = common.data.maps[hyd.map_current].name
 			box = container.box()
 			split = box.split(factor=0.5)
-			split.label(text="Current:")
+			split.label(text="Result:")
 			split.label(text=name)
 			cols = box.column_flow(columns=3, align=True)
 			if common.data.lastPreview == act.name:
@@ -50,17 +50,20 @@ class DefaultHeightmapPanel:
 			cols.operator('hydra.hmmove', text="", icon="TRIA_DOWN_BAR")
 			cols.operator('hydra.hmdelete', text="", icon="PANEL_CLOSE")
 
-			cols = box.column_flow(columns=4, align=True)
+			grid = box.grid_flow(columns=1, align=True)
+
+			cols = grid.column_flow(columns=2, align=True)
 			op = cols.operator('hydra.hmapplyimg', text="", icon="IMAGE_DATA")
 			op.save_target = hyd.map_current
 			op.name = f"HYD_{act.name}_Eroded"
+			cols.operator('hydra.hmapplygeo', text="", icon="GEOMETRY_NODES")
+			# cols.operator('hydra.hmapplygeoinsert', text="", icon="OUTLINER_DATA_POINTCLOUD")
+			# op = cols.operator('hydra.hmapplyupdate', text="", icon="IMAGE_REFERENCE")
+
+			cols = grid.column_flow(columns=3, align=True)
 			cols.operator('hydra.hmapplymod', text="", icon="MOD_DISPLACE")
 			cols.operator('hydra.hmapplydisp', text="", icon="RNDCURVE")
 			cols.operator('hydra.hmapplybump', text="", icon="MOD_NOISE")
-
-			cols = box.column_flow(columns=2, align=True)
-			cols.operator('hydra.hmapplygeo', text="", icon="OUTLINER_OB_POINTCLOUD")
-			cols.operator('hydra.hmapplygeoinsert', text="", icon="GEOMETRY_NODES")
 			
 			if any(m.name.startswith("HYD_") for m in act.modifiers):
 				cols = box.column_flow(columns=2, align=True)

@@ -146,6 +146,16 @@ class HydraData(object):
 		self.maps = {}
 		self.releaseActive()
 
+	def addMessage(self, message: str, error: bool=False):
+		"""Adds an info message.
+
+		:param message: Message to be added.
+		:type message: :class:`str`"""
+		if error:
+			self.error.append(message)
+		else:
+			self.info.append(message)
+
 #-------------------------------------------- Extra
 
 def showMessage(message: str, title:str="Hydra", icon:str='INFO'):

@@ -205,11 +205,13 @@ class HMGeometryOp(bpy.types.Operator):
 	def invoke(self, ctx, event):
 		hyd = ctx.object.hydra_erosion
 		data = common.data
+		data.clear()
 		apply.removePreview()
 		target = heightmap.subtract(data.maps[hyd.map_current].texture, data.maps[hyd.map_base].texture)
 		apply.addGeometryNode(ctx.object, target)
 		target.release()
 		nav.gotoModifier()
+		data.report(self, callerName="Erosion")
 		return {'FINISHED'}
 	
 class HMGeometryInsertOp(bpy.types.Operator):
@@ -277,6 +279,20 @@ class HMImageOp(bpy.types.Operator):
 		img = texture.writeImage(self.name, data.maps[self.save_target].texture)
 		nav.gotoImage(img)
 		self.report({'INFO'}, f"Created texture: {self.name}")
+		return {'FINISHED'}
+	
+class HMUpdateOp(bpy.types.Operator):
+	"""Update displacement texture."""
+	bl_idname = "hydra.hmapplyupdate"; bl_label = "Only Update"
+	bl_description = "Only update existing deformations"; bl_options = {'REGISTER'}
+
+	def invoke(self, ctx, event):
+		hyd = ctx.object.hydra_erosion
+		data = common.data
+		target = heightmap.subtract(data.maps[hyd.map_current].texture, data.maps[hyd.map_base].texture)
+		apply.onlyUpdate(ctx.object, target)
+		target.release()
+		self.report({'INFO'}, f"Updated texture: {self.name}")
 		return {'FINISHED'}
 
 #-------------------------------------------- Reload
@@ -385,6 +401,7 @@ EXPORTS = [
 	HMGeometryOp,
 	HMGeometryInsertOp,
 	HMImageOp,
+	HMUpdateOp,
 	HMDisplaceOp,
 	HMBumpOp,
 	HMReloadOp,
