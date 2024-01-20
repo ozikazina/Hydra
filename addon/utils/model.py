@@ -108,6 +108,7 @@ def createLandscape(txt: mgl.Texture, name: str, subscale: int = 2)->bpy.types.O
 
 	act.name = f"HYD_{name}_Landscape"
 	act.hydra_erosion.is_generated = True
+	act.scale[1] = txt.size[1] / txt.size[0]
 
 	for polygon in act.data.polygons:
 		polygon.use_smooth = True

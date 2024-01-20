@@ -415,6 +415,8 @@ def configureLandscape(obj: bpy.types.Object, src: mgl.Texture):
 	mod.node_group = getOrMakeDisplaceGroup(P_LAND_TEMP_NAME, image=img)
 
 	bpy.ops.object.mode_set(mode="OBJECT")	# modifiers can't be applied in EDIT mode
+
+	bpy.ops.object.transform_apply(scale=True, location=False, rotation=False, properties=False, isolate_users=False)
 	bpy.ops.object.modifier_apply(modifier=P_LAND_TEMP_NAME)
 	
 	bpy.data.images.remove(img)
