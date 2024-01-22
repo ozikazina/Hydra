@@ -13,7 +13,7 @@ class Heightmap:
 		:param name: Display name of the stored texture.
 		:type name: :class:`str`
 		:param txt: Texture to wrap.
-		:type txt: :class:`moderngl.Texture:"""
+		:type txt: :class:`moderngl.Texture:`"""
 		self.name = name
 		self.texture = txt
 	
