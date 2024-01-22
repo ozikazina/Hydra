@@ -46,7 +46,7 @@ or
 Addon usage
 ===========
 
-This addon supports erosion for individual **objects** and **images**. It can be found in the right side panel in both `3D View` and `Image Editor` windows in the Hydra tab.
+This addon supports erosion for individual **objects** and **images**. It can be found in the right side panel in **3D&nbsp;View** and **Image&nbsp;Editor** windows in the Hydra tab.
 
 Water erosion
 =============
@@ -140,12 +140,13 @@ The addon similarly supports thermal erosion, where steep surfaces cause materia
 Heightmap generation
 ====================
 
-Heightmaps can be generated directly at an arbitrary resolution. Cached heightmaps are also offered for direct export. This addon now creates three types of heightmaps:
+Heightmaps can be generated directly at an arbitrary resolution. Cached heightmaps are also offered for direct export. This addon creates the following types of heightmaps:
 | | |
 | --: | -- |
 | `Normalized` | Heights are scaled to the range \[0,1\]. |
-| `Proportional` | Z to X ratio is preserved. |
-| `World scale` | Values are directly equal to height without scale applied. |
+| `Proportional` | Vertical angles are preserved. |
+| `Local size` | Equal to object height without scale applied. |
+| `World size` | Equal to world height. |
 
 License
 =======

@@ -1,8 +1,10 @@
 Push-Location
 Set-Location $PSScriptRoot
 
+$base_path = "..\src\hydra"
+
 #Get version from __init__.py
-if (Get-Content ..\addon\__init__.py | Where-Object { $_ -match "version.*?(\d,\s*\d,\s*\d)" }) {
+if (Get-Content "$base_path\__init__.py" | Where-Object { $_ -match "version.*?(\d,\s*\d,\s*\d)" }) {
     $version = $Matches[1] -replace '\s*,\s*',"."
     $name = "Hydra_$version.zip"
     Write-Host "Found version number: $version"
@@ -13,7 +15,7 @@ else {
 }
 
 $null = New-Item "Hydra" -ItemType "Directory"
-Copy-Item "..\addon\*" "Hydra" -Recurse
+Copy-Item "$base_path\*" "Hydra" -Recurse
 
 Get-ChildItem Hydra -Filter __pycache__ -Recurse | Remove-Item -Recurse
 
