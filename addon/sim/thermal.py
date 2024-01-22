@@ -24,8 +24,6 @@ def thermalPrepare(obj: bpy.types.Image | bpy.types.Object):
 	hyd = obj.hydra_erosion
 	if not data.hasMap(hyd.map_base):
 		heightmap.prepareHeightmap(obj)
-	else:
-		model.recalculateScales(obj)
 
 	size = obj.hydra_erosion.getSize()
 
