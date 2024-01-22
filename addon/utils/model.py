@@ -82,12 +82,12 @@ def recalculateScales(obj: bpy.types.Object) -> None:
 	:rtype: :class:`tuple[float]`
 	"""
 	ar = np.array(obj.bound_box)
-	dx = 2.0/(ar[4][0] - ar[0][0])
-	dy = 2.0/(ar[2][1] - ar[0][1])
-	dz = 1.0/(ar[1][2] - ar[0][2])
+	dx = (ar[4][0] - ar[0][0]) / 2
+	dy = (ar[2][1] - ar[0][1]) / 2
+	dz = (ar[1][2] - ar[0][2])
 
-	obj.hydra_erosion.scale_ratio = dx / dy if dy > 1e-3 else 1
-	obj.hydra_erosion.height_scale = dx / dz if dz > 1e-3 else 1
+	obj.hydra_erosion.scale_ratio = dy / dx if dx > 1e-3 else 1
+	obj.hydra_erosion.height_scale = dz / dx if dx > 1e-3 else 1
 	obj.hydra_erosion.org_scale = abs(obj.dimensions.z / obj.scale.z) if abs(obj.scale.z) > 1e-3 else 1
 	obj.hydra_erosion.org_width = abs(obj.dimensions.x / obj.scale.x) if abs(obj.scale.x) > 1e-3 else 1
 

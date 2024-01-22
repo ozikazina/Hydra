@@ -56,3 +56,7 @@ def initContext():
 	with open(Path(base, "plug.glsl"), "r") as f:
 		comp = f.read()
 	data.shaders["plug"] = ctx.compute_shader(comp)
+
+	with open(Path(base, "scaling.glsl"), "r") as f:
+		comp = f.read()
+	data.shaders["scaling"] = ctx.compute_shader(comp)

@@ -134,8 +134,10 @@ class HMMoveBackOp(bpy.types.Operator):
 
 		if self.useImage:
 			apply.addImagePreview(txt)
-		else:	
-			heightmap.preview(obj, data.maps[hyd.map_current], data.maps[hyd.map_base])
+		else:
+			target = heightmap.subtract(data.maps[hyd.map_current], data.maps[hyd.map_base], hyd.org_scale / hyd.height_scale)
+			apply.addPreview(obj, target)
+			target.release()
 		return {'FINISHED'}
 
 #-------------------------------------------- Delete
@@ -190,7 +192,7 @@ class HMModifierOp(bpy.types.Operator):
 		hyd = ctx.object.hydra_erosion
 		data = common.data
 		apply.removePreview()
-		target = heightmap.subtract(data.maps[hyd.map_current].texture, data.maps[hyd.map_base].texture)
+		target = heightmap.subtract(data.maps[hyd.map_current].texture, data.maps[hyd.map_base].texture, hyd.org_scale / hyd.height_scale)
 		apply.addModifier(ctx.object, target)
 		target.release()
 		nav.gotoModifier()
@@ -207,7 +209,7 @@ class HMGeometryOp(bpy.types.Operator):
 		data = common.data
 		data.clear()
 		apply.removePreview()
-		target = heightmap.subtract(data.maps[hyd.map_current].texture, data.maps[hyd.map_base].texture)
+		target = heightmap.subtract(data.maps[hyd.map_current].texture, data.maps[hyd.map_base].texture, hyd.org_scale / hyd.height_scale)
 		apply.addGeometryNode(ctx.object, target)
 		target.release()
 		nav.gotoModifier()
@@ -225,7 +227,7 @@ class HMGeometryInsertOp(bpy.types.Operator):
 		data = common.data
 		data.clear()
 		apply.removePreview()
-		target = heightmap.subtract(data.maps[hyd.map_current].texture, data.maps[hyd.map_base].texture)
+		target = heightmap.subtract(data.maps[hyd.map_current].texture, data.maps[hyd.map_base].texture, hyd.org_scale / hyd.height_scale)
 		apply.addIntoGeometryNodes(ctx.object, target)
 		target.release()
 		nav.gotoModifier()
@@ -242,7 +244,7 @@ class HMDisplaceOp(bpy.types.Operator):
 		hyd = ctx.object.hydra_erosion
 		data = common.data
 		apply.removePreview()
-		target = heightmap.subtract(data.maps[hyd.map_current].texture, data.maps[hyd.map_base].texture)
+		target = heightmap.subtract(data.maps[hyd.map_current].texture, data.maps[hyd.map_base].texture, hyd.org_scale / hyd.height_scale)
 		apply.addDisplacement(ctx.object, target)
 		target.release()
 		nav.gotoShader(ctx.object)
@@ -258,7 +260,7 @@ class HMBumpOp(bpy.types.Operator):
 		hyd = ctx.object.hydra_erosion
 		data = common.data
 		apply.removePreview()
-		target = heightmap.subtract(data.maps[hyd.map_current].texture, data.maps[hyd.map_base].texture)
+		target = heightmap.subtract(data.maps[hyd.map_current].texture, data.maps[hyd.map_base].texture, hyd.org_scale / hyd.height_scale)
 		apply.addBump(ctx.object, target)
 		target.release()
 		nav.gotoShader(ctx.object)
@@ -290,7 +292,7 @@ class HMUpdateOp(bpy.types.Operator):
 	def invoke(self, ctx, event):
 		hyd = ctx.object.hydra_erosion
 		data = common.data
-		target = heightmap.subtract(data.maps[hyd.map_current].texture, data.maps[hyd.map_base].texture)
+		target = heightmap.subtract(data.maps[hyd.map_current].texture, data.maps[hyd.map_base].texture, hyd.org_scale / hyd.height_scale)
 		apply.onlyUpdate(ctx.object, target)
 		target.release()
 		self.report({'INFO'}, f"Updated texture: {self.name}")

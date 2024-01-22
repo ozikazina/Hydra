@@ -179,8 +179,9 @@ class HeightmapOp(bpy.types.Operator):
 		act.hydra_erosion.img_size = tuple(act.hydra_erosion.heightmap_gen_size)
 
 		normalized = act.hydra_erosion.heightmap_gen_type == "normalized"
-		proportional = act.hydra_erosion.heightmap_gen_type == "proportional"
-		txt = heightmap.genHeightmap(act, normalized=normalized, proportional=proportional)
+		world_scale = act.hydra_erosion.heightmap_gen_type == "world"
+		local_scale = act.hydra_erosion.heightmap_gen_type == "object"
+		txt = heightmap.genHeightmap(act, normalized=normalized, world_scale=world_scale, local_scale=local_scale)
 
 		img = texture.writeImage(f"HYD_{act.name}_Heightmap", txt)
 		txt.release()

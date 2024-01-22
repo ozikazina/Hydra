@@ -256,11 +256,12 @@ class ErosionGroup(bpy.types.PropertyGroup):
 	map_base: StringProperty(name="Base map", description="Base heightmap")
 
 	heightmap_gen_type: EnumProperty(
-		default="normalized",
+		default="proportional",
 		items=(
 			("normalized", "Normalized", "Scales heightmap to the range [0,1], 1 (white) being highest", 0),
-			("proportional", "Proportional", "Preserves object Z size to X size ratio", 1),
-			("real", "World scale", "Preserves real height (without object scale applied)", 2),
+			("proportional", "Proportional", "Preserves vertical angles", 1),
+			("local", "Local size", "Preserves object height (without object scale applied)", 2),
+			("world", "World size", "Preserves world height", 3),
 		),
 		name="Heightmap type",
 		description="Heightmap generation type"
