@@ -135,9 +135,9 @@ class HydraData(object):
 		:param callerName: Message box title.
 		:type callerName: :class:`str`"""
 		if len(self.error) != 0:
-			showMessage(";".join(self.error), title=callerName, icon="ERROR")
+			showMessage(" ".join(self.error), title=callerName, icon="ERROR")
 		if len(self.info) != 0:
-			caller.report({"INFO"}, ";".join(self.info))
+			caller.report({"INFO"}, " ".join(self.info))
 	
 	def freeAll(self):
 		"""Frees all allocated textures."""
@@ -145,6 +145,16 @@ class HydraData(object):
 			i.release()
 		self.maps = {}
 		self.releaseActive()
+
+	def addMessage(self, message: str, error: bool=False):
+		"""Adds an info message.
+
+		:param message: Message to be added.
+		:type message: :class:`str`"""
+		if error:
+			self.error.append(message)
+		else:
+			self.info.append(message)
 
 #-------------------------------------------- Extra
 

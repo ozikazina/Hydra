@@ -102,9 +102,9 @@ class HMMergeShapeOp(bpy.types.Operator):
 #-------------------------------------------- Move
 
 class HMMoveOp(bpy.types.Operator):
-	"""Apply current as source operator."""
-	bl_idname = "hydra.hmmove"; bl_label = "Set as source"
-	bl_description = "Sets the current heightmap as the new source map"; bl_options = {'REGISTER'}
+	"""Apply Result as Source operator."""
+	bl_idname = "hydra.hmmove"; bl_label = "Set as Source"
+	bl_description = "Sets the Result heightmap as the new Source map"; bl_options = {'REGISTER'}
 
 	useImage: BoolProperty(default=False)
 	"""Apply to image if `True`. Else apply to object."""
@@ -115,9 +115,9 @@ class HMMoveOp(bpy.types.Operator):
 		return {'FINISHED'}
 
 class HMMoveBackOp(bpy.types.Operator):
-	"""Apply source as current operator."""
-	bl_idname = "hydra.hmback"; bl_label = "Set as current"
-	bl_description = "Sets this source as the current map and previews it"; bl_options = {'REGISTER'}
+	"""Apply Source as Result operator."""
+	bl_idname = "hydra.hmback"; bl_label = "Set as Result"
+	bl_description = "Sets this Source as the Result map and previews it"; bl_options = {'REGISTER'}
 
 	useImage: BoolProperty(default=False)
 	"""Apply to image if `True`. Else apply to object."""
@@ -134,14 +134,16 @@ class HMMoveBackOp(bpy.types.Operator):
 
 		if self.useImage:
 			apply.addImagePreview(txt)
-		else:	
-			heightmap.preview(obj, data.maps[hyd.map_current], data.maps[hyd.map_base])
+		else:
+			target = heightmap.subtract(data.maps[hyd.map_current], data.maps[hyd.map_base], hyd.org_scale / hyd.height_scale)
+			apply.addPreview(obj, target)
+			target.release()
 		return {'FINISHED'}
 
 #-------------------------------------------- Delete
 
 class HMDeleteOp(bpy.types.Operator):
-	"""Delete current operator."""
+	"""Delete Result operator."""
 	bl_idname = "hydra.hmdelete"; bl_label = "Delete this layer"
 	bl_description = "Deletes the generated heightmap"; bl_options = {'REGISTER'}
 
@@ -190,11 +192,47 @@ class HMModifierOp(bpy.types.Operator):
 		hyd = ctx.object.hydra_erosion
 		data = common.data
 		apply.removePreview()
-		target = heightmap.subtract(data.maps[hyd.map_current].texture, data.maps[hyd.map_base].texture)
+		target = heightmap.subtract(data.maps[hyd.map_current].texture, data.maps[hyd.map_base].texture, hyd.org_scale / hyd.height_scale)
 		apply.addModifier(ctx.object, target)
 		target.release()
 		nav.gotoModifier()
 		self.report({'INFO'}, f"Successfuly applied map as a modifier")
+		return {'FINISHED'}
+	
+class HMGeometryOp(bpy.types.Operator):
+	"""Apply as modifier operator."""
+	bl_idname = "hydra.hmapplygeo"; bl_label = "As Geometry Modifier"
+	bl_description = "Apply texture as a Geometry Nodes modifier"; bl_options = {'REGISTER'}
+
+	def invoke(self, ctx, event):
+		hyd = ctx.object.hydra_erosion
+		data = common.data
+		data.clear()
+		apply.removePreview()
+		target = heightmap.subtract(data.maps[hyd.map_current].texture, data.maps[hyd.map_base].texture, hyd.org_scale / hyd.height_scale)
+		apply.addGeometryNode(ctx.object, target)
+		target.release()
+		nav.gotoModifier()
+		nav.gotoGeometry(ctx.object)
+		data.report(self, callerName="Erosion")
+		return {'FINISHED'}
+	
+class HMGeometryInsertOp(bpy.types.Operator):
+	"""Apply as modifier operator."""
+	bl_idname = "hydra.hmapplygeoinsert"; bl_label = "Into Geometry Modifier"
+	bl_description = "Apply texture into an existing Geometry Nodes modifier"; bl_options = {'REGISTER'}
+
+	def invoke(self, ctx, event):
+		hyd = ctx.object.hydra_erosion
+		data = common.data
+		data.clear()
+		apply.removePreview()
+		target = heightmap.subtract(data.maps[hyd.map_current].texture, data.maps[hyd.map_base].texture, hyd.org_scale / hyd.height_scale)
+		apply.addIntoGeometryNodes(ctx.object, target)
+		target.release()
+		nav.gotoModifier()
+		nav.gotoGeometry(ctx.object)
+		data.report(self, callerName="Erosion")
 		return {'FINISHED'}
 
 class HMDisplaceOp(bpy.types.Operator):
@@ -206,7 +244,7 @@ class HMDisplaceOp(bpy.types.Operator):
 		hyd = ctx.object.hydra_erosion
 		data = common.data
 		apply.removePreview()
-		target = heightmap.subtract(data.maps[hyd.map_current].texture, data.maps[hyd.map_base].texture)
+		target = heightmap.subtract(data.maps[hyd.map_current].texture, data.maps[hyd.map_base].texture, hyd.org_scale / hyd.height_scale)
 		apply.addDisplacement(ctx.object, target)
 		target.release()
 		nav.gotoShader(ctx.object)
@@ -222,7 +260,7 @@ class HMBumpOp(bpy.types.Operator):
 		hyd = ctx.object.hydra_erosion
 		data = common.data
 		apply.removePreview()
-		target = heightmap.subtract(data.maps[hyd.map_current].texture, data.maps[hyd.map_base].texture)
+		target = heightmap.subtract(data.maps[hyd.map_current].texture, data.maps[hyd.map_base].texture, hyd.org_scale / hyd.height_scale)
 		apply.addBump(ctx.object, target)
 		target.release()
 		nav.gotoShader(ctx.object)
@@ -244,6 +282,20 @@ class HMImageOp(bpy.types.Operator):
 		img = texture.writeImage(self.name, data.maps[self.save_target].texture)
 		nav.gotoImage(img)
 		self.report({'INFO'}, f"Created texture: {self.name}")
+		return {'FINISHED'}
+	
+class HMUpdateOp(bpy.types.Operator):
+	"""Update displacement texture."""
+	bl_idname = "hydra.hmapplyupdate"; bl_label = "Only Update"
+	bl_description = "Only update existing deformations"; bl_options = {'REGISTER'}
+
+	def invoke(self, ctx, event):
+		hyd = ctx.object.hydra_erosion
+		data = common.data
+		target = heightmap.subtract(data.maps[hyd.map_current].texture, data.maps[hyd.map_base].texture, hyd.org_scale / hyd.height_scale)
+		apply.onlyUpdate(ctx.object, target)
+		target.release()
+		self.report({'INFO'}, f"Updated texture: {self.name}")
 		return {'FINISHED'}
 
 #-------------------------------------------- Reload
@@ -349,7 +401,10 @@ EXPORTS = [
 	HMMoveBackOp,
 	HMDeleteOp,
 	HMModifierOp,
+	HMGeometryOp,
+	HMGeometryInsertOp,
 	HMImageOp,
+	HMUpdateOp,
 	HMDisplaceOp,
 	HMBumpOp,
 	HMReloadOp,

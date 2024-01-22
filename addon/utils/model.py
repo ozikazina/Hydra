@@ -56,7 +56,6 @@ def evaluateMesh(obj: bpy.types.Object)->tuple[any, any]:
 def getResizeMatrix(obj: bpy.types.Object) -> tuple[float]:
 	"""
 	Creates a resizing matrix that scales the input object into normalized device coordinates, so that 1-Z is the normalized surface height.
-	Also sets :data:`hydra_erosion.scale_ratio` and :data:`hydra_erosion.height_scale` for the object.
 
 	:param obj: Object to be evaluated.
 	:type obj: :class:`bpy.types.Object`
@@ -71,12 +70,28 @@ def getResizeMatrix(obj: bpy.types.Object) -> tuple[float]:
 	dy = 2.0/(ar[2][1] - ar[0][1])
 	dz = 1.0/(ar[1][2] - ar[0][2])
 
-	obj.hydra_erosion.scale_ratio = dx / dy
-	obj.hydra_erosion.height_scale = dx / dz
-	obj.hydra_erosion.org_scale = 2 * obj.dimensions.z / obj.scale.z
 	return (dx,0,0,-cx*dx, 0,dy,0,-cy*dy, 0,0,-dz,0.5+cz*dz, 0,0,0,1)
 
-def createLandscape(txt: mgl.Texture, name: str)->bpy.types.Object:
+def recalculateScales(obj: bpy.types.Object) -> None:
+	"""
+	Sets :data:`hydra_erosion.scale_ratio`, `hydra_erosion.org_scale`. `hydra_erosion.org_width` and :data:`hydra_erosion.height_scale` for the object.
+
+	:param obj: Object to be evaluated.
+	:type obj: :class:`bpy.types.Object`
+	:return: Created resizing matrix.
+	:rtype: :class:`tuple[float]`
+	"""
+	ar = np.array(obj.bound_box)
+	dx = (ar[4][0] - ar[0][0]) / 2
+	dy = (ar[2][1] - ar[0][1]) / 2
+	dz = (ar[1][2] - ar[0][2])
+
+	obj.hydra_erosion.scale_ratio = dy / dx if dx > 1e-3 else 1
+	obj.hydra_erosion.height_scale = dz / dx if dx > 1e-3 else 1
+	obj.hydra_erosion.org_scale = abs(obj.dimensions.z / obj.scale.z) if abs(obj.scale.z) > 1e-3 else 1
+	obj.hydra_erosion.org_width = abs(obj.dimensions.x / obj.scale.x) if abs(obj.scale.x) > 1e-3 else 1
+
+def createLandscape(txt: mgl.Texture, name: str, subscale: int = 2)->bpy.types.Object:
 	"""Creates a grid object of the given texture resolution. Divides the resolution by global settings. Doesn't write height data!
 	
 	:param txt: Texture of the intended resolution.
@@ -85,15 +100,15 @@ def createLandscape(txt: mgl.Texture, name: str)->bpy.types.Object:
 	:type name: :class:`str`
 	:return: Created grid object.
 	:rtype: :class:`bpy.types.Object`"""
-	sub = bpy.context.scene.hydra_erosion.gen_subscale
-	resX = math.ceil(txt.size[0] / sub)
-	resY = math.ceil(txt.size[1] / sub)
+	resX = math.ceil(txt.size[0] / subscale)
+	resY = math.ceil(txt.size[1] / subscale)
 
 	bpy.ops.mesh.primitive_grid_add(x_subdivisions=resX, y_subdivisions=resY, location=bpy.context.scene.cursor.location)
 	act = bpy.context.active_object
 
 	act.name = f"HYD_{name}_Landscape"
 	act.hydra_erosion.is_generated = True
+	act.scale[1] = txt.size[1] / txt.size[0]
 
 	for polygon in act.data.polygons:
 		polygon.use_smooth = True

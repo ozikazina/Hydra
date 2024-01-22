@@ -11,8 +11,8 @@ class AddonPanel(bpy.types.AddonPreferences):
 	"""Addon preferences panel."""
 	bl_idname = "Hydra"
 
-	skip_indexing: BoolProperty(name="Force thorough heightmaps", default=False,
-		description="Fixes heightmap generation. Skips vertex indexing, which seems to exhibit odd behavior outside Windows. Uses slightly more memory during generation"
+	skip_indexing: BoolProperty(name="Force heightmaps", default=False,
+		description="Can fixes heightmap generation if it fails. Skips vertex indexing, which fails outside Windows in ModernGL. Uses slightly more memory during generation"
 	)
 	"""Heightmap generation indexing override."""
 
@@ -28,6 +28,10 @@ class AddonPanel(bpy.types.AddonPreferences):
 	)
 	"""Split direction preference."""
 
+	debug_mode: BoolProperty(name="Debug mode", default=False,
+		description="Enables debug mode, giving access to additional operators."
+	)
+
 	def draw(self, context):
 		layout = self.layout
 
@@ -38,6 +42,8 @@ class AddonPanel(bpy.types.AddonPreferences):
 		split.prop(self, "split_direction", text="")
 		if startup.invalid and not startup.promptRestart:
 			box.enabled = False
+			
+		box.prop(self, "debug_mode")
 
 		box = layout.box()
 		if startup.promptFailed:

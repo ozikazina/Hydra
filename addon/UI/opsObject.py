@@ -30,7 +30,7 @@ class DefaultHeightmapPanel:
 
 		if common.data.hasMap(hyd.map_base):
 			hasAny = True
-			container.operator('hydra.hmclear', icon="CANCEL")
+			container.operator('hydra.hmclear', icon="CANCEL").useImage = False
 			container.separator()
 
 		if common.data.hasMap(hyd.map_current):
@@ -38,7 +38,7 @@ class DefaultHeightmapPanel:
 			name = common.data.maps[hyd.map_current].name
 			box = container.box()
 			split = box.split(factor=0.5)
-			split.label(text="Current:")
+			split.label(text="Result:")
 			split.label(text=name)
 			cols = box.column_flow(columns=3, align=True)
 			if common.data.lastPreview == act.name:
@@ -47,15 +47,24 @@ class DefaultHeightmapPanel:
 				op = cols.operator('hydra.hmpreview', text="", icon="HIDE_OFF")
 				op.target = hyd.map_current
 				op.base = hyd.map_base
-			cols.operator('hydra.hmmove', text="", icon="TRIA_DOWN_BAR")
-			cols.operator('hydra.hmdelete', text="", icon="PANEL_CLOSE")
-			cols = box.column_flow(columns=4, align=True)
-			cols.operator('hydra.hmapplybump', text="", icon="MOD_NOISE")
-			cols.operator('hydra.hmapplydisp', text="", icon="RNDCURVE")
-			cols.operator('hydra.hmapplymod', text="", icon="MOD_DISPLACE")
+			cols.operator('hydra.hmmove', text="", icon="TRIA_DOWN_BAR").useImage = False
+			cols.operator('hydra.hmdelete', text="", icon="PANEL_CLOSE").useImage = False
+
+			grid = box.grid_flow(columns=1, align=True)
+
+			cols = grid.column_flow(columns=2, align=True)
 			op = cols.operator('hydra.hmapplyimg', text="", icon="IMAGE_DATA")
 			op.save_target = hyd.map_current
 			op.name = f"HYD_{act.name}_Eroded"
+			cols.operator('hydra.hmapplygeo', text="", icon="GEOMETRY_NODES")
+			# cols.operator('hydra.hmapplygeoinsert', text="", icon="OUTLINER_DATA_POINTCLOUD")
+			# op = cols.operator('hydra.hmapplyupdate', text="", icon="IMAGE_REFERENCE")
+
+			cols = grid.column_flow(columns=3, align=True)
+			cols.operator('hydra.hmapplymod', text="", icon="MOD_DISPLACE")
+			cols.operator('hydra.hmapplydisp', text="", icon="RNDCURVE")
+			cols.operator('hydra.hmapplybump', text="", icon="MOD_NOISE")
+			
 			if any(m.name.startswith("HYD_") for m in act.modifiers):
 				cols = box.column_flow(columns=2, align=True)
 				cols.operator('hydra.hmmerge', text="", icon="MESH_DATA")
@@ -69,9 +78,9 @@ class DefaultHeightmapPanel:
 			split.label(text="Source:")
 			split.label(text=name)
 			cols = box.column_flow(columns=3, align=True)
-			cols.operator('hydra.hmforcereload', text="", icon="RNDCURVE")
-			cols.operator('hydra.hmback', text="", icon="TRIA_UP_BAR")
-			cols.operator('hydra.hmreload', text="", icon="FILE_REFRESH")
+			cols.operator('hydra.hmforcereload', text="", icon="GRAPH").useImage = False
+			cols.operator('hydra.hmback', text="", icon="TRIA_UP_BAR").useImage = False
+			cols.operator('hydra.hmreload', text="", icon="FILE_REFRESH").useImage = False
 		
 		if not hasAny:
 			container.label(text="No maps have been cached yet.")
@@ -123,7 +132,11 @@ class HeightmapPanel(bpy.types.Panel, DefaultPanel):
 		
 		col = self.layout.column()
 		col.operator('hydra.genheight', text="Generate", icon="SEQ_HISTOGRAM")
-		col.prop(ctx.scene.hydra_erosion, "heightmap_size")
+		
+		col.label(text="Heightmap type:")
+		col.prop(hyd, "heightmap_gen_type", text="")
+
+		col.prop(hyd, "heightmap_gen_size")
 
 		col.separator()
 
@@ -163,8 +176,13 @@ class HeightmapOp(bpy.types.Operator):
 		act = ctx.object
 
 		size = tuple(act.hydra_erosion.img_size)
-		act.hydra_erosion.img_size = tuple(ctx.scene.hydra_erosion.heightmap_size)
-		txt = heightmap.genHeightmap(act)
+		act.hydra_erosion.img_size = tuple(act.hydra_erosion.heightmap_gen_size)
+
+		normalized = act.hydra_erosion.heightmap_gen_type == "normalized"
+		world_scale = act.hydra_erosion.heightmap_gen_type == "world"
+		local_scale = act.hydra_erosion.heightmap_gen_type == "object"
+		txt = heightmap.genHeightmap(act, normalized=normalized, world_scale=world_scale, local_scale=local_scale)
+
 		img = texture.writeImage(f"HYD_{act.name}_Heightmap", txt)
 		txt.release()
 		act.hydra_erosion.img_size = size

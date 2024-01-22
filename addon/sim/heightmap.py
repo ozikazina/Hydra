@@ -8,7 +8,7 @@ import bpy.types
 import numpy as np
 import platform
 
-def genHeightmap(obj: bpy.types.Object)->mgl.Texture:
+def genHeightmap(obj: bpy.types.Object, normalized: bool=False, world_scale: bool=False, local_scale: bool=False)->mgl.Texture:
 	"""Creates a heightmap for the specified object and returns it.
 	
 	:param obj: Object to generate from.
@@ -32,16 +32,30 @@ def genHeightmap(obj: bpy.types.Object)->mgl.Texture:
 
 	size = obj.hydra_erosion.getSize()
 	txt = ctx.texture(size, 1, dtype="f4")
-	dpth = ctx.depth_texture(size)
+	depth = ctx.depth_texture(size)
 
-	fbo = ctx.framebuffer(color_attachments=(txt), depth_attachment=dpth)
+	model.recalculateScales(obj)
+	resize_matrix = model.getResizeMatrix(obj)
+
+	if normalized:
+		scale = 1
+	elif world_scale:
+		scale = obj.hydra_erosion.org_scale * obj.scale.z
+	elif local_scale:
+		scale = obj.hydra_erosion.org_scale
+	else:
+		scale = obj.hydra_erosion.height_scale
+
+	fbo = ctx.framebuffer(color_attachments=(txt), depth_attachment=depth)
+
 	with ctx.scope(fbo, mgl.DEPTH_TEST):
 		fbo.clear(depth=2.0)
-		vao.program["sizer"].value = model.getResizeMatrix(obj)
+		vao.program["resize_matrix"].value = resize_matrix
+		vao.program["scale"] = scale
 		vao.render()
 		ctx.finish()
 
-	dpth.release()
+	depth.release()
 	fbo.release()
 	vao.release()
 
@@ -93,8 +107,8 @@ def prepareHeightmap(obj: bpy.types.Image | bpy.types.Object):
 		hmid = data.createMap("Base map", txt)
 		hyd.map_source = hmid
 
-def subtract(modified: mgl.Texture, base: mgl.Texture)->mgl.Texture:
-	"""Subtracts given textures and returns difference relative to `base` as a result.
+def subtract(modified: mgl.Texture, base: mgl.Texture, scale: float=1.0)->mgl.Texture:
+	"""Subtracts given textures and returns difference relative to `base` as a result. Also scales result if needed.
 	
 	:param modified: Current heightmap. Minuend.
 	:type modified: :class:`moderngl.Texture`
@@ -110,6 +124,15 @@ def subtract(modified: mgl.Texture, base: mgl.Texture)->mgl.Texture:
 	prog["B"].value = 2
 	#A=A-B
 	prog.run(base.width, base.height)
+
+	if scale != 1.0:
+		prog = common.data.shaders["scaling"]
+		prog["A"].value = 1
+		prog["scale"] = scale
+		#A *= scale
+		prog.run(base.width, base.height)
+	
+	common.data.context.finish()
 	return txt
 
 def preview(obj: bpy.types.Object, current: common.Heightmap, base: common.Heightmap):
@@ -121,7 +144,7 @@ def preview(obj: bpy.types.Object, current: common.Heightmap, base: common.Heigh
 	:type current: :class:`common.Heightmap`
 	:param base: Base heightmap for difference calculation.
 	:type base: :class:`common.Heightmap`"""
-	target = subtract(current.texture, base.texture)
+	target = subtract(current.texture, base.texture, scale=obj.hydra_erosion.org_scale/obj.hydra_erosion.height_scale)
 	apply.addPreview(obj, target)
 	target.release()
 

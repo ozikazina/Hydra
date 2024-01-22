@@ -79,7 +79,7 @@ void main(void) {
 		else nh -= inp;
 	}
 	
-	oldH.x = clamp(nh, 0, 1);
+	oldH.x = max(nh, 0);
 	
 	imageStore(outH, base, oldH);
 }

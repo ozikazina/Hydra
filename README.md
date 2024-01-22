@@ -58,14 +58,16 @@ Once erosion starts, the object or image is converted into a heightmap. In the c
 
 > To pick a different resolution, you first have to clear generated textures for the current object.
 
-Two heightmaps are created - **Source** and **Current**.
+> If the height of the object changes (e.g. you apply Scale), you should also first clear existing heightmaps.
+
+Two heightmaps are created - **Source** and **Result**.
 
 - `Source` - Starting point for erosion.
-- `Current` - Result of erosion. It is automatically previewed.
+- `Result` - Result of erosion. It is automatically previewed.
 
-Choosing different parameters and eroding again will start erosion from the source map, giving you the option to test different settings.
+Choosing different parameters and eroding again will start erosion from the Source map, giving you the option to test different settings.
 
-To use the current map as a starting point and to exchange maps between thermal and water erosion, apply it as a source in the *Heightmaps* subtab. The source layer can also be set back as Current to be exported or applied.
+To use the Result map as a starting point and to exchange maps between thermal and water erosion, apply it as a Source in the *Heightmaps* subtab. The Source layer can also be set back as Result to be exported or applied.
 
 Additional outputs
 ---------------
@@ -86,13 +88,14 @@ Water erosion can also create extra output maps:
 Applying results
 ----------------
 
-The current map can be applied in the following ways using buttons in the *Heightmaps* subtab:
+The resulting map can be applied in the following ways using buttons in the *Heightmaps* subtab:
 
-| Method | Description |
+| | |
 | --: | -- |
+| `Nodes` | Creates a Geometry Nodes group for the object. |
 | `Modifier` | Adds a Displace modifier to the object. |
-| `Bump` | Adds a bump map to the first material slot. Creates material if necessary.|
 | `Displacement` | Adds a displacement map to the first material slot. Creates material if necessary.|
+| `Bump` | Adds a bump map to the first material slot. Creates material if necessary.|
 | `Mesh` | Applies modifiers to the mesh. Available if the preview or modifier option was chosen.|
 | `Shape Key` | Applies modifiers as a shape key. Available if the preview or modifier option was chosen.|
 | `Image` | Creates a Blender image of the corresponding heightmap.|
@@ -102,14 +105,14 @@ Parameters
 
 Water erosion has the following parameters:
 
-| Parameter | Description |
+| | |
 | --: | -- |
 | `Iterations` | Number of iterations to perform. |
 | `Lifetime` | Number of steps a particle can take in an iteration. |
 | `Acceleration` | Defines how strongly slopes affect particle movement. |
 | `Drag` | Slows down particle movement. |
 | `Erosion Smoothness` | Erosion strength. Slightly smoothes surface features. |
-| `Deposition Strength` | Strength of sedimentation. |
+| `Deposition Strength` | Rate of sedimentation. |
 | `Capacity` | Particle material capacity. Higher values lead to deeper features. |
 
 | | |
@@ -137,7 +140,12 @@ The addon similarly supports thermal erosion, where steep surfaces cause materia
 Heightmap generation
 ====================
 
-Heightmaps can be generated directly at an arbitrary resolution. Cached heightmaps are also offered for direct export.
+Heightmaps can be generated directly at an arbitrary resolution. Cached heightmaps are also offered for direct export. This addon now creates three types of heightmaps:
+| | |
+| --: | -- |
+| `Normalized` | Heights are scaled to the range \[0,1\]. |
+| `Proportional` | Z to X ratio is preserved. |
+| `World scale` | Values are directly equal to height without scale applied. |
 
 License
 =======

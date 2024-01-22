@@ -106,3 +106,14 @@ def gotoShape():
 	"""Navigates to the Mesh data tab."""
 	space = getOrMakeArea("PROPERTIES").spaces[0]
 	space.context = "DATA"
+
+def gotoGeometry(obj: bpy.types.Object):
+	"""Navigates to the Geometry Nodes tab."""
+	nodes = [m for m in obj.modifiers if m.type == "NODES"]
+	if len(nodes) == 0 or nodes[-1].node_group is None:
+		return
+	
+	nodeEditor = getOrMakeArea("NODE_EDITOR", "GeometryNodeTree")
+	space = nodeEditor.spaces[0]
+	space.geometry_nodes_type = "MODIFIER"
+	space.node_tree = nodes[-1].node_group

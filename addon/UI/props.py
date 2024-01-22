@@ -15,43 +15,28 @@ from Hydra import common
 
 class HydraGlobalGroup(bpy.types.PropertyGroup):
 	"""Global settings group for Hydra."""
-	heightmap_size: IntVectorProperty(
-		default=(512,512),
-		name="Heightmap size",
-		min=16,
-		max=4096,
-		description="Image size for direct heightmap generation",
-		size=2
-	)
-	"""Image size for direct heightmap generation."""
-
-	gen_subscale: IntProperty(
-		default=2,
-		name="Subscale",
-		min=1, max=16,
-		description="Resolution divisor for landscape generation"
-	)
-	"""Resolution divisor for landscape generation"""
 
 class ErosionGroup(bpy.types.PropertyGroup):
 	"""Individual settings for objects and images."""
 	height_scale: FloatProperty(
-		name="Height scale", default=1,
-		min = 0.01, max = 10
+		name="Height scale", default=1
 	)
 	"""Height scaling factor after normalization. Value of 1 means same scale as heightmap width."""
 
 	scale_ratio: FloatProperty(
-		name="Scale ratio", default=1,
-		min = 0.01, max = 10
+		name="Scale ratio", default=1
 	)
 	"""Ratio of Y to X scales for non-uniform images."""
 
 	org_scale: FloatProperty(
-		name="Original height scaling", default=1,
-		min = 0.01, max = 10
+		name="Original height scaling", default=1
 	)
 	"""Original height scaling to use with modifiers, which affect it."""
+
+	org_width: FloatProperty(
+		name="Original width", default=1,
+	)
+	"""Original object width for correct angle calculations."""
 
 	img_size: IntVectorProperty(
 		default=(512,512),
@@ -269,6 +254,37 @@ class ErosionGroup(bpy.types.PropertyGroup):
 	map_current: StringProperty(name="Current map", description="Current heightmap")
 	map_source: StringProperty(name="Source map", description="Source heightmap")
 	map_base: StringProperty(name="Base map", description="Base heightmap")
+
+	heightmap_gen_type: EnumProperty(
+		default="proportional",
+		items=(
+			("normalized", "Normalized", "Scales heightmap to the range [0,1], 1 (white) being highest", 0),
+			("proportional", "Proportional", "Preserves vertical angles", 1),
+			("local", "Local size", "Preserves object height (without object scale applied)", 2),
+			("world", "World size", "Preserves world height", 3),
+		),
+		name="Heightmap type",
+		description="Heightmap generation type"
+	)
+	"""Heightmap generation type."""
+
+	heightmap_gen_size: IntVectorProperty(
+		default=(512,512),
+		name="Heightmap size",
+		min=16,
+		max=4096,
+		description="Image size for direct heightmap generation",
+		size=2
+	)
+	"""Image size for direct heightmap generation."""
+
+	gen_subscale: IntProperty(
+		default=2,
+		name="Subscale",
+		min=1, max=16,
+		description="Resolution divisor for landscape generation"
+	)
+	"""Resolution divisor for landscape generation"""
 	
 	#------------------------- Funcs
 	
