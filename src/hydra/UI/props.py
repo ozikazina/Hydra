@@ -4,6 +4,7 @@ import bpy
 from bpy.props import (
 	BoolProperty,
 	FloatProperty,
+	FloatVectorProperty,
 	IntProperty,
 	IntVectorProperty,
 	StringProperty,
@@ -49,6 +50,16 @@ class ErosionGroup(bpy.types.PropertyGroup):
 	
 	#------------------------- Erosion
 	
+	erosion_solver: EnumProperty(
+		default="pipe",
+		items=(
+			("particle", "Particle", "Slower model, but stable for any terrain. Creates larger terrain features", 0),
+			("pipe", "Pipe", "Faster, but unstable. Creates finer details", 1),
+		),
+		name="Erosion solver",
+		description="Solver type for erosion"
+	)
+
 	out_color: BoolProperty(
 		default=False,
 		name="Transport color",
@@ -139,12 +150,6 @@ class ErosionGroup(bpy.types.PropertyGroup):
 		description="Size of solver chunks. Higher values prevent interference between particles"
 	)
 
-	part_randomize: BoolProperty(
-		default=True,
-		name="Randomize droplets",
-		description="Each chunk has randomized droplets. Otherwise creates one particle for each pixel. Requires higher iterations"
-	)
-
 	part_maxjump: FloatProperty(
 		default=0.1,
 		min=0.01, soft_max=0.2, max=1,
@@ -202,6 +207,80 @@ class ErosionGroup(bpy.types.PropertyGroup):
 		min=0.0, max=1.0,
 		name="Color mixing",
 		description="Defines how strongly a particle colors the path it takes. Value of 1 means directly painting the color"
+	)
+
+	#------------------------- Mei
+
+	mei_iter_num: IntProperty(
+		default=200,
+		min=1, max=1000,
+		name="Iterations",
+		description="Number of iterations, each over the entire image"
+	)
+
+	mei_dt: FloatProperty(
+		default=0.5,
+		min=0.01, max=1.0,
+		name="Time step",
+		description="Time step for the simulation"
+	)
+
+	mei_rain: FloatProperty(
+		default=0.1,
+		min=0.01, max=1.0,
+		name="Rain",
+		description="Amount of rain per iteration"
+	)
+
+	mei_evaporation: FloatProperty(
+		default=0.3,
+		min=0.01, max=1.0,
+		name="Evaporation",
+		description="Amount of water evaporated per iteration"
+	)
+
+	mei_capacity: FloatProperty(
+		default=0.5,
+		min=0.01, max=50.0,
+		name="Capacity",
+		description="Erosion capacity of water per cell"
+	)
+
+	mei_deposition: FloatProperty(
+		default=0.25,
+		min=0.01, max=1.0,
+		name="Deposition",
+		description="Amount of sediment that can be deposited per iteration"
+	)
+
+	mei_erosion: FloatProperty(
+		default=0.25,
+		min=0.01, max=1.0,
+		name="Erosion strength",
+		description="Amount of sediment that can be eroded per iteration"
+	)
+
+	mei_scale: FloatProperty(
+		default=512,
+		min=1, max=2048,
+		name="Scale",
+		description="Scale of the simulation"
+	)
+
+	mei_length: FloatVectorProperty(
+		default=(1,1),
+		name="Lengths",
+		min=0.1,
+		max=10.0,
+		description="Unit side lengths",
+		size=2
+	)
+
+	mei_min_alpha: FloatProperty(
+		default=0.025,
+		min=0.0, max=0.1,
+		name="Minimum angle",
+		description="Minimum angle value"
 	)
 	
 	#------------------------- Flow

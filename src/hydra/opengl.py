@@ -12,6 +12,12 @@ def initContext():
 	dr = Path(__file__).resolve().parent
 	base = Path(dr, "GLSL")
 
+	for prog in data.programs.values():
+		prog.release()
+	
+	for shader in data.shaders.values():
+		shader.release()
+
 	def make_prog(name, v, f):
 		data.programs[name] = ctx.program(
 			vertex_shader=v,
@@ -60,3 +66,8 @@ def initContext():
 	with open(Path(base, "scaling.glsl"), "r") as f:
 		comp = f.read()
 	data.shaders["scaling"] = ctx.compute_shader(comp)
+	
+	for i in range(1,6+1):
+		with open(Path(base, f"mei{i}.glsl"), "r") as f:
+			comp = f.read()
+		data.shaders[f"mei{i}"] = ctx.compute_shader(comp)

@@ -2,8 +2,8 @@
 
 import bpy, bpy.types
 
-from Hydra import common, startup
-from Hydra.sim import erosion, flow, heightmap, thermal
+from Hydra import common, startup, opengl
+from Hydra.sim import erosion, flow, heightmap, thermal, mei
 from Hydra.utils import nav, texture, apply
 
 class DefaultPanel:
@@ -218,6 +218,8 @@ class ErodePanel(bpy.types.Panel, DefaultPanel):
 		
 		fragmentSize(main.box(), act)
 
+		main.prop(hyd, "erosion_solver", text="Solver")
+
 class ErodeHeightPanel(bpy.types.Panel, DefaultHeightmapPanel):
 	"""Subpanel for water erosion heightmap stack. Uses :class:`DefaultHeightmapPanel`"""
 	bl_label = "Heightmaps"
@@ -266,14 +268,26 @@ class ErodeParticlePanel(bpy.types.Panel):
 	def draw(self, ctx):
 		p = self.layout.box()
 		hyd = ctx.object.hydra_erosion
-		p.prop(hyd, "part_iter_num")
-		p.prop(hyd, "part_lifetime")
-		p.prop(hyd, "part_acceleration", slider=True)
-		p.prop(hyd, "part_drag", slider=True)
-		
-		p.prop(hyd, "part_fineness", slider=True)
-		p.prop(hyd, "part_deposition", slider=True)
-		p.prop(hyd, "part_capacity", slider=True)
+		if hyd.erosion_solver == "particle":
+			p.prop(hyd, "part_iter_num")
+			p.prop(hyd, "part_lifetime")
+			p.prop(hyd, "part_acceleration", slider=True)
+			p.prop(hyd, "part_drag", slider=True)
+			
+			p.prop(hyd, "part_fineness", slider=True)
+			p.prop(hyd, "part_deposition", slider=True)
+			p.prop(hyd, "part_capacity", slider=True)
+		else:
+			p.prop(hyd, "mei_iter_num")
+			p.prop(hyd, "mei_dt")
+			p.prop(hyd, "mei_rain")
+			p.prop(hyd, "mei_evaporation")
+			p.prop(hyd, "mei_capacity")
+			p.prop(hyd, "mei_deposition")
+			p.prop(hyd, "mei_erosion")
+			p.prop(hyd, "mei_scale")
+			p.prop(hyd, "mei_length")
+			p.prop(hyd, "mei_min_alpha")			
 
 class ErodeAdvancedPanel(bpy.types.Panel):
 	"""Subpanel for water erosion advanced settings."""
@@ -306,9 +320,14 @@ class ErodeOp(bpy.types.Operator):
 		data.clear()
 		data.running = True
 
-		erosion.erosionPrepare(ctx.object)
-		erosion.erosionRun(ctx.object)
-		imgs = erosion.erosionFinish(ctx.object)
+		if hyd.erosion_solver == "particle":
+			erosion.erosionPrepare(ctx.object)
+			erosion.erosionRun(ctx.object)
+			imgs = erosion.erosionFinish(ctx.object)
+		else:
+			mei.erosionPrepare(ctx.object)
+			mei.erosionRun(ctx.object)
+			_ = mei.erosionFinish(ctx.object)
 		
 		heightmap.preview(ctx.object, data.maps[hyd.map_current], data.maps[hyd.map_base])
 		nav.gotoModifier()
@@ -481,7 +500,7 @@ class CleanupOp(bpy.types.Operator):
 		common.showMessage("Successfuly freed cached textures.")
 		return {'FINISHED'}
 
-#-------------------------------------------- Tests
+#--------------------------------------------
 
 class InfoPanel(bpy.types.Panel):
 	"""Object info panel."""
@@ -514,9 +533,38 @@ class InfoPanel(bpy.types.Panel):
 		if startup.invalid or not obj:
 			return False
 		return obj.hydra_erosion.is_generated
+	
+class DebugPanel(bpy.types.Panel):
+	bl_category = "Hydra"
+	bl_label = "Hydra - Debug"
+	bl_idname = "HYDRA_PT_debug"
+	bl_space_type = "VIEW_3D"
+	bl_region_type = "UI"
+	bl_context = "objectmode"
+	bl_options = {'DEFAULT_CLOSED'}
+
+	def draw(self, ctx):
+		col = self.layout.column()
+		col.operator('hydra.reloadshaders', text="Reload shaders", icon="FILE_REFRESH")
+
+	@classmethod
+	def poll(cls, ctx):
+		return common.getPreferences().debug_mode
+
+class ReloadShadersOp(bpy.types.Operator):
+	"""Operator for reloading shaders."""
+	bl_idname = "hydra.reloadshaders"
+	bl_label = "Reload shaders"
+	bl_description = "Reloads OpenGL shaders"
+
+	def execute(self, context):
+		opengl.initContext()
+		self.report({'INFO'}, "Successfuly reloaded shaders.")
+		return {'FINISHED'}
+
 #-------------------------------------------- Exports
 
-EXPORTS = [
+EXPROTS = [
 	InfoPanel,
 	ErodeOp,
 	ErodePanel,
@@ -532,5 +580,7 @@ EXPORTS = [
 	HeightmapOp,
 	HeightmapPanel,
 	CleanupOp,
-	CleanupPanel
+	CleanupPanel,
+	DebugPanel,
+	ReloadShadersOp
 ]
