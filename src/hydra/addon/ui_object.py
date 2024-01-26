@@ -1,27 +1,17 @@
-"""Module responsible for object UI elements and operators."""
 
 import bpy, bpy.types
 
 from Hydra import common, startup, opengl
 from Hydra.sim import erosion, flow, heightmap, thermal, mei
 from Hydra.utils import nav, texture, apply
+from Hydra.addon import ui_common
 
-class DefaultPanel:
-	"""Default panel defining a poll method for other UI elements."""
-	@classmethod
-	def poll(cls, ctx):
-		"""Poll function to hide panel for invalid objects."""
-		if startup.invalid:
-			return False
-		ob = bpy.context.active_object
-		if not ob:
-			return
-		if ob.hydra_erosion.is_generated:
-			return False
-		return ob.type == "MESH" and len(ob.data.vertices) != 0
-
-class DefaultHeightmapPanel:
+class DefaultHeightmapPanel(bpy.types.Panel):
 	"""Heightmap subpanel for displaying the heightmap stack."""
+	
+	bl_space_type = "VIEW_3D"
+	bl_region_type = "UI"
+
 	def draw(self, ctx):
 		container = self.layout.column()
 		act = ctx.object
@@ -112,17 +102,11 @@ def fragmentNav(container, name:str, label:str):
 		split.label(text=f"{label}:")
 		split.operator('hydra.nav', text="", icon="IMAGE_DATA").target = name
 
-#-------------------------------------------- Heightmap
 
-class HeightmapPanel(bpy.types.Panel, DefaultPanel):
+class HeightmapPanel(ui_common.ObjectPanel):
 	"""Panel for standalone heightmap generation."""
-	bl_category = "Hydra"
 	bl_label = "Hydra - Heightmap"
 	bl_idname = "HYDRA_PT_heightPanel"
-	bl_space_type = "VIEW_3D"
-	bl_region_type = "UI"
-	bl_context = "objectmode"
-	bl_options = {'DEFAULT_CLOSED'}
 	bl_description = "Generate heightmap into an image"
 
 	def draw(self, ctx):
@@ -165,42 +149,11 @@ class HeightmapPanel(bpy.types.Panel, DefaultPanel):
 			split.label(text=name)
 			split.operator('hydra.hmapplyimg', text="", icon="IMAGE_DATA").save_target = hyd.map_current
 
-class HeightmapOp(bpy.types.Operator):
-	"""Standalone heightmap operator."""
-	bl_idname = "hydra.genheight"
-	bl_label = "Heightmap"
-	bl_description = "Generate heightmap into an image"
 
-	def invoke(self, ctx, event):
-		common.data.clear()
-		act = ctx.object
-
-		size = tuple(act.hydra_erosion.img_size)
-		act.hydra_erosion.img_size = tuple(act.hydra_erosion.heightmap_gen_size)
-
-		normalized = act.hydra_erosion.heightmap_gen_type == "normalized"
-		world_scale = act.hydra_erosion.heightmap_gen_type == "world"
-		local_scale = act.hydra_erosion.heightmap_gen_type == "object"
-		txt = heightmap.genHeightmap(act, normalized=normalized, world_scale=world_scale, local_scale=local_scale)
-
-		img = texture.writeImage(f"HYD_{act.name}_Heightmap", txt)
-		txt.release()
-		act.hydra_erosion.img_size = size
-		nav.gotoImage(img)
-		self.report({'INFO'}, f"Successfuly created heightmap: {img.name}")
-		return {'FINISHED'}
-
-#-------------------------------------------- Erosion
-
-class ErodePanel(bpy.types.Panel, DefaultPanel):
+class ErodePanel(ui_common.ObjectPanel):
 	"""Panel for water erosion."""
-	bl_category = "Hydra"
 	bl_label = "Hydra - Erosion"
 	bl_idname = "HYDRA_PT_erodePanel"
-	bl_space_type = "VIEW_3D"
-	bl_region_type = "UI"
-	bl_context = "objectmode"
-	bl_options = {'DEFAULT_CLOSED'}
 
 	def draw(self, ctx):
 		layout = self.layout
@@ -220,13 +173,11 @@ class ErodePanel(bpy.types.Panel, DefaultPanel):
 
 		main.prop(hyd, "erosion_solver", text="Solver")
 
-class ErodeHeightPanel(bpy.types.Panel, DefaultHeightmapPanel):
+class ErodeHeightPanel(DefaultHeightmapPanel):
 	"""Subpanel for water erosion heightmap stack. Uses :class:`DefaultHeightmapPanel`"""
 	bl_label = "Heightmaps"
 	bl_parent_id = "HYDRA_PT_erodePanel"
 	bl_idname = "HYDRA_PT_erodeHeightPanel"
-	bl_space_type = "VIEW_3D"
-	bl_region_type = "UI"
 
 class ErodeExtraPanel(bpy.types.Panel):
 	"""Subpanel for water erosion extra settings."""
@@ -331,58 +282,19 @@ class ErodeMeiAdvancedPanel(bpy.types.Panel):
 		p = self.layout.box()
 		hyd = ctx.object.hydra_erosion
 		p.prop(hyd, "mei_min_alpha")
-
-class ErodeOp(bpy.types.Operator):
-	"""Water erosion operator."""
-	bl_idname = "hydra.erode"
-	bl_label = "Erode"
-	bl_description = "Erode object"
-	bl_options = {'REGISTER', 'UNDO'}
-			
-	def invoke(self, ctx, event):
-		hyd = ctx.object.hydra_erosion
-		data = common.data
-		data.clear()
-		data.running = True
-
-		if hyd.erosion_solver == "particle":
-			erosion.erosionPrepare(ctx.object)
-			erosion.erosionRun(ctx.object)
-			imgs = erosion.erosionFinish(ctx.object)
-		else:
-			mei.erosionPrepare(ctx.object)
-			mei.erosionRun(ctx.object)
-			_ = mei.erosionFinish(ctx.object)
 		
-		heightmap.preview(ctx.object, data.maps[hyd.map_current], data.maps[hyd.map_base])
-		nav.gotoModifier()
-		if hyd.out_color:
-			nav.gotoImage(imgs[2])
-		elif hyd.out_sediment:
-			nav.gotoImage(imgs[1])
-		elif hyd.out_depth:
-			nav.gotoImage(imgs[0])
-		common.data.report(self, callerName="Erosion")
-		return {'FINISHED'}
 
-#-------------------------------------------- Flow
-
-class FlowPanel(bpy.types.Panel, DefaultPanel):
+class FlowPanel(ui_common.ObjectPanel):
 	"""Panel for flowmap generation."""
-	bl_category = "Hydra"
 	bl_label = "Hydra - Flow"
 	bl_idname = "HYDRA_PT_flowpanel"
-	bl_space_type = "VIEW_3D"
-	bl_region_type = "UI"
-	bl_context = "objectmode"
-	bl_options = {'DEFAULT_CLOSED'}
 	bl_description = "Generate flow data into an image"
 
 	def draw(self, ctx):
 		hyd = ctx.object.hydra_erosion
 		
 		col = self.layout.column()
-		col.operator('hydra.genflow', text="Generate Flowmap", icon="MATFLUID")
+		col.operator('hydra.flow', text="Generate Flowmap", icon="MATFLUID")
 	
 		fragmentSize(col.box(), ctx.object)
 		
@@ -411,32 +323,11 @@ class FlowPanel(bpy.types.Panel, DefaultPanel):
 		box.prop(hyd, "part_acceleration", slider=True)
 		box.prop(hyd, "part_drag", slider=True)
 
-class FlowOp(bpy.types.Operator):
-	"""Flowmap generation operator."""
-	bl_idname = "hydra.genflow"
-	bl_label = "Generate Flow"
-	bl_description = "Generates a map of flow concentration using particle erosion. Uses eroded heightmaps, if they exist"
-	bl_options = {'REGISTER'}
-	
-	def invoke(self, ctx, event):
-		common.data.clear()
-		obj = ctx.object
-		img = flow.genFlow(obj)
-		nav.gotoImage(img)
-		self.report({"INFO"}, f"Successfuly created image: {img.name}")
-		return {'FINISHED'}
 
-#-------------------------------------------- Thermal
-
-class ThermalPanel(bpy.types.Panel, DefaultPanel):
+class ThermalPanel(ui_common.ObjectPanel):
 	"""Panel for thermal erosion."""
-	bl_category = "Hydra"
 	bl_label = "Hydra - Thermal"
 	bl_idname = "HYDRA_PT_thermalPanel"
-	bl_space_type = "VIEW_3D"
-	bl_region_type = "UI"
-	bl_context = "objectmode"
-	bl_options = {'DEFAULT_CLOSED'}
 	bl_description = "Erosion settings for material transport"
 
 	def draw(self, ctx):
@@ -459,73 +350,25 @@ class ThermalPanel(bpy.types.Panel, DefaultPanel):
 		split.label(text="Direction: ")
 		split.prop(hyd, "thermal_solver", text="")
 
-class ThermalHeightPanel(bpy.types.Panel, DefaultHeightmapPanel):
+class ThermalHeightPanel(DefaultHeightmapPanel):
 	"""Subpanel for thermal erosion heightmap stack. Uses :class:`DefaultHeightmapPanel`."""
 	bl_label = "Heightmaps"
 	bl_parent_id = "HYDRA_PT_thermalPanel"
 	bl_idname = "HYDRA_PT_thermalHeightPanel"
-	bl_space_type = "VIEW_3D"
-	bl_region_type = "UI"
 
-class ThermalOp(bpy.types.Operator):
-	"""Thermal erosion operator."""
-	bl_idname = "hydra.thermal"
-	bl_label = "Erode"
-	bl_description = "Erode object"
-	bl_options = {'REGISTER', 'UNDO'}
-			
-	def invoke(self, ctx, event):
-		data = common.data
-		data.clear()
-		hyd = ctx.object.hydra_erosion
-		apply.removePreview()
-
-		thermal.thermalPrepare(ctx.object)
-		thermal.thermalRun(ctx.object)
-		thermal.thermalFinish(ctx.object)
-
-		heightmap.preview(ctx.object, data.maps[hyd.map_current], data.maps[hyd.map_base])
-		nav.gotoModifier()
-		data.report(self, callerName="Erosion")
-		return {'FINISHED'}
-	
-#-------------------------------------------- Cleanup
-
-class CleanupPanel(bpy.types.Panel):
+class CleanupPanel(ui_common.ObjectPanel):
 	"""Panel for cleanup operations."""
-	bl_category = "Hydra"
 	bl_label = "Hydra - Cleanup"
-	bl_idname = "HYDRA_PT_cleanPanel"
-	bl_space_type = "VIEW_3D"
-	bl_region_type = "UI"
-	bl_context = "objectmode"
-	bl_options = {'DEFAULT_CLOSED'}
+	bl_idname = "HYDRA_PT_CleanupPanel"
 
-	def draw(self, context):
+	def draw(self, ctx):
 		col = self.layout.column()
-		col.operator('hydra.clean', text="Clear cache", icon="SHADING_BBOX")
+		col.operator('hydra.release_cache', text="Clear cache", icon="SHADING_BBOX")
 		col.operator('hydra.hmnoview', text="Remove previews", icon="HIDE_ON")
 	
 	@classmethod
 	def poll(cls, ctx):
 		return not startup.invalid
-
-class CleanupOp(bpy.types.Operator):
-	"""Resource release operator."""
-	bl_idname = "hydra.clean"
-	bl_label = "Clean"
-	bl_description = "Release cached textures"
-	bl_options = {'REGISTER', 'UNDO'}
-	
-	def invoke(self, context, event):
-		apply.removePreview()
-		apply.removeImagePreview()
-		common.data.freeAll()
-		self.report({'INFO'}, "Successfuly freed cached textures.")
-		common.showMessage("Successfuly freed cached textures.")
-		return {'FINISHED'}
-
-#--------------------------------------------
 
 class InfoPanel(bpy.types.Panel):
 	"""Object info panel."""
@@ -577,49 +420,19 @@ class DebugPanel(bpy.types.Panel):
 	def poll(cls, ctx):
 		return common.getPreferences().debug_mode
 
-class ReloadShadersOp(bpy.types.Operator):
-	"""Operator for reloading shaders."""
-	bl_idname = "hydra.reloadshaders"
-	bl_label = "Reload shaders"
-	bl_description = "Reloads OpenGL shaders"
-
-	def execute(self, context):
-		opengl.initContext()
-		self.report({'INFO'}, "Successfuly reloaded shaders.")
-		return {'FINISHED'}
-
-class NukeUIOp(bpy.types.Operator):
-	"""Destroys Blender's UI."""
-	bl_idname = "hydra.nukeui"
-	bl_label = "Nuke UI"
-	bl_description = "Enjoy the authentic developer experience (restart Blender to restore UI)"
-
-	def execute(self, context):
-		heightmap.nukeUI()
-		self.report({'INFO'}, "Successfuly destroyed UI.")
-		return {'FINISHED'}
-
-#-------------------------------------------- Exports
-
-EXPORTS = [
-	InfoPanel,
-	ErodeOp,
-	ErodePanel,
-	ErodeParticlePanel,
-	ErodeHeightPanel,
-	ErodeExtraPanel,
-	ErodeAdvancedPanel,
-	ErodeMeiAdvancedPanel,
-	ThermalOp,
-	ThermalPanel,
-	ThermalHeightPanel,
-	FlowOp,
-	FlowPanel,
-	HeightmapOp,
-	HeightmapPanel,
-	CleanupOp,
-	CleanupPanel,
-	DebugPanel,
-	ReloadShadersOp,
-	NukeUIOp
-]
+def get_exports()->list:
+	return [
+		InfoPanel,
+		ErodePanel,
+		ErodeParticlePanel,
+		ErodeHeightPanel,
+		ErodeExtraPanel,
+		ErodeAdvancedPanel,
+		ErodeMeiAdvancedPanel,
+		ThermalPanel,
+		ThermalHeightPanel,
+		FlowPanel,
+		HeightmapPanel,
+		CleanupPanel,
+		DebugPanel
+	]

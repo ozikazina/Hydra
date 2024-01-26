@@ -1,24 +1,15 @@
-"""Module responsible for image UI elements and operators."""
-
 import bpy
 from bpy.props import BoolProperty
 
-from Hydra import common, startup
-from Hydra.sim import thermal, flow, erosion, heightmap
-from Hydra.utils import nav, apply, model
+from Hydra import common
+from Hydra.utils import apply
+from Hydra.addon import ui_common
 
-class DefaultPanel:
-	"""Default panel defining a poll method for other UI elements."""
-	@classmethod
-	def poll(cls, ctx):
-		"""Poll function to hide panel for invalid objects."""
-		img = ctx.area.spaces.active.image
-		if startup.invalid or not img or tuple(img.size) == (0,0):
-			return False
-		return not img.hydra_erosion.is_generated
-
-class DefaultHeightmapPanel:
+class DefaultHeightmapPanel(bpy.types.Panel):
 	"""Heightmap subpanel for displaying the heightmap stack."""
+	bl_space_type = "IMAGE_EDITOR"
+	bl_region_type = "UI"
+	
 	def draw(self, ctx):
 		container = self.layout.column()
 		act = ctx.area.spaces.active.image
@@ -81,16 +72,11 @@ def fragmentNav(container, name:str, label:str):
 		split.label(text=f"{label}:")
 		split.operator('hydra.nav', text="", icon="IMAGE_DATA").target = name
 
-#-------------------------------------------- Flow
 
-class FlowPanel(bpy.types.Panel, DefaultPanel):
+class FlowPanel(ui_common.ImagePanel):
 	"""Panel for flowmap generation."""
-	bl_category = "Hydra"
 	bl_label = "Hydra - Flow"
 	bl_idname = "HYDRA_PT_imgflowpanel"
-	bl_space_type = "IMAGE_EDITOR"
-	bl_region_type = "UI"
-	bl_options = {'DEFAULT_CLOSED'}
 	bl_description = "Generate flow data into an image"
 
 	def draw(self, ctx):
@@ -98,7 +84,7 @@ class FlowPanel(bpy.types.Panel, DefaultPanel):
 		hyd = img.hydra_erosion
 
 		col = self.layout.column()
-		col.operator('hydra.imggenflow', text="Generate Flowmap", icon="MATFLUID")
+		col.operator('hydra.flow_img', text="Generate Flowmap", icon="MATFLUID")
 
 		col.separator()
 		fragmentSize(col.box())
@@ -120,32 +106,10 @@ class FlowPanel(bpy.types.Panel, DefaultPanel):
 		box.prop(hyd, "part_acceleration", slider=True)
 		box.prop(hyd, "part_drag", slider=True)
 
-class FlowOp(bpy.types.Operator):
-	"""Flowmap generation operator."""
-	bl_idname = "hydra.imggenflow"
-	bl_label = "Generate Flow"
-	bl_description = "Generates a map of flow concentration using particle erosion. Uses eroded heightmaps, if they exist"
-	bl_options = {'REGISTER'}
-	
-	def invoke(self, ctx, event):
-		common.data.clear()
-		img = ctx.area.spaces.active.image
-		img.hydra_erosion.img_size = img.size
-		img = flow.genFlow(img)
-		nav.gotoImage(img)
-		self.report({"INFO"}, f"Successfuly created image: {img.name}")
-		return {'FINISHED'}
-
-#-------------------------------------------- Erosion
-
-class ErodePanel(bpy.types.Panel, DefaultPanel):
+class ErodePanel(ui_common.ImagePanel):
 	"""Panel for water erosion."""
-	bl_category = "Hydra"
 	bl_label = "Hydra - Erosion"
 	bl_idname = "HYDRA_PT_imgerodepanel"
-	bl_space_type = "IMAGE_EDITOR"
-	bl_region_type = "UI"
-	bl_options = {'DEFAULT_CLOSED'}
 
 	def draw(self, ctx):
 		layout = self.layout
@@ -163,13 +127,11 @@ class ErodePanel(bpy.types.Panel, DefaultPanel):
 		
 		fragmentSize(main.box())
 
-class ErodeHeightPanel(bpy.types.Panel, DefaultHeightmapPanel):
+class ErodeHeightPanel(DefaultHeightmapPanel):
 	"""Subpanel for water erosion heightmap stack. Uses :class:`DefaultHeightmapPanel`"""
 	bl_label = "Heightmaps"
 	bl_parent_id = "HYDRA_PT_imgerodepanel"
 	bl_idname = "HYDRA_PT_imgerodeheightpanel"
-	bl_space_type = "IMAGE_EDITOR"
-	bl_region_type = "UI"
 
 class ErodeExtraPanel(bpy.types.Panel):
 	"""Subpanel for water erosion extra settings."""
@@ -238,39 +200,11 @@ class ErodeAdvancedPanel(bpy.types.Panel):
 		split.prop(hyd, "part_subdiv", text="")
 		p.prop(hyd, "part_maxjump")
 
-class ErodeOp(bpy.types.Operator):
-	"""Water erosion operator."""
-	bl_idname = "hydra.imgerode"
-	bl_label = "Erode"
-	bl_description = "Erode object"
-	bl_options = {'REGISTER', 'UNDO'}
-			
-	def invoke(self, ctx, event):
-		img = ctx.area.spaces.active.image
-		hyd = img.hydra_erosion
-		data = common.data
-		data.clear()
-		data.running = True
-		
-		erosion.erosionPrepare(img)
-		erosion.erosionRun(img)
-		_ = erosion.erosionFinish(img)
 
-		img = apply.addImagePreview(data.maps[hyd.map_current].texture)
-		nav.gotoImage(img)
-		data.report(self, callerName="Erosion")
-		return {'FINISHED'}
-
-#-------------------------------------------- Thermal
-
-class ThermalPanel(bpy.types.Panel, DefaultPanel):
+class ThermalPanel(ui_common.ImagePanel):
 	"""Panel for thermal erosion."""
-	bl_category = "Hydra"
 	bl_label = "Hydra - Thermal"
 	bl_idname = "HYDRA_PT_imgthermalpanel"
-	bl_space_type = "IMAGE_EDITOR"
-	bl_region_type = "UI"
-	bl_options = {'DEFAULT_CLOSED'}
 	bl_description = "Erosion settings for material transport"
 
 	def draw(self, ctx):
@@ -294,64 +228,30 @@ class ThermalPanel(bpy.types.Panel, DefaultPanel):
 		split.label(text="Direction: ")
 		split.prop(hyd, "thermal_solver", text="")
 
-class ThermalHeightPanel(bpy.types.Panel, DefaultHeightmapPanel):
+class ThermalHeightPanel(DefaultHeightmapPanel):
 	"""Subpanel for thermal erosion heightmap stack. Uses :class:`DefaultHeightmapPanel`."""
 	bl_label = "Heightmaps"
 	bl_parent_id = "HYDRA_PT_imgthermalpanel"
 	bl_idname = "HYDRA_PT_imgThermalHeightPanel"
-	bl_space_type = "IMAGE_EDITOR"
-	bl_region_type = "UI"
 
-class ThermalOp(bpy.types.Operator):
-	"""Thermal erosion operator."""
-	bl_idname = "hydra.imgthermal"
-	bl_label = "Erode"
-	bl_description = "Erode object"
-	bl_options = {'REGISTER', 'UNDO'}
-			
-	def invoke(self, ctx, event):
-		data = common.data
-		data.clear()
-		img = ctx.area.spaces.active.image
-		hyd = img.hydra_erosion
 
-		thermal.thermalPrepare(img)
-		thermal.thermalRun(img)
-		thermal.thermalFinish(img)
-
-		img = apply.addImagePreview(data.maps[hyd.map_current].texture)
-		nav.gotoImage(img)
-		data.report(self, callerName="Erosion")
-		return {'FINISHED'}
-
-#-------------------------------------------- Normalize
-
-class CleanupPanel(bpy.types.Panel):
-	"""Panel for cleanup operations. Uses Object cleanup operator, as they are the same."""
-	bl_category = "Hydra"
+class CleanupPanel(ui_common.ImagePanel):
+	"""Panel for cleanup operations."""
 	bl_label = "Hydra - Cleanup"
-	bl_idname = "HYDRA_PT_imgcleanpanel"
-	bl_space_type = "IMAGE_EDITOR"
-	bl_region_type = "UI"
-	bl_options = {'DEFAULT_CLOSED'}
+	bl_idname = "HYDRA_PT_CleanupPanelImage"
 
 	def draw(self, ctx):
 		col = self.layout.column()
-		col.operator('hydra.clean', text="Clear cache", icon="SHADING_BBOX")
-	
+		col.operator('hydra.release_cache', text="Clear cache", icon="SHADING_BBOX")
+
 	@classmethod
 	def poll(cls, ctx):
-		return not startup.invalid
+		return True
 
-
-class InfoPanel(bpy.types.Panel):
+class InfoPanel(ui_common.ImagePanel):
 	"""Image info panel."""
-	bl_category = "Hydra"
 	bl_label = "Hydra - Info"
 	bl_idname = "HYDRA_PT_imginfo"
-	bl_space_type = "IMAGE_EDITOR"
-	bl_region_type = "UI"
-	bl_options = {'DEFAULT_CLOSED'}
 
 	def draw(self, ctx):
 		img = ctx.area.spaces.active.image
@@ -378,24 +278,12 @@ class InfoPanel(bpy.types.Panel):
 				split = box.split()
 				split.label(text=owner)
 				split.operator('hydra.nav', text="", icon="IMAGE_DATA").target = owner
-	
-	@classmethod
-	def poll(cls, ctx):
-		img = ctx.area.spaces.active.image
-		if startup.invalid or not img:
-			return False
-		return img.hydra_erosion.is_generated
 
-#-------------------------------------------- Generate
 
-class LandscapePanel(bpy.types.Panel, DefaultPanel):
+class LandscapePanel(ui_common.ImagePanel):
 	"""Panel for landscape generation."""
-	bl_category = "Hydra"
 	bl_label = "Hydra - Generate"
 	bl_idname = "HYDRA_PT_imggenerate"
-	bl_space_type = "IMAGE_EDITOR"
-	bl_region_type = "UI"
-	bl_options = {'DEFAULT_CLOSED'}
 
 	def draw(self, ctx):
 		act = ctx.area.spaces.active.image
@@ -405,44 +293,17 @@ class LandscapePanel(bpy.types.Panel, DefaultPanel):
 		col.prop(hyd, "gen_subscale")
 		col.operator('hydra.landscape', text="Generate", icon="RNDCURVE")
 
-
-class LandscapeOp(bpy.types.Operator):
-	"""Landscape generation operator."""
-	bl_idname = "hydra.landscape"
-	bl_label = "Generate"
-	bl_description = "Generate a landscape using this heightmap"
-	bl_options = {'REGISTER', 'UNDO'}
-			
-	def invoke(self, ctx, event):
-		data = common.data
-		img = ctx.area.spaces.active.image
-		hyd = img.hydra_erosion
-
-		if not data.hasMap(hyd.map_base):
-			heightmap.prepareHeightmap(img)
-		
-		txt = data.maps[hyd.map_base].texture
-		obj = model.createLandscape(txt, img.name, subscale=hyd.gen_subscale)
-		apply.configureLandscape(obj, txt)
-		nav.gotoObject(obj)
-		return {'FINISHED'}
-
-#-------------------------------------------- Exports
-	
-EXPORTS = (
-	InfoPanel,
-	ErodeOp,
-	ErodePanel,
-	ErodeParticlePanel,
-	ErodeHeightPanel,
-	ErodeExtraPanel,
-	ErodeAdvancedPanel,
-	ThermalOp,
-	ThermalPanel,
-	ThermalHeightPanel,
-	FlowOp,
-	FlowPanel,
-	LandscapeOp,
-	LandscapePanel,
-	CleanupPanel
-)
+def get_exports()->list:
+    return [
+		InfoPanel,
+		ErodePanel,
+		ErodeParticlePanel,
+		ErodeHeightPanel,
+		ErodeExtraPanel,
+		ErodeAdvancedPanel,
+		ThermalPanel,
+		ThermalHeightPanel,
+		FlowPanel,
+		LandscapePanel,
+		CleanupPanel
+	]

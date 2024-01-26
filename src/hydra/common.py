@@ -122,14 +122,14 @@ class HydraData(object):
 		
 	def clear(self):
 		"""Clears :attr:`info` and :attr:`error` messages."""
-		self.running = False
-		self.progress = 0.0
-		self.iteration = 0
-		self.info = []
-		self.error = []
+		# self.running = False
+		# self.progress = 0.0
+		# self.iteration = 0
+		# self.info = []
+		# self.error = []
 	
 	def report(self, caller, callerName:str="Hydra"):
-		"""Shows either stored error or info messages.
+		"""Shows either stored error or info messages and clears them.
 
 		:param caller: `Operation` calling this function.
 		:param callerName: Message box title.
@@ -138,15 +138,18 @@ class HydraData(object):
 			showMessage(" ".join(self.error), title=callerName, icon="ERROR")
 		if len(self.info) != 0:
 			caller.report({"INFO"}, " ".join(self.info))
+
+		self.info = []
+		self.error = []
 	
-	def freeAll(self):
+	def free_all(self):
 		"""Frees all allocated textures."""
 		for i in self.maps.values():
 			i.release()
 		self.maps = {}
 		self.releaseActive()
 
-	def addMessage(self, message: str, error: bool=False):
+	def add_message(self, message: str, error: bool=False):
 		"""Adds an info message.
 
 		:param message: Message to be added.
@@ -158,7 +161,7 @@ class HydraData(object):
 
 #-------------------------------------------- Extra
 
-def showMessage(message: str, title:str="Hydra", icon:str='INFO'):
+def show_message(message: str, title:str="Hydra", icon:str='INFO'):
 	"""Displays a message as popup.
 
 	:param message: Message to be shown.

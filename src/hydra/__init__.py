@@ -27,29 +27,20 @@ def checkModernGL():
 
 checkModernGL()
 
-import bpy
-from bpy.props import PointerProperty
-
 # ------------------------------------------------------------
 # Init:
 # ------------------------------------------------------------
 
-_classes = []
-"""List of UI classes to be imported."""
-
+import bpy
 from Hydra import startup
 
 if not _hydra_invalid:
 	from Hydra import common, opengl
-	from Hydra.UI import addon, opsHeightmap, opsObject, opsImage, props
-	_classes += props.EXPORTS
-	_classes += addon.EXPORTS
-	_classes += opsHeightmap.EXPORTS
-	_classes += opsObject.EXPORTS
-	_classes += opsImage.EXPORTS
+	from Hydra.addon import get_exports, properties
+	_classes = get_exports()
 else:
-	from Hydra.UI import addon
-	_classes += addon.EXPORTS
+	from Hydra.addon.preferences import get_exports
+	_classes = get_exports()
 
 # ------------------------------------------------------------
 # Register:
@@ -59,10 +50,13 @@ def register():
 	"""Blender Addon register function.
 	Creates :data:`common.data` object and calls initialization functions.
 	Adds settings properties to `Scene`, `Object` and `Image` Blender classes."""
+	from bpy.props import PointerProperty
+
 	global _hydra_invalid
 	global _classes
+
 	for cls in _classes:
-			bpy.utils.register_class(cls)
+		bpy.utils.register_class(cls)
 
 	if not _hydra_invalid:
 		common.data = common.HydraData()
@@ -70,20 +64,20 @@ def register():
 		opengl.initContext()
 		startup.invalid = False
 
-		bpy.types.Object.hydra_erosion = PointerProperty(type=props.ErosionGroup)
-		bpy.types.Image.hydra_erosion = PointerProperty(type=props.ErosionGroup)
-		bpy.types.Scene.hydra_erosion = PointerProperty(type=props.HydraGlobalGroup)
+		bpy.types.Object.hydra_erosion = PointerProperty(type=properties.ErosionGroup)
+		bpy.types.Image.hydra_erosion = PointerProperty(type=properties.ErosionGroup)
 
 def unregister():
 	"""Blender Addon unregister function.
 	Removes UI classes, settings properties and releases all resources."""
 	global _hydra_invalid
 	global _classes
+	
 	for cls in reversed(_classes):
-			bpy.utils.unregister_class(cls)
+		bpy.utils.unregister_class(cls)
+
 	if not _hydra_invalid:
 		del bpy.types.Object.hydra_erosion
-		del bpy.types.Scene.hydra_erosion
 		del bpy.types.Image.hydra_erosion
 
 		common.data.freeAll()

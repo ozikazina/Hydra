@@ -85,4 +85,7 @@ class ModernGLInstaller(bpy.types.Operator):
 			self.report({'ERROR'}, f"Failed to install. Try launching Blender as administrator.")
 		return {'FINISHED'}
 	
-EXPORTS = [ModernGLInstaller, AddonPanel]
+def get_exports()->list:
+	return [
+		ModernGLInstaller, AddonPanel
+	]

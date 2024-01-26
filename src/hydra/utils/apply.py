@@ -333,7 +333,7 @@ def addImagePreview(src: mgl.Texture)->bpy.types.Image:
 	:rtype: :class:`bpy.types.Image`"""
 	return texture.writeImage(P_VIEW_NAME, src)
 
-def removeImagePreview():
+def remove_preview_image():
 	"""Removes the temporary preview Image."""
 	if P_VIEW_NAME in bpy.data.images:
 		img = bpy.data.images[P_VIEW_NAME]
@@ -370,7 +370,7 @@ def addPreview(obj: bpy.types.Object, src: mgl.Texture):
 
 	common.data.lastPreview = obj.name
 
-def removePreview():
+def remove_preview():
 	"""Removes the preview modifier from the last previewed object."""
 	data = common.data
 	if str(data.lastPreview) in bpy.data.objects:

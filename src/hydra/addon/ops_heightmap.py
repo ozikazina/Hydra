@@ -393,24 +393,25 @@ class InstantiateOp(bpy.types.Operator):
 
 #-------------------------------------------- Exports
 
-EXPORTS = [
-	HMClearOp,
-	HMMergeOp,
-	HMMergeShapeOp,
-	HMPreviewOp,
-	HMNoPreviewOp,
-	HMMoveOp,
-	HMMoveBackOp,
-	HMDeleteOp,
-	HMModifierOp,
-	HMGeometryOp,
-	HMGeometryInsertOp,
-	HMImageOp,
-	HMUpdateOp,
-	HMDisplaceOp,
-	HMBumpOp,
-	HMReloadOp,
-	HMForceReloadOp,
-	NavOp,
-	InstantiateOp
-]
+def get_exports()->list:
+	return [
+		HMClearOp,
+		HMMergeOp,
+		HMMergeShapeOp,
+		HMPreviewOp,
+		HMNoPreviewOp,
+		HMMoveOp,
+		HMMoveBackOp,
+		HMDeleteOp,
+		HMModifierOp,
+		HMGeometryOp,
+		HMGeometryInsertOp,
+		HMImageOp,
+		HMUpdateOp,
+		HMDisplaceOp,
+		HMBumpOp,
+		HMReloadOp,
+		HMForceReloadOp,
+		NavOp,
+		InstantiateOp
+	]

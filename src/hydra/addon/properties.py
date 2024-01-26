@@ -14,9 +14,6 @@ from Hydra import common
 
 #-------------------------------------------- Settings
 
-class HydraGlobalGroup(bpy.types.PropertyGroup):
-	"""Global settings group for Hydra."""
-
 class ErosionGroup(bpy.types.PropertyGroup):
 	"""Individual settings for objects and images."""
 	height_scale: FloatProperty(
@@ -373,4 +370,7 @@ class ErosionGroup(bpy.types.PropertyGroup):
 	def isSameSize(self, hm: common.Heightmap):
 		return tuple(hm.size) == tuple(self.img_size)
 
-EXPORTS = [HydraGlobalGroup, ErosionGroup]
+def get_exports()->list:
+	return [
+		ErosionGroup
+	]

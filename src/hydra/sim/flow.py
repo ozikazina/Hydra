@@ -9,7 +9,7 @@ from datetime import datetime
 
 # --------------------------------------------------------- Flow
 
-def genFlow(obj: bpy.types.Image | bpy.types.Object)->bpy.types.Image:
+def generate_flow(obj: bpy.types.Image | bpy.types.Object)->bpy.types.Image:
 	"""Simulates a flow map on the specified entity.
 	
 	:param obj: Object or image to simulate on.
