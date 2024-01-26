@@ -18,18 +18,18 @@ def generate_flow(obj: bpy.types.Image | bpy.types.Object)->bpy.types.Image:
 	:rtype: :class:`bpy.types.Image`"""
 	data = common.data
 	hyd = obj.hydra_erosion
-	if not data.hasMap(hyd.map_base):
-		heightmap.prepareHeightmap(obj)
+	if not data.has_map(hyd.map_base):
+		heightmap.prepare_heightmap(obj)
 
 	ctx = data.context
 	
-	size = hyd.getSize()
+	size = hyd.get_size()
 
-	if data.hasMap(hyd.map_current):
-		height = data.maps[hyd.map_current].texture
+	if data.has_map(hyd.map_result):
+		height = data.maps[hyd.map_result].texture
 	else:
 		height = data.maps[hyd.map_source].texture
-	amount = texture.createTexture(size)
+	amount = texture.create_texture(size)
 
 	subdiv = int(hyd.flow_subdiv)
 
@@ -57,7 +57,7 @@ def generate_flow(obj: bpy.types.Image | bpy.types.Object)->bpy.types.Image:
 			prog.run(group_x=groupsX, group_y=groupsY)
 	ctx.finish()
 
-	finalAmount = texture.createTexture(amount.size)
+	finalAmount = texture.create_texture(amount.size)
 	finalAmount.bind_to_image(3, read=True, write=True)
 	prog = data.shaders["plug"]
 	prog["inMap"].value = 2
@@ -67,7 +67,7 @@ def generate_flow(obj: bpy.types.Image | bpy.types.Object)->bpy.types.Image:
 	print((datetime.now() - time).total_seconds())
 
 	imgName = f"HYD_{obj.name}_Flow"
-	ret = texture.writeImage(imgName, finalAmount)
+	ret = texture.write_image(imgName, finalAmount)
 	amount.release()
 	finalAmount.release()
 	return ret

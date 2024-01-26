@@ -11,7 +11,7 @@ def get_split_direction(target)->str:
 	:param target: Window to be split.
 	:return: Window split direction.
 	:rtype: :class:`str`"""
-	prefs = common.getPreferences()
+	prefs = common.get_preferences()
 	if prefs.split_direction == "x":
 		return "VERTICAL"	#direction of split line -> perpendicular
 	elif prefs.split_direction == "y":

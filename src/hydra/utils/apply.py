@@ -3,10 +3,10 @@
 import bpy, bpy.types, bpy_extras
 import numpy as np
 from Hydra import common
-from Hydra.utils import texture
+from Hydra.utils import texture, nav
 import moderngl as mgl
 
-def minimizeNode(node):
+def minimize_node(node):
 	"""Hides unused inputs and minimizes the specified node.
 	
 	:param node: Node to minimize."""
@@ -16,7 +16,7 @@ def minimizeNode(node):
 	for n in node.outputs:
 		n.hide = True
 
-def setupVectorNode(nodes, node: bpy.types.ShaderNode)->bpy.types.ShaderNode:
+def setup_vector_node(nodes, node: bpy.types.ShaderNode)->bpy.types.ShaderNode:
 	"""Creates a Z Normal node and connects it to the specified node.
 	
 	:param nodes: Node graph.
@@ -28,10 +28,10 @@ def setupVectorNode(nodes, node: bpy.types.ShaderNode)->bpy.types.ShaderNode:
 	norm.name = "HYD_norm"
 	norm.label = "Z Normal"
 	nodes.links.new(node.inputs["Normal"], norm.outputs["Normal"])
-	minimizeNode(norm)
+	minimize_node(norm)
 	return norm
 	
-def setupImageNode(nodes, name:str, imageSrc:str)->tuple[bpy.types.ShaderNode, bpy.types.ShaderNode]:
+def setup_image_node(nodes, name:str, imageSrc:str)->tuple[bpy.types.ShaderNode, bpy.types.ShaderNode]:
 	"""Creates an Image Texture node and connects it to generated coordinates.
 	
 	:param nodes: Node graph.
@@ -49,10 +49,10 @@ def setupImageNode(nodes, name:str, imageSrc:str)->tuple[bpy.types.ShaderNode, b
 	img.interpolation = 'Cubic'
 	coords = nodes.nodes.new("ShaderNodeTexCoord")
 	nodes.links.new(img.inputs["Vector"], coords.outputs["Generated"])
-	minimizeNode(coords)
+	minimize_node(coords)
 	return (img, coords)
 	
-def staggerNodes(baseNode:bpy.types.ShaderNode, *args, forwards:bool=False):
+def stagger_nodes(baseNode:bpy.types.ShaderNode, *args, forwards:bool=False):
 	"""Spaces and shifts specified nodes around.
 	
 	:param baseNode: Rightmost node.
@@ -80,13 +80,12 @@ def staggerNodes(baseNode:bpy.types.ShaderNode, *args, forwards:bool=False):
 			y = baseY
 			for node in layer:
 				node.location[0] = x - node.width - 20
-				print(node.dimensions)
 				maxwidth = max(maxwidth, node.width)
 				node.location[1] = y
 				y -= node.height + 10
 			x -= maxwidth + 20
 			
-def makeBSDF(nodes)->bpy.types.ShaderNode:
+def make_bsdf(nodes)->bpy.types.ShaderNode:
 	"""Creates a Principled BSDF node.
 	
 	:param nodes: Node graph.
@@ -102,7 +101,7 @@ def makeBSDF(nodes)->bpy.types.ShaderNode:
 
 	return ret
 
-def getOrMakeOutputNode(nodes):
+def get_or_make_output_node(nodes):
 	"""Finds or creates an Output node.
 	
 	:param nodes: Node graph.
@@ -134,7 +133,7 @@ def addBump(obj: bpy.types.Object, src: mgl.Texture):
 	:param src: Source texture to add.
 	:type src: :class:`moderngl.Texture`"""
 	data = common.data
-	img = texture.writeImage(f"HYD_{obj.name}_DISPLACE", src)
+	img = texture.write_image(f"HYD_{obj.name}_DISPLACE", src)
 
 	mats = obj.material_slots
 	if len(mats) == 0:
@@ -155,10 +154,10 @@ def addBump(obj: bpy.types.Object, src: mgl.Texture):
 		nodes.nodes[H_NAME_BUMP].image = img
 		return
 	
-	out = getOrMakeOutputNode(nodes)
+	out = get_or_make_output_node(nodes)
 		
 	if not out.inputs["Surface"].is_linked:
-		shader = makeBSDF(nodes)
+		shader = make_bsdf(nodes)
 		nodes.links.new(out.inputs["Surface"], shader.outputs["BSDF"])
 	else:
 		shader = out.inputs["Surface"].links[0].from_node
@@ -181,10 +180,10 @@ def addBump(obj: bpy.types.Object, src: mgl.Texture):
 	
 	bump.inputs["Distance"].default_value = 0.2
 	
-	imgNode,coords = setupImageNode(nodes, "Bumpmap", img)
+	imgNode,coords = setup_image_node(nodes, "Bumpmap", img)
 	nodes.links.new(bump.inputs["Height"], imgNode.outputs["Color"])
-	minimizeNode(imgNode)
-	staggerNodes(shader, [bump], [imgNode], [coords])
+	minimize_node(imgNode)
+	stagger_nodes(shader, [bump], [imgNode], [coords])
 
 H_NAME_DISP = "Hydra Displacement"
 """Displacement map node name."""
@@ -198,7 +197,7 @@ def addDisplacement(obj: bpy.types.Object, src: mgl.Texture):
 	:param src: Source texture to add.
 	:type src: :class:`moderngl.Texture`"""
 	data = common.data
-	img = texture.writeImage(f"HYD_{obj.name}_DISPLACE", src)
+	img = texture.write_image(f"HYD_{obj.name}_DISPLACE", src)
 
 	mats = obj.material_slots
 	if len(mats) == 0:
@@ -220,14 +219,14 @@ def addDisplacement(obj: bpy.types.Object, src: mgl.Texture):
 		nodes.nodes[H_NAME_DISP].image = img
 		return
 	
-	out = getOrMakeOutputNode(nodes)
+	out = get_or_make_output_node(nodes)
 
 	if not out.inputs["Displacement"].is_linked:
 		disp = nodes.nodes.new("ShaderNodeDisplacement")
 		disp.inputs["Midlevel"].default_value = 0
 		disp.inputs["Scale"].default_value = 1
 		nodes.links.new(out.inputs["Displacement"], disp.outputs["Displacement"])
-		norm = setupVectorNode(nodes, disp)
+		norm = setup_vector_node(nodes, disp)
 	else:
 		disp = out.inputs["Displacement"].links[0].from_node
 		if disp.bl_idname != "ShaderNodeDisplacement":
@@ -238,13 +237,13 @@ def addDisplacement(obj: bpy.types.Object, src: mgl.Texture):
 		data.error += ["Material already implements a different displacement map."]
 		return
 	
-	imgNode, coords = setupImageNode(nodes, H_NAME_DISP, img)
+	imgNode, coords = setup_image_node(nodes, H_NAME_DISP, img)
 	nodes.links.new(disp.inputs["Height"], imgNode.outputs["Color"])
-	minimizeNode(imgNode)
+	minimize_node(imgNode)
 	
-	staggerNodes(out, [disp], [imgNode, norm], [coords], forwards=True)
+	stagger_nodes(out, [disp], [imgNode, norm], [coords], forwards=True)
 
-def addModifier(obj: bpy.types.Object, src: mgl.Texture):
+def add_modifier(obj: bpy.types.Object, src: mgl.Texture):
 	"""Adds a Displace modifier to the specified object.
 
 	:param obj: Object to add to.
@@ -252,7 +251,7 @@ def addModifier(obj: bpy.types.Object, src: mgl.Texture):
 	:param src: Source texture to add.
 	:type src: :class:`moderngl.Texture`"""
 	data = common.data
-	img = texture.writeImage(f"HYD_{obj.name}_DISPLACE", src)
+	img = texture.write_image(f"HYD_{obj.name}_DISPLACE", src)
 
 	if len(obj.modifiers) == 0:
 		mod = obj.modifiers.new("HYD_" + obj.name, "DISPLACE")
@@ -313,7 +312,7 @@ P_VIEW_NAME = "HYD_Image_Preview"	#different from object preview heightmap
 P_GEO_NAME = "HYD_Preview"
 """Geometry Nodes group name."""
 
-def showGenModifier(obj: bpy.types.Object, visible: bool):
+def show_gen_modifier(obj: bpy.types.Object, visible: bool):
 	"""Internal. Shows or hides the first modifier created by Hydra belonging to the specified object.
 	
 	:param obj: Object to add to.
@@ -324,14 +323,15 @@ def showGenModifier(obj: bpy.types.Object, visible: bool):
 	if mod and mod.name != P_MOD_NAME:
 		mod.show_viewport = visible
 
-def addImagePreview(src: mgl.Texture)->bpy.types.Image:
+def add_image_preview(src: mgl.Texture)->None:
 	"""Writes the specified texture as a temporary image.
 	
 	:param src: Source texture to add.
 	:type src: :class:`moderngl.Texture`
 	:return: Created image.
 	:rtype: :class:`bpy.types.Image`"""
-	return texture.writeImage(P_VIEW_NAME, src)
+	img = texture.write_image(P_VIEW_NAME, src)
+	nav.goto_image(img)
 
 def remove_preview_image():
 	"""Removes the temporary preview Image."""
@@ -339,7 +339,7 @@ def remove_preview_image():
 		img = bpy.data.images[P_VIEW_NAME]
 		bpy.data.images.remove(img)
 
-def addPreview(obj: bpy.types.Object, src: mgl.Texture):
+def add_preview(obj: bpy.types.Object, src: mgl.Texture):
 	"""Previews the specified texture as a geometry node on the specified object.
 	
 	:param obj: Object to add to.
@@ -356,19 +356,21 @@ def addPreview(obj: bpy.types.Object, src: mgl.Texture):
 		g = bpy.data.node_groups[P_GEO_NAME]
 		bpy.data.node_groups.remove(g)
 
-	showGenModifier(obj, False)
+	show_gen_modifier(obj, False)
 
 	if P_MOD_NAME in obj.modifiers:
 		mod = obj.modifiers[P_MOD_NAME]
-		common.data.info += ["Updated existing preview."]
+		common.data.add_message("Updated existing preview.")
 	else:
 		mod = obj.modifiers.new(P_MOD_NAME, "NODES")
-		common.data.info += ["Created preview modifier."]
+		common.data.add_message("Created preview modifier.")
 	
-	img = texture.writeImage(P_IMG_NAME, src)
-	mod.node_group = getOrMakeDisplaceGroup(P_GEO_NAME, img)
+	img = texture.write_image(P_IMG_NAME, src)
+	mod.node_group = get_or_make_displace_group(P_GEO_NAME, img)
 
 	common.data.lastPreview = obj.name
+
+	nav.goto_modifier()
 
 def remove_preview():
 	"""Removes the preview modifier from the last previewed object."""
@@ -377,12 +379,12 @@ def remove_preview():
 		last = bpy.data.objects[data.lastPreview]
 		if P_MOD_NAME in last.modifiers:
 			last.modifiers.remove(last.modifiers[P_MOD_NAME])
-		showGenModifier(last, True)
+		show_gen_modifier(last, True)
 	elif data.lastPreview: #invalid data
 		previewed = [i for i in bpy.data.objects if P_MOD_NAME in i.modifiers]
 		for i in previewed:
 			i.modifiers.remove(i.modifiers[P_MOD_NAME])
-			showGenModifier(i, True)
+			show_gen_modifier(i, True)
 
 	if P_MOD_NAME in bpy.data.textures:
 		txt = bpy.data.textures[P_MOD_NAME]
@@ -401,7 +403,7 @@ def remove_preview():
 
 P_LAND_TEMP_NAME = "HYD_TEMP_DISPLACE"
 
-def configureLandscape(obj: bpy.types.Object, src: mgl.Texture):
+def configure_landscape(obj: bpy.types.Object, src: mgl.Texture):
 	"""Shapes the specified grid object using the input heightmap texture.
 	
 	:param obj: Object to shape.
@@ -412,7 +414,7 @@ def configureLandscape(obj: bpy.types.Object, src: mgl.Texture):
 	mod = obj.modifiers.new(P_LAND_TEMP_NAME, "NODES")
 
 	
-	mod.node_group = getOrMakeDisplaceGroup(P_LAND_TEMP_NAME, image=img)
+	mod.node_group = get_or_make_displace_group(P_LAND_TEMP_NAME, image=img)
 
 	bpy.ops.object.mode_set(mode="OBJECT")	# modifiers can't be applied in EDIT mode
 
@@ -424,7 +426,7 @@ def configureLandscape(obj: bpy.types.Object, src: mgl.Texture):
 
 # -------------------------------------------------- Geometry Nodes
 
-def getOrMakeDisplaceGroup(name, image: bpy.types.Image=None):
+def get_or_make_displace_group(name, image: bpy.types.Image=None):
 	if name in bpy.data.node_groups:
 		g = bpy.data.node_groups[name]
 		sockets = g.interface.items_tree
@@ -436,16 +438,17 @@ def getOrMakeDisplaceGroup(name, image: bpy.types.Image=None):
 			n_image.extension = "EXTEND"
 			n_image.interpolation = "Cubic"
 			n_image.inputs[0].default_value = image
-			common.data.addMessage(f"Existing group {name} was missing HYD_Displacement image node. It has been added, but hasn't been connected.", error=True)
+			common.data.add_message(f"Existing group {name} was missing HYD_Displacement image node. It has been added, but hasn't been connected.", error=True)
 		elif not any(i for i in sockets if i.in_out == "OUTPUT" and i.socket_type == "NodeSocketGeometry") or\
 			not any(i for i in sockets if i.in_out == "INPUT" and i.socket_type == "NodeSocketGeometry"):
-			common.data.addMessage(f"Updated existing group {name}, but it doesn't have Geometry input/output!", error=True)
+			common.data.add_message(f"Updated existing group {name}, but it doesn't have Geometry input/output!", error=True)
 		else:
-			common.data.addMessage(f"Updated existing group {name}.")
+			common.data.add_message(f"Updated existing group {name}.")
 		return g
 	else:
 		g = bpy.data.node_groups.new(name, type='GeometryNodeTree')
-		common.data.addMessage(f"Created new group {name}.")
+		common.data.add_message(f"Created new group {name}.")
+		
 		g.is_modifier = True
 		g.interface.new_socket("Geometry", in_out="INPUT", socket_type="NodeSocketGeometry")
 		i_scale = g.interface.new_socket("Scale", in_out="INPUT", socket_type="NodeSocketFloat")
@@ -524,18 +527,18 @@ def getOrMakeDisplaceGroup(name, image: bpy.types.Image=None):
 
 		links.new(n_displace.outputs["Geometry"], n_output.inputs["Displaced"])
 
-		staggerNodes(n_output, [n_displace], [n_combine], [n_scale], [n_image], [n_normalize], [n_subpos, n_subbound], [n_pos, n_bounds], [n_input], forwards=False)
+		stagger_nodes(n_output, [n_displace], [n_combine], [n_scale], [n_image], [n_normalize], [n_subpos, n_subbound], [n_pos, n_bounds], [n_input], forwards=False)
 
 		return g
 
-def addGeometryNode(obj: bpy.types.Object, src: mgl.Texture):
+def add_geometry_node(obj: bpy.types.Object, src: mgl.Texture):
 	"""Adds a Geometry Nodes modifier to the specified object.
 
 	:param obj: Object to add to.
 	:type obj: :class:`bpy.types.Object`
 	:param src: Source texture to add.
 	:type src: :class:`moderngl.Texture`"""
-	img = texture.writeImage(f"HYD_{obj.name}_DISPLACE", src)
+	img = texture.write_image(f"HYD_{obj.name}_DISPLACE", src)
 
 	if len(obj.modifiers) == 0:
 		mod = obj.modifiers.new("HYD_" + obj.name, "NODES")
@@ -548,9 +551,9 @@ def addGeometryNode(obj: bpy.types.Object, src: mgl.Texture):
 	else:
 		mod = obj.modifiers[-1]
 	
-	mod.node_group = getOrMakeDisplaceGroup(f"HYD_{obj.name}", img)
+	mod.node_group = get_or_make_displace_group(f"HYD_{obj.name}", img)
 
-def addIntoGeometryNodes(obj: bpy.types.Object, src: mgl.Texture):
+def add_into_geometry_nodes(obj: bpy.types.Object, src: mgl.Texture):
 	"""Adds the texture into an existing Geometry Nodes modifier.
 
 	:param obj: Object to add to.
@@ -558,7 +561,7 @@ def addIntoGeometryNodes(obj: bpy.types.Object, src: mgl.Texture):
 	:param src: Source texture to add.
 	:type src: :class:`moderngl.Texture`"""
 	data = common.data
-	img = texture.writeImage(f"HYD_{obj.name}_DISPLACE", src)
+	img = texture.write_image(f"HYD_{obj.name}_DISPLACE", src)
 
 	mod = None
 	for m in obj.modifiers:
@@ -578,7 +581,7 @@ def addIntoGeometryNodes(obj: bpy.types.Object, src: mgl.Texture):
 	else:
 		output = outputs[0]
 
-	displace_group = getOrMakeDisplaceGroup("HYD_Displace")
+	displace_group = get_or_make_displace_group("HYD_Displace")
 
 	connected = None
 	if output.inputs[0].is_linked:
@@ -600,13 +603,13 @@ def addIntoGeometryNodes(obj: bpy.types.Object, src: mgl.Texture):
 	if connected:
 		links.new(connected.outputs[0], g.inputs[0])
 
-	staggerNodes(output, [g], forwards=True)
+	stagger_nodes(output, [g], forwards=True)
 
-def onlyUpdate(obj: bpy.types.Object, src: mgl.Texture):
+def only_update(obj: bpy.types.Object, src: mgl.Texture):
 	"""Only writes the specified texture to a Blender Image used by other methods.
 
 	:param obj: Object to add to.
 	:type obj: :class:`bpy.types.Object`
 	:param src: Source texture to add.
 	:type src: :class:`moderngl.Texture`"""
-	_ = texture.writeImage(f"HYD_{obj.name}_DISPLACE", src)
+	_ = texture.write_image(f"HYD_{obj.name}_DISPLACE", src)

@@ -6,7 +6,7 @@ import moderngl as mgl
 from Hydra.utils import model
 from Hydra import common
 
-def getOrMakeImage(size: tuple[int,int], name: str)->bpy.types.Image:
+def get_or_make_image(size: tuple[int,int], name: str)->bpy.types.Image:
 	"""Gets or creates an image of the specified name. If sizes are different, then it gets scaled to `size`.
 	
 	:param size: Resolution tuple.
@@ -27,7 +27,7 @@ def getOrMakeImage(size: tuple[int,int], name: str)->bpy.types.Image:
 
 	return img
 
-def writeImage(name: str, txt: mgl.Texture)->bpy.types.Image:
+def write_image(name: str, txt: mgl.Texture)->bpy.types.Image:
 	"""Writes texture to an `Image` of the specified name.
 	
 	:param name: Image name.
@@ -36,86 +36,62 @@ def writeImage(name: str, txt: mgl.Texture)->bpy.types.Image:
 	:type txt: :class:`moderngl.Texture`
 	:return: Created image.
 	:rtype: :class:`bpy.types.Image`"""
-	img = getOrMakeImage(txt.size, name)
-	if txt.components == 1:
-		fillImageMono(img, txt)
-	else:
-		fillImage(img, txt)
+	img = get_or_make_image(txt.size, name)
+	fill_image(img, txt)
 	img.pack()
 	return img
 
-def fillImageMono(image: bpy.types.Image, texture: mgl.Texture):
+def fill_image(image: bpy.types.Image, texture: mgl.Texture)->None:
 	"""Writes single channel texture data to an image.
 	
 	:param image: Image to be written to.
 	:type image: :class:`bpy.types.Image`
 	:param texture: Texture to be read.
 	:type texture: :class:`moderngl.Texture`"""
-	pixels = np.frombuffer(texture.read(), dtype=np.float32)
-	pixels = [x for p in pixels for x in (p,p,p,1)]
-	image.pixels = pixels
+	if texture.components == 1:
+		pixels = np.frombuffer(texture.read(), dtype=np.float32)
+		pixels = [x for p in pixels for x in (p,p,p,1)]
+		image.pixels = pixels
+	elif texture.components == 2 or texture.components == 3:
+		raise ValueError("Two or three channel fill isn't supported.")
+	elif texture.components == 4:
+		image.pixels = np.frombuffer(texture.read(), dtype=np.float32)
 
-def fillImage(image: bpy.types.Image, texture: mgl.Texture):
-	"""Writes four channel texture data to an image.
-	
-	:param image: Image to be written to.
-	:type image: :class:`bpy.types.Image`
-	:param texture: Texture to be read.
-	:type texture: :class:`moderngl.Texture`"""
-	image.pixels = np.frombuffer(texture.read(), dtype=np.float32)
+def create_texture(size: tuple[int,int], pixels: bytes|None = None, image: bpy.types.Image|None = None, channels: int = 1)->mgl.Texture:
+	"""Creates a :class:`moderngl.Texture` of the specified size."""
 
-def createTexture(size: tuple[int,int], pixels: bytes|None = None)->mgl.Texture:
-	"""Creates a single channel :class:`moderngl.Texture` of the specified size.
-	
-	:param size: Resolution tuple.
-	:type size: :class:`tuple[int,int]`
-	:param pixels: Optional texture data.
-	:type pixels: :class:`bytes` or :class:`None`
-	:return: Created texture.
-	:rtype: :class:`moderngl.Texture`"""
-	if pixels is None:
-		pixels = np.zeros(size[0]*size[1], dtype="f4").tobytes()
-	return common.data.context.texture(size, 1, dtype="f4", data=pixels)
+	if channels < 1 or channels > 4:
+		raise ValueError("Invalid channel count")
+	if image is not None and pixels is not None:
+		raise ValueError("Only one of image and pixels can be specified")
 
-def createTextureFull(size: tuple[int,int])->mgl.Texture:
-	"""Creates a four channel :class:`moderngl.Texture` of the specified size.
-	
-	:param size: Resolution tuple.
-	:type size: :class:`tuple[int,int]`
-	:return: Created texture.
-	:rtype: :class:`moderngl.Texture`"""
-	return common.data.context.texture(size, 4, dtype="f4")
-
-def createColorTexture(size: tuple[int,int], image: bpy.types.Image)->mgl.Texture:
-	"""Creates a four channel :class:`moderngl.Texture` from the specified image. Redraws to new size if needed.
-	
-	:param size: Final resolution tuple.
-	:type size: :class:`tuple[int,int]`
-	:param image: Image to be read.
-	:type image: :class:`bpy.types.Image`
-	:return: Created texture.
-	:rtype: :class:`moderngl.Texture`"""
 	data = common.data
-	data.floatColor = image.is_float
-	pixels = np.array(image.pixels).astype('f4').tobytes()
-	color = data.context.texture(tuple(image.size), 4, dtype="f4", data=pixels)
-	
 	ctx = data.context
-	dest = ctx.texture(size, 4, dtype="f4")
-	
-	vao = model.createVAO(ctx, data.programs["redraw"])
-	fbo = ctx.framebuffer(color_attachments=(dest))
-	scope = ctx.scope(fbo)
-	with scope:
-		color.use(location=0)
-		vao.program["source"].value = 0
-		vao.program["linearize"] = not image.is_float
-		vao.render()
-	
-	fbo.release()
-	vao.release()
-	color.release()
-	return dest
+
+	if image is not None:
+		pixels = np.array(image.pixels).astype('f4').tobytes()
+		color = ctx.texture(tuple(image.size), 4, dtype="f4", data=pixels)
+		
+		dest = ctx.texture(size, channels, dtype="f4")
+		
+		vao = model.createVAO(ctx, data.programs["redraw"])
+		fbo = ctx.framebuffer(color_attachments=(dest))
+		scope = ctx.scope(fbo)
+		with scope:
+			color.use(location=0)
+			vao.program["source"].value = 0
+			vao.program["linearize"] = not image.is_float
+			vao.render()
+		
+		fbo.release()
+		vao.release()
+		color.release()
+		return dest
+	elif pixels is not None:
+		return ctx.texture(size, channels, dtype="f4", data=pixels)
+	else:
+		# pixels = np.zeros(size[0]*size[1], dtype="f4").tobytes()
+		return ctx.texture(size, channels, dtype="f4")
 
 def clone(txt: mgl.Texture)->mgl.Texture:
 	"""Clones a :class:`moderngl.Texture`.

@@ -60,8 +60,8 @@ def register():
 
 	if not _hydra_invalid:
 		common.data = common.HydraData()
-		common.data.initContext()
-		opengl.initContext()
+		common.data.init_context()
+		opengl.init_context()
 		startup.invalid = False
 
 		bpy.types.Object.hydra_erosion = PointerProperty(type=properties.ErosionGroup)

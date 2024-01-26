@@ -4,11 +4,11 @@ import bpy
 from Hydra import common
 from Hydra.sim import thermal, flow, erosion, heightmap
 from Hydra.utils import nav, apply, model
-from Hydra.addon import ui_common
+from Hydra.addon import ops_common
 
 #-------------------------------------------- Flow
 
-class FlowOp(ui_common.FlowOperator, ui_common.ImageOperator):
+class FlowOp(ops_common.FlowOperator, ops_common.ImageOperator):
 	"""Flowmap generation operator."""
 	bl_idname = "hydra.flow_img"
 

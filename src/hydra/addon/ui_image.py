@@ -72,39 +72,8 @@ def fragmentNav(container, name:str, label:str):
 		split.label(text=f"{label}:")
 		split.operator('hydra.nav', text="", icon="IMAGE_DATA").target = name
 
-
-class FlowPanel(ui_common.ImagePanel):
-	"""Panel for flowmap generation."""
-	bl_label = "Hydra - Flow"
-	bl_idname = "HYDRA_PT_imgflowpanel"
-	bl_description = "Generate flow data into an image"
-
-	def draw(self, ctx):
-		img = ctx.area.spaces.active.image
-		hyd = img.hydra_erosion
-
-		col = self.layout.column()
-		col.operator('hydra.flow_img', text="Generate Flowmap", icon="MATFLUID")
-
-		col.separator()
-		fragmentSize(col.box())
-		
-		fragmentNav(col, f"HYD_{img.name}_Flow", "Flow")
-
-		col.separator()
-		box = col.box()
-		box.prop(hyd, "flow_contrast", slider=True)
-		box.prop(hyd, "interpolate_flow")
-		split = box.split()
-		split.label(text="Chunk size")
-		split.prop(hyd, "flow_subdiv", text="")
-		
-		col.separator()
-		col.label(text="Particle settings")
-		box = col.box()
-		box.prop(hyd, "part_lifetime")
-		box.prop(hyd, "part_acceleration", slider=True)
-		box.prop(hyd, "part_drag", slider=True)
+class FlowPanel(ui_common.FlowPanel, ui_common.ImagePanel):
+	bl_idname = "HYDRA_PT_FlowPanelImage"
 
 class ErodePanel(ui_common.ImagePanel):
 	"""Panel for water erosion."""

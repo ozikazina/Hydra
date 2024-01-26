@@ -5,7 +5,7 @@ import bpy, bpy.types
 from Hydra import common, startup, opengl
 from Hydra.sim import erosion, flow, heightmap, thermal, mei
 from Hydra.utils import nav, texture, apply
-from Hydra.addon.ui_common import ObjectOperator, FlowOperator
+from Hydra.addon import ops_common
 
 #-------------------------------------------- Heightmap
 
@@ -71,39 +71,41 @@ class ErodeOp(bpy.types.Operator):
 
 #-------------------------------------------- Flow
 
-class FlowOp(FlowOperator, ObjectOperator):
+class FlowOp(ops_common.FlowOperator, ops_common.ObjectOperator):
 	"""Flowmap generation operator."""
 	bl_idname = "hydra.flow"
 
 #-------------------------------------------- Thermal
 
-class ThermalOp(bpy.types.Operator):
-	"""Thermal erosion operator."""
+class ThermalOp(ops_common.ThermalOperator, ops_common.ObjectOperator):
 	bl_idname = "hydra.thermal"
-	bl_label = "Erode"
-	bl_description = "Erode object"
-	bl_options = {'REGISTER', 'UNDO'}
+
+# class ThermalOp(bpy.types.Operator):
+# 	"""Thermal erosion operator."""
+# 	bl_idname = "hydra.thermal"
+# 	bl_label = "Erode"
+# 	bl_description = "Erode object"
 			
-	def invoke(self, ctx, event):
-		data = common.data
-		data.clear()
-		hyd = ctx.object.hydra_erosion
-		apply.removePreview()
+# 	def invoke(self, ctx, event):
+# 		data = common.data
+# 		data.clear()
+# 		hyd = ctx.object.hydra_erosion
+# 		apply.removePreview()
 
-		thermal.thermalPrepare(ctx.object)
-		thermal.thermalRun(ctx.object)
-		thermal.thermalFinish(ctx.object)
+# 		thermal.thermalPrepare(ctx.object)
+# 		thermal.thermalRun(ctx.object)
+# 		thermal.thermalFinish(ctx.object)
 
-		heightmap.preview(ctx.object, data.maps[hyd.map_current], data.maps[hyd.map_base])
-		nav.gotoModifier()
-		data.report(self, callerName="Erosion")
-		return {'FINISHED'}
+# 		heightmap.preview(ctx.object, data.maps[hyd.map_current], data.maps[hyd.map_base])
+# 		nav.gotoModifier()
+# 		data.report(self, callerName="Erosion")
+# 		return {'FINISHED'}
 
 #--------------------------------------------
 
 class ReloadShadersOp(bpy.types.Operator):
 	"""Operator for reloading shaders."""
-	bl_idname = "hydra.reloadshaders"
+	bl_idname = "hydra.reload_shaders"
 	bl_label = "Reload shaders"
 	bl_description = "Reloads OpenGL shaders"
 
@@ -113,14 +115,14 @@ class ReloadShadersOp(bpy.types.Operator):
 		return {'FINISHED'}
 
 class NukeUIOp(bpy.types.Operator):
-	"""Destroys Blender's UI."""
-	bl_idname = "hydra.nukeui"
-	bl_label = "Nuke UI"
-	bl_description = "Enjoy the authentic developer experience (restart Blender to restore UI)"
+	"""Destroys Blender's GUI."""
+	bl_idname = "hydra.nuke_gui"
+	bl_label = "Nuke GUI"
+	bl_description = "Enjoy the authentic developer experience (restart Blender to restore)"
 
 	def execute(self, context):
-		heightmap.nukeUI()
-		self.report({'INFO'}, "Successfuly destroyed UI.")
+		heightmap.nuke_gui()
+		self.report({'INFO'}, "Successfuly destroyed GUI.")
 		return {'FINISHED'}
 
 #-------------------------------------------- Exports

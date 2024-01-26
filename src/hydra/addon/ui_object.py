@@ -18,14 +18,14 @@ class DefaultHeightmapPanel(bpy.types.Panel):
 		hyd = act.hydra_erosion
 		hasAny = False
 
-		if common.data.hasMap(hyd.map_base):
+		if common.data.has_map(hyd.map_base):
 			hasAny = True
 			container.operator('hydra.hmclear', icon="CANCEL").useImage = False
 			container.separator()
 
-		if common.data.hasMap(hyd.map_current):
+		if common.data.has_map(hyd.map_result):
 			hasAny = True
-			name = common.data.maps[hyd.map_current].name
+			name = common.data.maps[hyd.map_result].name
 			box = container.box()
 			split = box.split(factor=0.5)
 			split.label(text="Result:")
@@ -35,7 +35,7 @@ class DefaultHeightmapPanel(bpy.types.Panel):
 				op = cols.operator('hydra.hmnoview', text="", icon="HIDE_ON")
 			else:
 				op = cols.operator('hydra.hmpreview', text="", icon="HIDE_OFF")
-				op.target = hyd.map_current
+				op.target = hyd.map_result
 				op.base = hyd.map_base
 			cols.operator('hydra.hmmove', text="", icon="TRIA_DOWN_BAR").useImage = False
 			cols.operator('hydra.hmdelete', text="", icon="PANEL_CLOSE").useImage = False
@@ -44,7 +44,7 @@ class DefaultHeightmapPanel(bpy.types.Panel):
 
 			cols = grid.column_flow(columns=2, align=True)
 			op = cols.operator('hydra.hmapplyimg', text="", icon="IMAGE_DATA")
-			op.save_target = hyd.map_current
+			op.save_target = hyd.map_result
 			op.name = f"HYD_{act.name}_Eroded"
 			cols.operator('hydra.hmapplygeo', text="", icon="GEOMETRY_NODES")
 			# cols.operator('hydra.hmapplygeoinsert', text="", icon="OUTLINER_DATA_POINTCLOUD")
@@ -60,7 +60,7 @@ class DefaultHeightmapPanel(bpy.types.Panel):
 				cols.operator('hydra.hmmerge', text="", icon="MESH_DATA")
 				cols.operator('hydra.hmmergeshape', text="", icon="SHAPEKEY_DATA")
 
-		if common.data.hasMap(hyd.map_source):
+		if common.data.has_map(hyd.map_source):
 			hasAny = True
 			name = common.data.maps[hyd.map_source].name
 			box = container.box()
@@ -82,7 +82,7 @@ def fragmentSize(container, obj: bpy.types.Object):
 	:param obj: Object the settings apply to.
 	:type obj: :class:`bpy.types.Object`"""
 	hyd = obj.hydra_erosion
-	if common.data.hasMap(hyd.map_base):
+	if common.data.has_map(hyd.map_base):
 		split = container.split(factor=0.5)
 		split.label(text=f"Size:")
 		split.label(text=f"{tuple(hyd.img_size)}")
@@ -124,7 +124,7 @@ class HeightmapPanel(ui_common.ObjectPanel):
 
 		col.separator()
 
-		if data.hasMap(hyd.map_base):
+		if data.has_map(hyd.map_base):
 			col.separator()
 			size = data.maps[hyd.map_base].size
 			split = col.split()
@@ -135,14 +135,14 @@ class HeightmapPanel(ui_common.ObjectPanel):
 			split.label(text="Mesh")
 			split.operator('hydra.hmapplyimg', text="", icon="IMAGE_DATA").save_target = hyd.map_base
 		
-		if data.hasMap(hyd.map_source):
+		if data.has_map(hyd.map_source):
 			col.separator()
 			split = box.split()
 			name = data.maps[hyd.map_source].name
 			split.label(text=name)
 			split.operator('hydra.hmapplyimg', text="", icon="IMAGE_DATA").save_target = hyd.map_source
 		
-		if data.hasMap(hyd.map_current):
+		if data.has_map(hyd.map_current):
 			col.separator()
 			split = box.split()
 			name = data.maps[hyd.map_current].name
@@ -284,45 +284,9 @@ class ErodeMeiAdvancedPanel(bpy.types.Panel):
 		p.prop(hyd, "mei_min_alpha")
 		
 
-class FlowPanel(ui_common.ObjectPanel):
+class FlowPanel(ui_common.FlowPanel, ui_common.ObjectPanel):
 	"""Panel for flowmap generation."""
-	bl_label = "Hydra - Flow"
-	bl_idname = "HYDRA_PT_flowpanel"
-	bl_description = "Generate flow data into an image"
-
-	def draw(self, ctx):
-		hyd = ctx.object.hydra_erosion
-		
-		col = self.layout.column()
-		col.operator('hydra.flow', text="Generate Flowmap", icon="MATFLUID")
-	
-		fragmentSize(col.box(), ctx.object)
-		
-		name = f"HYD_{ctx.object.name}_Flow"
-		if name in bpy.data.images:
-			col.separator()
-			col.label(text="Generated:")
-			box = col.box()
-			split = box.split()
-			split.label(text=name)
-			op = split.operator('hydra.nav', text="", icon="IMAGE_DATA")
-			op.target = name
-
-		col.separator()
-		box = col.box()
-		box.prop(hyd, "flow_contrast", slider=True)
-		box.prop(hyd, "interpolate_flow")
-		split = box.split()
-		split.label(text="Chunk size")
-		split.prop(hyd, "flow_subdiv", text="")
-
-		col.separator()
-		col.label(text="Particle settings")
-		box = col.box()
-		box.prop(hyd, "part_lifetime")
-		box.prop(hyd, "part_acceleration", slider=True)
-		box.prop(hyd, "part_drag", slider=True)
-
+	bl_idname = "HYDRA_PT_FlowPanel"
 
 class ThermalPanel(ui_common.ObjectPanel):
 	"""Panel for thermal erosion."""
@@ -413,12 +377,12 @@ class DebugPanel(bpy.types.Panel):
 
 	def draw(self, ctx):
 		col = self.layout.column()
-		col.operator('hydra.reloadshaders', text="Reload shaders", icon="FILE_REFRESH")
-		col.operator('hydra.nukeui', text="Nuke UI", icon="MOD_EXPLODE")
+		col.operator('hydra.reload_shaders', text="Reload shaders", icon="FILE_REFRESH")
+		col.operator('hydra.nuke_gui', text="Nuke GUI", icon="MOD_EXPLODE")
 
 	@classmethod
 	def poll(cls, ctx):
-		return common.getPreferences().debug_mode
+		return common.get_preferences().debug_mode
 
 def get_exports()->list:
 	return [

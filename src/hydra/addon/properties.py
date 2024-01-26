@@ -325,9 +325,9 @@ class ErosionGroup(bpy.types.PropertyGroup):
 
 	#------------------------- Utils
 
-	is_generated: BoolProperty(name="Is Generated", description="Prevents resource allocation for generated objects")
+	is_generated: BoolProperty(name="Is generated", description="Prevents resource allocation for generated objects")
 
-	map_current: StringProperty(name="Current map", description="Current heightmap")
+	map_result: StringProperty(name="Result map", description="Result heightmap")
 	map_source: StringProperty(name="Source map", description="Source heightmap")
 	map_base: StringProperty(name="Base map", description="Base heightmap")
 
@@ -364,11 +364,11 @@ class ErosionGroup(bpy.types.PropertyGroup):
 	
 	#------------------------- Funcs
 	
-	def getSize(self):
+	def get_size(self):
 		return tuple(self.img_size)
 		
-	def isSameSize(self, hm: common.Heightmap):
-		return tuple(hm.size) == tuple(self.img_size)
+	# def is_same_size(self, hm: common.Heightmap):
+	# 	return tuple(hm.size) == tuple(self.img_size)
 
 def get_exports()->list:
 	return [

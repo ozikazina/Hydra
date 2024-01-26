@@ -5,7 +5,7 @@ from Hydra import common
 
 # --------------------------------------------------------- Init
 
-def initContext():
+def init_context():
 	"""Compiles shader programs and adds them to :data:`common.data`."""
 	data = common.data
 	ctx = data.context

@@ -1,7 +1,7 @@
 """Module responsible for thermal erosion."""
 
 from Hydra.sim import heightmap
-from Hydra.utils import texture, model
+from Hydra.utils import texture
 from Hydra import common
 import bpy.types
 import math
@@ -9,43 +9,28 @@ from datetime import datetime
 
 # --------------------------------------------------------- Flow
 
-#Active texture list indices
-_MAP_HEIGHT = 0
-_MAP_REQUESTS = 1
-_MAP_FREE = 2
-
-def thermalPrepare(obj: bpy.types.Image | bpy.types.Object):
-	"""Prepares textures for thermal erosion.
-	
-	:param obj: Object or image to erode.
-	:type obj: :class:`bpy.types.Object` or :class:`bpy.types.Image`"""
-	print("Preparing for thermal erosion")
-	data = common.data
-	hyd = obj.hydra_erosion
-	if not data.hasMap(hyd.map_base):
-		heightmap.prepareHeightmap(obj)
-
-	size = obj.hydra_erosion.getSize()
-
-	data.active = [
-		texture.clone(data.maps[hyd.map_source].texture),
-		texture.createTextureFull(size),
-		texture.createTexture(size)]
-	print("Preparation finished")
-
-def thermalRun(obj: bpy.types.Image | bpy.types.Object):
+def erode(obj: bpy.types.Image | bpy.types.Object):
 	"""Erodes the specified entity. Can be run multiple times.
 	
 	:param obj: Object or image to erode.
 	:type obj: :class:`bpy.types.Object` or :class:`bpy.types.Image`"""
 	data = common.data
 	ctx = data.context
-	opts = obj.hydra_erosion
-	size = opts.getSize()
+	hyd = obj.hydra_erosion
 
-	height = data.active[_MAP_HEIGHT]
-	request = data.active[_MAP_REQUESTS]
-	free = data.active[_MAP_FREE]
+	print("Preparing for thermal erosion")
+
+	if not data.has_map(hyd.map_base):
+		heightmap.prepare_heightmap(obj)
+
+	size = hyd.get_size()
+
+	height = texture.clone(data.maps[hyd.map_source].texture)
+	request = texture.create_texture(size, channels=4)
+	free = texture.create_texture(size)
+
+	print("Preparation finished")
+
 
 	progA = data.shaders["thermalA"]
 	progB = data.shaders["thermalB"]
@@ -59,17 +44,17 @@ def thermalRun(obj: bpy.types.Image | bpy.types.Object):
 	free.bind_to_image(3, read=True, write=True)
 
 	progA["requests"].value = 2
-	progA["Ks"] = opts.thermal_strength * 0.5	#0-1 -> 0-0.5, higher is unstable
-	progA["alpha"] = math.tan(math.tau * opts.thermal_angle / 360) * 2 / size[0] # images are scaled to 2 z/x -> angle depends only on image width
-	progA["by"] = opts.scale_ratio
+	progA["Ks"] = hyd.thermal_strength * 0.5	#0-1 -> 0-0.5, higher is unstable
+	progA["alpha"] = math.tan(math.tau * hyd.thermal_angle / 360) * 2 / size[0] # images are scaled to 2 z/x -> angle depends only on image width
+	progA["by"] = hyd.scale_ratio
 
 	progB["requests"].value = 2
 
-	diagonal = opts.thermal_solver == "diagonal"
-	alternate = opts.thermal_solver == "both"
+	diagonal = hyd.thermal_solver == "diagonal"
+	alternate = hyd.thermal_solver == "both"
 
 	time = datetime.now()
-	for i in range(opts.thermal_iter_num):
+	for i in range(hyd.thermal_iter_num):
 		if alternate:
 			diagonal = (i&1) == 1
 
@@ -88,22 +73,15 @@ def thermalRun(obj: bpy.types.Image | bpy.types.Object):
 
 	ctx.finish()
 	print((datetime.now() - time).total_seconds())
-
-def thermalFinish(obj: bpy.types.Image | bpy.types.Object):
-	"""Releases resources allocated for thermal erosion.
 	
-	:param obj: Object or image that was eroded.
-	:type obj: :class:`bpy.types.Object` or :class:`bpy.types.Image`"""
-	data = common.data
-	opts = obj.hydra_erosion
+	data.try_release_map(hyd.map_result)
 	
-	data.releaseMap(opts.map_current)
-	
-	name = common.incrementLayer(data.maps[opts.map_source].name, "Thermal 1")
+	name = common.increment_layer(data.maps[hyd.map_source].name, "Thermal 1")
 
-	hmid = data.createMap(name, data.active[_MAP_HEIGHT])
-	opts.map_current = hmid
+	hmid = data.create_map(name, height)
+	hyd.map_result = hmid
 
-	data.active[_MAP_HEIGHT] = None #prevents release by releaseActive
-	data.releaseActive()
+	free.release()
+	request.release()
+
 	print("Erosion finished")

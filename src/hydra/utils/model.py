@@ -8,7 +8,7 @@ import math
 
 # --------------------------------------------------------- Models
 
-def createVAO(ctx: mgl.Context, program: mgl.Program, vertices:list[tuple[float]]=None, indices:list[int]=None):
+def create_vao(ctx: mgl.Context, program: mgl.Program, vertices:list[tuple[float]]=None, indices:list[int]=None):
 	"""Creates a :class:`moderngl.VertexArray` object.
 	
 	:param ctx: ModernGL context.
@@ -38,7 +38,7 @@ def createVAO(ctx: mgl.Context, program: mgl.Program, vertices:list[tuple[float]
 			content=[(vbo, "3f", "position")], index_buffer=ind
 		)
 
-def evaluateMesh(obj: bpy.types.Object)->tuple[any, any]:
+def evaluate_mesh(obj: bpy.types.Object)->tuple[any, any]:
 	"""Evaluates an object as a mesh.
 	
 	:param obj: Object to be evaluated.
@@ -53,7 +53,7 @@ def evaluateMesh(obj: bpy.types.Object)->tuple[any, any]:
 	bmesh.ops.triangulate(bm, faces=bm.faces)
 	return bm, mesh.vertices
 
-def getResizeMatrix(obj: bpy.types.Object) -> tuple[float]:
+def get_resize_matrix(obj: bpy.types.Object) -> tuple[float]:
 	"""
 	Creates a resizing matrix that scales the input object into normalized device coordinates, so that 1-Z is the normalized surface height.
 
@@ -72,7 +72,7 @@ def getResizeMatrix(obj: bpy.types.Object) -> tuple[float]:
 
 	return (dx,0,0,-cx*dx, 0,dy,0,-cy*dy, 0,0,-dz,0.5+cz*dz, 0,0,0,1)
 
-def recalculateScales(obj: bpy.types.Object) -> None:
+def recalculate_scales(obj: bpy.types.Object) -> None:
 	"""
 	Sets :data:`hydra_erosion.scale_ratio`, `hydra_erosion.org_scale`. `hydra_erosion.org_width` and :data:`hydra_erosion.height_scale` for the object.
 
@@ -91,7 +91,7 @@ def recalculateScales(obj: bpy.types.Object) -> None:
 	obj.hydra_erosion.org_scale = abs(obj.dimensions.z / obj.scale.z) if abs(obj.scale.z) > 1e-3 else 1
 	obj.hydra_erosion.org_width = abs(obj.dimensions.x / obj.scale.x) if abs(obj.scale.x) > 1e-3 else 1
 
-def createLandscape(txt: mgl.Texture, name: str, subscale: int = 2)->bpy.types.Object:
+def create_landscape(txt: mgl.Texture, name: str, subscale: int = 2)->bpy.types.Object:
 	"""Creates a grid object of the given texture resolution. Divides the resolution by global settings. Doesn't write height data!
 	
 	:param txt: Texture of the intended resolution.
