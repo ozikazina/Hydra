@@ -101,6 +101,7 @@ def erosionRun(obj: bpy.types.Object | bpy.types.Image):
 		prog["lx"] = hyd.mei_length[0]
 		prog["ly"] = hyd.mei_length[1]
 		prog["minalpha"] = hyd.mei_min_alpha
+		prog["scale"] = 1 / hyd.mei_scale
 		prog.run(group_x=size[0], group_y=size[1])
 
 		prog = data.shaders["mei5"]

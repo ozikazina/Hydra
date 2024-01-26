@@ -10,6 +10,7 @@ uniform float dt = 0.25;
 uniform float lx = 1;
 uniform float ly = 1;
 
+const float A = 0.25;
 //  1y -1
 //0x  2z
 //  3w +1
@@ -19,22 +20,23 @@ float heightAt(ivec2 pos) {
 }
 
 void main(void) {
+
 	ivec2 pos = ivec2(gl_GlobalInvocationID.xy);
 
 	float h = heightAt(pos); 
 	vec4 pipe = imageLoad(pipe_map, pos);
 
 	float hN = heightAt(pos + ivec2(-1, 0));
-	pipe.x = max(0, pipe.x + 0.25 * (h-hN) / lx);
+	pipe.x = max(0, pipe.x + A * (h-hN) / lx);
 
 	hN = heightAt(pos + ivec2(+1, 0));
-	pipe.z = max(0, pipe.z + 0.25 * (h-hN) / lx);
+	pipe.z = max(0, pipe.z + A * (h-hN) / lx);
 
 	hN = heightAt(pos + ivec2(0, -1));
-	pipe.y = max(0, pipe.y + 0.25 * (h-hN) / ly);
+	pipe.y = max(0, pipe.y + A * (h-hN) / ly);
 
 	hN = heightAt(pos + ivec2(0, +1));
-	pipe.w = max(0, pipe.w + 0.25 * (h-hN) / ly);
+	pipe.w = max(0, pipe.w + A * (h-hN) / ly);
 
 	float K = min(1, imageLoad(d_map, pos).r * lx * ly / ((pipe.x + pipe.y + pipe.z + pipe.w)));
 

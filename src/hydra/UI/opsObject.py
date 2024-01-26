@@ -237,6 +237,10 @@ class ErodeExtraPanel(bpy.types.Panel):
 	bl_region_type = "UI"
 	bl_options = {'DEFAULT_CLOSED'}
 
+	@classmethod
+	def poll(cls, ctx):
+		return ctx.object.hydra_erosion.erosion_solver == "particle"
+
 	def draw(self, ctx):
 		p = self.layout.box()
 		act = ctx.object
@@ -286,8 +290,7 @@ class ErodeParticlePanel(bpy.types.Panel):
 			p.prop(hyd, "mei_deposition")
 			p.prop(hyd, "mei_erosion")
 			p.prop(hyd, "mei_scale")
-			p.prop(hyd, "mei_length")
-			p.prop(hyd, "mei_min_alpha")			
+			p.prop(hyd, "mei_length")		
 
 class ErodeAdvancedPanel(bpy.types.Panel):
 	"""Subpanel for water erosion advanced settings."""
@@ -298,6 +301,10 @@ class ErodeAdvancedPanel(bpy.types.Panel):
 	bl_region_type = "UI"
 	bl_options = {'DEFAULT_CLOSED'}
 
+	@classmethod
+	def poll(cls, ctx):
+		return ctx.object.hydra_erosion.erosion_solver == "particle"
+	
 	def draw(self, ctx):
 		p = self.layout.box()
 		hyd = ctx.object.hydra_erosion
@@ -306,6 +313,24 @@ class ErodeAdvancedPanel(bpy.types.Panel):
 		split.label(text="Chunk size")
 		split.prop(hyd, "part_subdiv", text="")
 		p.prop(hyd, "part_maxjump")
+
+class ErodeMeiAdvancedPanel(bpy.types.Panel):
+	"""Subpanel for water erosion advanced settings."""
+	bl_label = "Advanced"
+	bl_parent_id = "HYDRA_PT_erodePanel"
+	bl_idname = "HYDRA_PT_erodeMeiAdvPanel"
+	bl_space_type = "VIEW_3D"
+	bl_region_type = "UI"
+	bl_options = {'DEFAULT_CLOSED'}
+
+	@classmethod
+	def poll(cls, ctx):
+		return ctx.object.hydra_erosion.erosion_solver != "particle"
+	
+	def draw(self, ctx):
+		p = self.layout.box()
+		hyd = ctx.object.hydra_erosion
+		p.prop(hyd, "mei_min_alpha")
 
 class ErodeOp(bpy.types.Operator):
 	"""Water erosion operator."""
@@ -517,7 +542,7 @@ class InfoPanel(bpy.types.Panel):
 		col = self.layout.column()
 
 		col.separator()
-		col.operator("hydra.instantiate", icon="DUPLICATE").object = True
+		col.operator("hydra.instantiate", icon="DUPLICATE").useImage = False
 
 		if owner := common.getOwner(obj.name, apply.P_LAND_NAME):
 			col.separator()
@@ -546,6 +571,7 @@ class DebugPanel(bpy.types.Panel):
 	def draw(self, ctx):
 		col = self.layout.column()
 		col.operator('hydra.reloadshaders', text="Reload shaders", icon="FILE_REFRESH")
+		col.operator('hydra.nukeui', text="Nuke UI", icon="MOD_EXPLODE")
 
 	@classmethod
 	def poll(cls, ctx):
@@ -562,9 +588,20 @@ class ReloadShadersOp(bpy.types.Operator):
 		self.report({'INFO'}, "Successfuly reloaded shaders.")
 		return {'FINISHED'}
 
+class NukeUIOp(bpy.types.Operator):
+	"""Destroys Blender's UI."""
+	bl_idname = "hydra.nukeui"
+	bl_label = "Nuke UI"
+	bl_description = "Enjoy the authentic developer experience (restart Blender to restore UI)"
+
+	def execute(self, context):
+		heightmap.nukeUI()
+		self.report({'INFO'}, "Successfuly destroyed UI.")
+		return {'FINISHED'}
+
 #-------------------------------------------- Exports
 
-EXPROTS = [
+EXPORTS = [
 	InfoPanel,
 	ErodeOp,
 	ErodePanel,
@@ -572,6 +609,7 @@ EXPROTS = [
 	ErodeHeightPanel,
 	ErodeExtraPanel,
 	ErodeAdvancedPanel,
+	ErodeMeiAdvancedPanel,
 	ThermalOp,
 	ThermalPanel,
 	ThermalHeightPanel,
@@ -582,5 +620,6 @@ EXPROTS = [
 	CleanupOp,
 	CleanupPanel,
 	DebugPanel,
-	ReloadShadersOp
+	ReloadShadersOp,
+	NukeUIOp
 ]

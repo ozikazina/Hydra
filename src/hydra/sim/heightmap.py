@@ -163,3 +163,14 @@ def setCurrentAsSource(obj: bpy.types.Object | bpy.types.Image, asBase: bool = F
 		src = common.data.maps[obj.hydra_erosion.map_source]
 		target = texture.clone(src.texture)
 		obj.hydra_erosion.map_base = common.data.createMap(src.name, target)
+
+def nukeUI():
+	"""Gives an authentic developer experience."""
+	ctx = common.data.context
+
+	fbo = ctx.simple_framebuffer((512,512), 1, dtype="f4")
+	fbo.use()
+	fbo.clear()
+	fbo.release()
+
+	# ctx.enable(mgl.CULL_FACE)

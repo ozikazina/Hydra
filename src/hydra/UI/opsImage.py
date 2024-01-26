@@ -359,7 +359,7 @@ class InfoPanel(bpy.types.Panel):
 		fragmentSize(col.box())
 
 		col.separator()
-		col.operator('hydra.instantiate', icon="DUPLICATE")
+		col.operator('hydra.instantiate', icon="DUPLICATE").useImage = True
 
 		if owner := common.getOwner(img.name, apply.P_VIEW_NAME):
 			if owner in bpy.data.objects:

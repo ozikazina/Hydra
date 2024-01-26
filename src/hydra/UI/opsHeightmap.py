@@ -135,7 +135,7 @@ class HMMoveBackOp(bpy.types.Operator):
 		if self.useImage:
 			apply.addImagePreview(txt)
 		else:
-			target = heightmap.subtract(data.maps[hyd.map_current], data.maps[hyd.map_base], hyd.org_scale / hyd.height_scale)
+			target = heightmap.subtract(data.maps[hyd.map_current].texture, data.maps[hyd.map_base].texture, hyd.org_scale / hyd.height_scale)
 			apply.addPreview(obj, target)
 			target.release()
 		return {'FINISHED'}
@@ -328,7 +328,7 @@ class HMForceReloadOp(bpy.types.Operator):
 	"""Apply to image if `True`. Else apply to object."""
 
 	def invoke(self, ctx, event):
-		obj = ctx.area.spaces.active.image if self.useImage else ctx.object
+		obj = ctx.object if self.useImage else ctx.area.spaces.active.image
 		hyd = obj.hydra_erosion
 		data = common.data
 		data.releaseMap(hyd.map_base)
@@ -346,11 +346,11 @@ class NavOp(bpy.types.Operator):
 
 	target: StringProperty(default="")
 	"""Target name."""
-	object: BoolProperty(default=False)
-	"""Apply to object if `True`. Else apply to image."""
+	useImage: BoolProperty(default=False)
+	"""Apply to image if `True`. Else apply to object."""
 
 	def invoke(self, ctx, event):
-		if self.object:
+		if not self.useImage:
 			if self.target in bpy.data.objects:
 				nav.gotoObject(bpy.data.objects[self.target])
 			else:
@@ -371,22 +371,24 @@ class InstantiateOp(bpy.types.Operator):
 	bl_description = "Decouples this entity from it's owner, preventing overwriting. Allows erosion of this entity"
 	bl_options = {'REGISTER', 'UNDO'}
 	
-	object: BoolProperty(default=False)
+	useImage: BoolProperty(default=False)
 	"""Apply to object if `True`. Else apply to image."""
 
 	def invoke(self, context, event):
-		if self.object:
-			target = context.active_object
-		else:
+		if self.useImage:
 			target = context.area.spaces.active.image
+		else:
+			target = context.active_object
 
-		target.name = target.name[4:]
+		if target.name.startswith("HYD_"):
+			target.name = target.name[4:]
+
 		target.hydra_erosion.is_generated = False
 
-		if self.object:
-			self.report({"INFO"}, "Object decoupled.")
-		else:
+		if self.useImage:
 			self.report({"INFO"}, "Image decoupled.")
+		else:
+			self.report({"INFO"}, "Object decoupled.")
 		return {'FINISHED'}
 
 #-------------------------------------------- Exports

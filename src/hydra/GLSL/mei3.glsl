@@ -24,14 +24,10 @@ void main(void) {
 
     dv *= dt / (lx * ly);
 
-    vec4 d = imageLoad(d_map, pos);
-    // d.r += 0.5 * dv;
-	// imageStore(c_map, pos, d);  //d_mean
-    // d.r += 0.5 * dv;
-	// imageStore(d_map, pos, d);  //d2
-    float d1 = d.x;
-    d.x = max((d1 + d1 + dv) / 2, 0);
-    imageStore(c_map, pos, d);  //d_mean
-    d.x = max(d1 + dv, 0);
-    imageStore(d_map, pos, d);  //d2
+    float d1 = imageLoad(d_map, pos).x;
+
+    float d = max((d1 + d1 + dv) / 2, 0);
+    imageStore(c_map, pos, vec4(d));  //d_mean
+    d = max(d1 + dv, 0);
+    imageStore(d_map, pos, vec4(d));  //d2
 }//main

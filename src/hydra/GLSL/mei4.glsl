@@ -13,6 +13,7 @@ uniform float Kc = 0.1;
 uniform float lx = 1;
 uniform float ly = 1;
 uniform float minalpha = 0.025;
+uniform float scale = 1;
 
 //  1y -1
 //0x  2z
@@ -32,23 +33,18 @@ void main(void) {
                + pipe.z - pipe.x;
 
     float u = 0.5 * du / (dmean * ly);
-    // u = min(1, max(u, -1));
 
     float dv = imageLoad(pipe_map, pos + ivec2(0, -1)).w - imageLoad(pipe_map, pos + ivec2(0, +1)).y
                + pipe.w - pipe.y;
     
     float v = 0.5 * dv / (dmean * lx);
-    // v = min(1, max(v, -1));
 
     imageStore(v_map, pos, vec4(u,v,0,0));
 
-    float sx = abs(heightAt(pos + ivec2(+1, 0)) - heightAt(pos + ivec2(-1, 0)));
-    float sy = abs(heightAt(pos + ivec2(0, +1)) - heightAt(pos + ivec2(0, -1)));
-    float sdm = 0.707 * abs(heightAt(pos + ivec2(+1, +1)) - heightAt(pos + ivec2(-1, -1)));
-    float sds = 0.707 * abs(heightAt(pos + ivec2(+1, -1)) - heightAt(pos + ivec2(-1, +1)));
+    float sx = 0.5 * abs(heightAt(pos + ivec2(+1, 0)) - heightAt(pos + ivec2(-1, 0))) * scale * 512;
+    float sy = 0.5 * abs(heightAt(pos + ivec2(0, +1)) - heightAt(pos + ivec2(0, -1))) * scale * 512;
 
-    float slope = max(max(sx, sy), max(sdm, sds));
-    slope *= 0.5;
+    float slope = 1 - 1 / sqrt(1 + sx * sx + sy * sy);
     slope = max(min(1, slope), minalpha);
     
     float C = slope * length(vec2(u,v)) * Kc;
