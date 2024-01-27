@@ -74,7 +74,7 @@ def create_texture(size: tuple[int,int], pixels: bytes|None = None, image: bpy.t
 		
 		dest = ctx.texture(size, channels, dtype="f4")
 		
-		vao = model.createVAO(ctx, data.programs["redraw"])
+		vao = model.create_vao(ctx, data.programs["redraw"])
 		fbo = ctx.framebuffer(color_attachments=(dest))
 		scope = ctx.scope(fbo)
 		with scope:

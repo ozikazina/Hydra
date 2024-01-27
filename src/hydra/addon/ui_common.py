@@ -146,6 +146,7 @@ class ThermalPanel():
 
 class HeightmapSystemPanel():
 	bl_label = "Heightmaps"
+	bl_options = set()
 
 	def draw(self, ctx):
 		col = self.layout.column()

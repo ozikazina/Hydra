@@ -136,7 +136,7 @@ def subtract(modified: mgl.Texture, base: mgl.Texture, scale: float=1.0)->mgl.Te
 	return txt
 
 def get_displacement(obj: bpy.types.Object, name:str)->bpy.types.Image:
-	"""Creates a heightmap difference and previews it.
+	"""Creates a heightmap difference as a Blender Image.
 
 	:param obj: Object to apply to.
 	:type obj: :class:`bpy.types.Object`
@@ -156,8 +156,8 @@ def get_displacement(obj: bpy.types.Object, name:str)->bpy.types.Image:
 
 	return ret
 
-def set_current_as_source(obj: bpy.types.Object | bpy.types.Image, asBase: bool = False):
-	"""Applies the current map as a source map.
+def set_result_as_source(obj: bpy.types.Object | bpy.types.Image, as_base: bool = False):
+	"""Applies the Result map as a Source map.
 
 	:param obj: Object or image to modify.
 	:type obj: :class:`bpy.types.Object` or :class:`bpy.types.Image`
@@ -166,7 +166,7 @@ def set_current_as_source(obj: bpy.types.Object | bpy.types.Image, asBase: bool 
 	common.data.try_release_map(obj.hydra_erosion.map_source)
 	obj.hydra_erosion.map_source = obj.hydra_erosion.map_result
 	obj.hydra_erosion.map_result = ""
-	if asBase:
+	if as_base:
 		common.data.try_release_map(obj.hydra_erosion.map_base)
 		src = common.data.maps[obj.hydra_erosion.map_source]
 		target = texture.clone(src.texture)

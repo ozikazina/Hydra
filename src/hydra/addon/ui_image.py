@@ -1,6 +1,4 @@
 import bpy
-from Hydra import common
-from Hydra.utils import apply
 from Hydra.addon import ui_common
 
 class LandscapePanel(ui_common.ImagePanel):

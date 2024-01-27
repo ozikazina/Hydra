@@ -1,7 +1,6 @@
 import bpy, bpy.types
 
-from Hydra import common, startup
-from Hydra.utils import apply
+from Hydra import common
 from Hydra.addon import ui_common
 
 class HeightmapPanel(ui_common.ObjectPanel):
