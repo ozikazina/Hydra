@@ -3,8 +3,10 @@
 import bpy, bpy.types, bpy_extras
 import numpy as np
 from Hydra import common
+from Hydra.sim import heightmap
 from Hydra.utils import texture, nav
 import moderngl as mgl
+import math, re
 
 def minimize_node(node):
 	"""Hides unused inputs and minimizes the specified node.
@@ -124,7 +126,7 @@ def get_or_make_output_node(nodes):
 H_NAME_BUMP = "Hydra Bump"
 """Bump map node name."""
 
-def addBump(obj: bpy.types.Object, src: mgl.Texture):
+def add_bump(obj: bpy.types.Object, src: mgl.Texture):
 	"""Adds a Bump map for the given texture in the specified object's material.
 	Creates a material if needed, otherwise selects the first material slot.
 
@@ -188,7 +190,7 @@ def addBump(obj: bpy.types.Object, src: mgl.Texture):
 H_NAME_DISP = "Hydra Displacement"
 """Displacement map node name."""
 
-def addDisplacement(obj: bpy.types.Object, src: mgl.Texture):
+def add_displacement(obj: bpy.types.Object, src: mgl.Texture):
 	"""Adds a Displacement map for the given texture in the specified object's material.
 	Creates a material if needed, otherwise selects the first material slot.
 
@@ -323,57 +325,47 @@ def show_gen_modifier(obj: bpy.types.Object, visible: bool):
 	if mod and mod.name != P_MOD_NAME:
 		mod.show_viewport = visible
 
-def add_image_preview(src: mgl.Texture)->None:
-	"""Writes the specified texture as a temporary image.
-	
-	:param src: Source texture to add.
-	:type src: :class:`moderngl.Texture`
-	:return: Created image.
-	:rtype: :class:`bpy.types.Image`"""
-	img = texture.write_image(P_VIEW_NAME, src)
-	nav.goto_image(img)
-
-def remove_preview_image():
-	"""Removes the temporary preview Image."""
-	if P_VIEW_NAME in bpy.data.images:
-		img = bpy.data.images[P_VIEW_NAME]
-		bpy.data.images.remove(img)
-
-def add_preview(obj: bpy.types.Object, src: mgl.Texture):
-	"""Previews the specified texture as a geometry node on the specified object.
+def add_preview(target: bpy.types.Object|bpy.types.Image):
+	"""Previews the specified texture as a geometry node on the specified object, or as an image.
 	
 	:param obj: Object to add to.
 	:type obj: :class:`bpy.types.Object`
 	:param src: Source texture to add.
 	:type src: :class:`moderngl.Texture`"""
 	data = common.data
-	if data.lastPreview and data.lastPreview in bpy.data.objects:
-		last = bpy.data.objects[data.lastPreview]
-		if last != obj and P_MOD_NAME in last.modifiers:
-			last.modifiers.remove(last.modifiers[P_MOD_NAME])
+	hyd = target.hydra_erosion
 
-	if data.lastPreview != obj.name and P_GEO_NAME in bpy.data.node_groups:
-		g = bpy.data.node_groups[P_GEO_NAME]
-		bpy.data.node_groups.remove(g)
-
-	show_gen_modifier(obj, False)
-
-	if P_MOD_NAME in obj.modifiers:
-		mod = obj.modifiers[P_MOD_NAME]
-		common.data.add_message("Updated existing preview.")
+	if isinstance(target, bpy.types.Image):
+		img = texture.write_image(P_VIEW_NAME, data.maps[hyd.map_result].texture)
+		nav.goto_image(img)
 	else:
-		mod = obj.modifiers.new(P_MOD_NAME, "NODES")
-		common.data.add_message("Created preview modifier.")
-	
-	img = texture.write_image(P_IMG_NAME, src)
-	mod.node_group = get_or_make_displace_group(P_GEO_NAME, img)
+		if data.lastPreview and data.lastPreview in bpy.data.objects:
+			last = bpy.data.objects[data.lastPreview]
+			if last != target and P_MOD_NAME in last.modifiers:
+				last.modifiers.remove(last.modifiers[P_MOD_NAME])
 
-	common.data.lastPreview = obj.name
+		if data.lastPreview != target.name and P_GEO_NAME in bpy.data.node_groups:
+			g = bpy.data.node_groups[P_GEO_NAME]
+			bpy.data.node_groups.remove(g)
 
-	nav.goto_modifier()
+		show_gen_modifier(target, False)
+
+		if P_MOD_NAME in target.modifiers:
+			mod = target.modifiers[P_MOD_NAME]
+			common.data.add_message("Updated existing preview.")
+		else:
+			mod = target.modifiers.new(P_MOD_NAME, "NODES")
+			common.data.add_message("Created preview modifier.")
+		
+		img = heightmap.get_displacement(target, P_IMG_NAME)
+		mod.node_group = get_or_make_displace_group(P_GEO_NAME, img)
+
+		common.data.lastPreview = target.name
+
+		nav.goto_modifier()
 
 def remove_preview():
-	"""Removes the preview modifier from the last previewed object."""
+	"""Removes the preview modifier from the last previewed object and deletes last preview image."""
 	data = common.data
 	if str(data.lastPreview) in bpy.data.objects:
 		last = bpy.data.objects[data.lastPreview]
@@ -394,6 +386,10 @@ def remove_preview():
 		img = bpy.data.images[P_IMG_NAME]
 		bpy.data.images.remove(img)
 
+	if P_VIEW_NAME in bpy.data.images:
+		img = bpy.data.images[P_VIEW_NAME]
+		bpy.data.images.remove(img)
+
 	if P_GEO_NAME in bpy.data.node_groups:
 		g = bpy.data.node_groups[P_GEO_NAME]
 		bpy.data.node_groups.remove(g)
@@ -403,16 +399,28 @@ def remove_preview():
 
 P_LAND_TEMP_NAME = "HYD_TEMP_DISPLACE"
 
-def configure_landscape(obj: bpy.types.Object, src: mgl.Texture):
-	"""Shapes the specified grid object using the input heightmap texture.
-	
-	:param obj: Object to shape.
-	:type obj: :class:`bpy.types.Object`
-	:param src: Heightmap texture.
-	:type src: :class:`moderngl.Texture`"""
-	img = texture.writeImage(P_LAND_TEMP_NAME, src)
-	mod = obj.modifiers.new(P_LAND_TEMP_NAME, "NODES")
+def add_landscape(img: bpy.types.Image):
+	hyd = img.hydra_erosion
 
+	resX = math.ceil(img.size[0] / hyd.gen_subscale)
+	resY = math.ceil(img.size[1] / hyd.gen_subscale)
+
+	bpy.ops.mesh.primitive_grid_add(x_subdivisions=resX, y_subdivisions=resY, location=bpy.context.scene.cursor.location)
+	act = bpy.context.active_object
+
+	if "." in img.name:
+		name = img.name[:img.name.rfind(".")]
+	else:
+		name = img.name
+
+	act.name = f"HYD_Gen_{name}"
+	act.hydra_erosion.is_generated = True
+	act.scale[1] = img.size[1] / img.size[0]
+
+	for polygon in act.data.polygons:
+		polygon.use_smooth = True
+
+	mod = act.modifiers.new(P_LAND_TEMP_NAME, "NODES")
 	
 	mod.node_group = get_or_make_displace_group(P_LAND_TEMP_NAME, image=img)
 
@@ -421,8 +429,9 @@ def configure_landscape(obj: bpy.types.Object, src: mgl.Texture):
 	bpy.ops.object.transform_apply(scale=True, location=False, rotation=False, properties=False, isolate_users=False)
 	bpy.ops.object.modifier_apply(modifier=P_LAND_TEMP_NAME)
 	
-	bpy.data.images.remove(img)
 	bpy.data.node_groups.remove(bpy.data.node_groups[P_LAND_TEMP_NAME])
+
+	nav.goto_object(act)
 
 # -------------------------------------------------- Geometry Nodes
 
@@ -448,7 +457,7 @@ def get_or_make_displace_group(name, image: bpy.types.Image=None):
 	else:
 		g = bpy.data.node_groups.new(name, type='GeometryNodeTree')
 		common.data.add_message(f"Created new group {name}.")
-		
+
 		g.is_modifier = True
 		g.interface.new_socket("Geometry", in_out="INPUT", socket_type="NodeSocketGeometry")
 		i_scale = g.interface.new_socket("Scale", in_out="INPUT", socket_type="NodeSocketFloat")

@@ -1,9 +1,8 @@
 
 import bpy, bpy.types
 
-from Hydra import common, startup, opengl
-from Hydra.sim import erosion, flow, heightmap, thermal, mei
-from Hydra.utils import nav, texture, apply
+from Hydra import common, startup
+from Hydra.utils import apply
 from Hydra.addon import ui_common
 
 class DefaultHeightmapPanel(bpy.types.Panel):
@@ -20,7 +19,7 @@ class DefaultHeightmapPanel(bpy.types.Panel):
 
 		if common.data.has_map(hyd.map_base):
 			hasAny = True
-			container.operator('hydra.hmclear', icon="CANCEL").useImage = False
+			container.operator('hydra.hmclear', icon="CANCEL")
 			container.separator()
 
 		if common.data.has_map(hyd.map_result):
@@ -32,33 +31,33 @@ class DefaultHeightmapPanel(bpy.types.Panel):
 			split.label(text=name)
 			cols = box.column_flow(columns=3, align=True)
 			if common.data.lastPreview == act.name:
-				op = cols.operator('hydra.hmnoview', text="", icon="HIDE_ON")
+				op = cols.operator('hydra.hm_remove_preview', text="", icon="HIDE_ON")
 			else:
-				op = cols.operator('hydra.hmpreview', text="", icon="HIDE_OFF")
+				op = cols.operator('hydra.hm_preview', text="", icon="HIDE_OFF")
 				op.target = hyd.map_result
 				op.base = hyd.map_base
-			cols.operator('hydra.hmmove', text="", icon="TRIA_DOWN_BAR").useImage = False
-			cols.operator('hydra.hmdelete', text="", icon="PANEL_CLOSE").useImage = False
+			cols.operator('hydra.hm_move', text="", icon="TRIA_DOWN_BAR")
+			cols.operator('hydra.hm_delete', text="", icon="PANEL_CLOSE")
 
 			grid = box.grid_flow(columns=1, align=True)
 
 			cols = grid.column_flow(columns=2, align=True)
-			op = cols.operator('hydra.hmapplyimg', text="", icon="IMAGE_DATA")
+			op = cols.operator('hydra.hm_apply_img', text="", icon="IMAGE_DATA")
 			op.save_target = hyd.map_result
 			op.name = f"HYD_{act.name}_Eroded"
-			cols.operator('hydra.hmapplygeo', text="", icon="GEOMETRY_NODES")
+			cols.operator('hydra.hm_apply_geo', text="", icon="GEOMETRY_NODES")
 			# cols.operator('hydra.hmapplygeoinsert', text="", icon="OUTLINER_DATA_POINTCLOUD")
 			# op = cols.operator('hydra.hmapplyupdate', text="", icon="IMAGE_REFERENCE")
 
 			cols = grid.column_flow(columns=3, align=True)
-			cols.operator('hydra.hmapplymod', text="", icon="MOD_DISPLACE")
-			cols.operator('hydra.hmapplydisp', text="", icon="RNDCURVE")
-			cols.operator('hydra.hmapplybump', text="", icon="MOD_NOISE")
+			cols.operator('hydra.hm_apply_mod', text="", icon="MOD_DISPLACE")
+			cols.operator('hydra.hm_apply_disp', text="", icon="RNDCURVE")
+			cols.operator('hydra.hm_apply_bump', text="", icon="MOD_NOISE")
 			
 			if any(m.name.startswith("HYD_") for m in act.modifiers):
 				cols = box.column_flow(columns=2, align=True)
-				cols.operator('hydra.hmmerge', text="", icon="MESH_DATA")
-				cols.operator('hydra.hmmergeshape', text="", icon="SHAPEKEY_DATA")
+				cols.operator('hydra.hm_merge', text="", icon="MESH_DATA")
+				cols.operator('hydra.hm_merge_shape', text="", icon="SHAPEKEY_DATA")
 
 		if common.data.has_map(hyd.map_source):
 			hasAny = True
@@ -68,9 +67,9 @@ class DefaultHeightmapPanel(bpy.types.Panel):
 			split.label(text="Source:")
 			split.label(text=name)
 			cols = box.column_flow(columns=3, align=True)
-			cols.operator('hydra.hmforcereload', text="", icon="GRAPH").useImage = False
-			cols.operator('hydra.hmback', text="", icon="TRIA_UP_BAR").useImage = False
-			cols.operator('hydra.hmreload', text="", icon="FILE_REFRESH").useImage = False
+			cols.operator('hydra.hm_force_reload', text="", icon="GRAPH")
+			cols.operator('hydra.hm_move_back', text="", icon="TRIA_UP_BAR")
+			cols.operator('hydra.hm_reload', text="", icon="FILE_REFRESH")
 		
 		if not hasAny:
 			container.label(text="No maps have been cached yet.")
@@ -150,39 +149,19 @@ class HeightmapPanel(ui_common.ObjectPanel):
 			split.operator('hydra.hmapplyimg', text="", icon="IMAGE_DATA").save_target = hyd.map_current
 
 
-class ErodePanel(ui_common.ObjectPanel):
-	"""Panel for water erosion."""
-	bl_label = "Hydra - Erosion"
-	bl_idname = "HYDRA_PT_erodePanel"
+class ErosionPanel(ui_common.ErosionPanel, ui_common.ObjectPanel):
+	bl_idname = "HYDRA_PT_ErosionPanel"
 
-	def draw(self, ctx):
-		layout = self.layout
-		act = ctx.object
-		hyd = act.hydra_erosion
-		
-		main = layout.column()
-		
-		if hyd.out_color and hyd.color_src not in bpy.data.images:
-			box = main.box()
-			box.operator('hydra.erode', text="No color source", icon="RNDCURVE")
-			box.enabled = False
-		else:
-			main.operator('hydra.erode', text="Erode", icon="RNDCURVE")
-		
-		fragmentSize(main.box(), act)
-
-		main.prop(hyd, "erosion_solver", text="Solver")
-
-class ErodeHeightPanel(DefaultHeightmapPanel):
+class ErosionHeightPanel(DefaultHeightmapPanel):
 	"""Subpanel for water erosion heightmap stack. Uses :class:`DefaultHeightmapPanel`"""
 	bl_label = "Heightmaps"
-	bl_parent_id = "HYDRA_PT_erodePanel"
+	bl_parent_id = "HYDRA_PT_ErosionPanel"
 	bl_idname = "HYDRA_PT_erodeHeightPanel"
 
-class ErodeExtraPanel(bpy.types.Panel):
+class ErosionExtraPanel(bpy.types.Panel):
 	"""Subpanel for water erosion extra settings."""
 	bl_label = "Extra"
-	bl_parent_id = "HYDRA_PT_erodePanel"
+	bl_parent_id = "HYDRA_PT_ErosionPanel"
 	bl_idname = "HYDRA_PT_erodeExtraPanel"
 	bl_space_type = "VIEW_3D"
 	bl_region_type = "UI"
@@ -212,10 +191,10 @@ class ErodeExtraPanel(bpy.types.Panel):
 		fragmentNav(p, f"HYD_{act.name}_Depth", "Depth")
 		fragmentNav(p, f"HYD_{act.name}_Sediment", "Sediment")
 
-class ErodeParticlePanel(bpy.types.Panel):
+class ErosionParticlePanel(bpy.types.Panel):
 	"""Subpanel for water erosion particle settings."""
 	bl_label = "Particle settings"
-	bl_parent_id = "HYDRA_PT_erodePanel"
+	bl_parent_id = "HYDRA_PT_ErosionPanel"
 	bl_idname = "HYDRA_PT_erodePartPanel"
 	bl_space_type = "VIEW_3D"
 	bl_region_type = "UI"
@@ -243,10 +222,10 @@ class ErodeParticlePanel(bpy.types.Panel):
 			p.prop(hyd, "mei_scale")
 			p.prop(hyd, "mei_length")		
 
-class ErodeAdvancedPanel(bpy.types.Panel):
+class ErosionAdvancedPanel(bpy.types.Panel):
 	"""Subpanel for water erosion advanced settings."""
 	bl_label = "Advanced"
-	bl_parent_id = "HYDRA_PT_erodePanel"
+	bl_parent_id = "HYDRA_PT_ErosionPanel"
 	bl_idname = "HYDRA_PT_erodeAdvPanel"
 	bl_space_type = "VIEW_3D"
 	bl_region_type = "UI"
@@ -265,10 +244,10 @@ class ErodeAdvancedPanel(bpy.types.Panel):
 		split.prop(hyd, "part_subdiv", text="")
 		p.prop(hyd, "part_maxjump")
 
-class ErodeMeiAdvancedPanel(bpy.types.Panel):
+class ErosionMeiAdvancedPanel(bpy.types.Panel):
 	"""Subpanel for water erosion advanced settings."""
 	bl_label = "Advanced"
-	bl_parent_id = "HYDRA_PT_erodePanel"
+	bl_parent_id = "HYDRA_PT_ErosionPanel"
 	bl_idname = "HYDRA_PT_erodeMeiAdvPanel"
 	bl_space_type = "VIEW_3D"
 	bl_region_type = "UI"
@@ -282,43 +261,25 @@ class ErodeMeiAdvancedPanel(bpy.types.Panel):
 		p = self.layout.box()
 		hyd = ctx.object.hydra_erosion
 		p.prop(hyd, "mei_min_alpha")
-		
+
+#-------------------------------------------- Flow
 
 class FlowPanel(ui_common.FlowPanel, ui_common.ObjectPanel):
 	"""Panel for flowmap generation."""
 	bl_idname = "HYDRA_PT_FlowPanel"
 
-class ThermalPanel(ui_common.ObjectPanel):
-	"""Panel for thermal erosion."""
-	bl_label = "Hydra - Thermal"
-	bl_idname = "HYDRA_PT_thermalPanel"
-	bl_description = "Erosion settings for material transport"
+#-------------------------------------------- Thermal
 
-	def draw(self, ctx):
-		act = ctx.object
-		hyd = act.hydra_erosion
-		
-		col = self.layout.column()
-		col.operator('hydra.thermal', text="Erode", icon="RNDCURVE")
-
-		fragmentSize(col.box(), act)
-
-		col.separator()
-		col.label(text="Erosion settings")
-
-		box = col.box()
-		box.prop(hyd, "thermal_iter_num")
-		box.prop(hyd, "thermal_strength", slider=True)
-		box.prop(hyd, "thermal_angle", slider=True)
-		split = box.split(factor=0.4)
-		split.label(text="Direction: ")
-		split.prop(hyd, "thermal_solver", text="")
+class ThermalPanel(ui_common.ThermalPanel, ui_common.ObjectPanel):
+	bl_idname = "HYDRA_PT_ThermalPanel"
 
 class ThermalHeightPanel(DefaultHeightmapPanel):
 	"""Subpanel for thermal erosion heightmap stack. Uses :class:`DefaultHeightmapPanel`."""
 	bl_label = "Heightmaps"
-	bl_parent_id = "HYDRA_PT_thermalPanel"
-	bl_idname = "HYDRA_PT_thermalHeightPanel"
+	bl_parent_id = "HYDRA_PT_ThermalPanel"
+	bl_idname = "HYDRA_PT_ThermalHeightPanel"
+
+#-------------------------------------------- Cleanup
 
 class CleanupPanel(ui_common.ObjectPanel):
 	"""Panel for cleanup operations."""
@@ -387,12 +348,12 @@ class DebugPanel(bpy.types.Panel):
 def get_exports()->list:
 	return [
 		InfoPanel,
-		ErodePanel,
-		ErodeParticlePanel,
-		ErodeHeightPanel,
-		ErodeExtraPanel,
-		ErodeAdvancedPanel,
-		ErodeMeiAdvancedPanel,
+		ErosionPanel,
+		ErosionParticlePanel,
+		ErosionHeightPanel,
+		ErosionExtraPanel,
+		ErosionAdvancedPanel,
+		ErosionMeiAdvancedPanel,
 		ThermalPanel,
 		ThermalHeightPanel,
 		FlowPanel,

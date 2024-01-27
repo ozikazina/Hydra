@@ -1,7 +1,7 @@
 """Module responsible for heightmap generation."""
 
 import moderngl as mgl
-from Hydra.utils import texture, model, apply
+from Hydra.utils import texture, model
 from Hydra import common
 import bpy
 import bpy.types
@@ -135,7 +135,7 @@ def subtract(modified: mgl.Texture, base: mgl.Texture, scale: float=1.0)->mgl.Te
 	common.data.context.finish()
 	return txt
 
-def preview(obj: bpy.types.Object):
+def get_displacement(obj: bpy.types.Object, name:str)->bpy.types.Image:
 	"""Creates a heightmap difference and previews it.
 
 	:param obj: Object to apply to.
@@ -150,9 +150,11 @@ def preview(obj: bpy.types.Object):
 	target = subtract(data.maps[hyd.map_result].texture,
 		data.maps[hyd.map_base].texture,
 		scale=obj.hydra_erosion.org_scale/obj.hydra_erosion.height_scale)
-	
-	apply.add_preview(obj, target)
+
+	ret = texture.write_image(name, target)
 	target.release()
+
+	return ret
 
 def set_current_as_source(obj: bpy.types.Object | bpy.types.Image, asBase: bool = False):
 	"""Applies the current map as a source map.

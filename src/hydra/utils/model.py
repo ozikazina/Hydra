@@ -4,7 +4,6 @@ import numpy as np
 import bpy, bmesh
 import bpy.types
 import moderngl as mgl
-import math
 
 # --------------------------------------------------------- Models
 
@@ -90,26 +89,3 @@ def recalculate_scales(obj: bpy.types.Object) -> None:
 	obj.hydra_erosion.height_scale = dz / dx if dx > 1e-3 else 1
 	obj.hydra_erosion.org_scale = abs(obj.dimensions.z / obj.scale.z) if abs(obj.scale.z) > 1e-3 else 1
 	obj.hydra_erosion.org_width = abs(obj.dimensions.x / obj.scale.x) if abs(obj.scale.x) > 1e-3 else 1
-
-def create_landscape(txt: mgl.Texture, name: str, subscale: int = 2)->bpy.types.Object:
-	"""Creates a grid object of the given texture resolution. Divides the resolution by global settings. Doesn't write height data!
-	
-	:param txt: Texture of the intended resolution.
-	:type txt: :class:`moderngl.Texture`
-	:param name: Owner name.
-	:type name: :class:`str`
-	:return: Created grid object.
-	:rtype: :class:`bpy.types.Object`"""
-	resX = math.ceil(txt.size[0] / subscale)
-	resY = math.ceil(txt.size[1] / subscale)
-
-	bpy.ops.mesh.primitive_grid_add(x_subdivisions=resX, y_subdivisions=resY, location=bpy.context.scene.cursor.location)
-	act = bpy.context.active_object
-
-	act.name = f"HYD_{name}_Landscape"
-	act.hydra_erosion.is_generated = True
-	act.scale[1] = txt.size[1] / txt.size[0]
-
-	for polygon in act.data.polygons:
-		polygon.use_smooth = True
-	return act

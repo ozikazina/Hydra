@@ -366,9 +366,6 @@ class ErosionGroup(bpy.types.PropertyGroup):
 	
 	def get_size(self):
 		return tuple(self.img_size)
-		
-	# def is_same_size(self, hm: common.Heightmap):
-	# 	return tuple(hm.size) == tuple(self.img_size)
 
 def get_exports()->list:
 	return [

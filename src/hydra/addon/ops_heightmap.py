@@ -9,9 +9,9 @@ from Hydra.utils import nav, texture, apply
 
 #-------------------------------------------- Preview
 
-class HMPreviewOp(bpy.types.Operator):
+class PreviewOp(bpy.types.Operator):
 	"""Heightmap modifier preview operator."""
-	bl_idname = "hydra.hmpreview"
+	bl_idname = "hydra.hm_preview"
 	bl_label = "Preview"
 	bl_description = "Preview map"
 	bl_options = {'REGISTER'}
@@ -33,20 +33,20 @@ class HMPreviewOp(bpy.types.Operator):
 				nav.gotoImage(img)
 		return {'FINISHED'}
 	
-class HMNoPreviewOp(bpy.types.Operator):
+class NoPreviewOp(bpy.types.Operator):
 	"""Heightmap modifier preview removal operator."""
-	bl_idname = "hydra.hmnoview"; bl_label = "Remove preview"
+	bl_idname = "hydra.hm_remove_preview"; bl_label = "Remove preview"
 	bl_description = "Remove preview modifier"; bl_options = {'REGISTER'}
 
 	def invoke(self, ctx, event):
-		apply.removePreview()
+		apply.remove_preview()
 		return {'FINISHED'}
 
 #-------------------------------------------- Merge
 
-class HMMergeOp(bpy.types.Operator):
+class MergeOp(bpy.types.Operator):
 	"""Modifier apply to mesh operator."""
-	bl_idname = "hydra.hmmerge"
+	bl_idname = "hydra.hm_merge"
 	bl_label = "Apply"
 	bl_description = "Applies the preview or modifier directly to the mesh (applies entire stack up to the modifier!)"
 	bl_options = {'REGISTER'}
@@ -70,9 +70,9 @@ class HMMergeOp(bpy.types.Operator):
 		nav.gotoModifier()
 		return {'FINISHED'}
 
-class HMMergeShapeOp(bpy.types.Operator):
+class MergeShapeOp(bpy.types.Operator):
 	"""Modifier apply as shape key operator."""
-	bl_idname = "hydra.hmmergeshape"
+	bl_idname = "hydra.hm_merge_shape"
 	bl_label = "Apply as shape"
 	bl_description = "Applies the preview or modifier as a shape key"
 	bl_options = {'REGISTER'}
@@ -101,9 +101,9 @@ class HMMergeShapeOp(bpy.types.Operator):
 
 #-------------------------------------------- Move
 
-class HMMoveOp(bpy.types.Operator):
+class MoveOp(bpy.types.Operator):
 	"""Apply Result as Source operator."""
-	bl_idname = "hydra.hmmove"; bl_label = "Set as Source"
+	bl_idname = "hydra.hm_move"; bl_label = "Set as Source"
 	bl_description = "Sets the Result heightmap as the new Source map"; bl_options = {'REGISTER'}
 
 	useImage: BoolProperty(default=False)
@@ -114,9 +114,9 @@ class HMMoveOp(bpy.types.Operator):
 		heightmap.setCurrentAsSource(obj)
 		return {'FINISHED'}
 
-class HMMoveBackOp(bpy.types.Operator):
+class MoveBackOp(bpy.types.Operator):
 	"""Apply Source as Result operator."""
-	bl_idname = "hydra.hmback"; bl_label = "Set as Result"
+	bl_idname = "hydra.hm_move_back"; bl_label = "Set as Result"
 	bl_description = "Sets this Source as the Result map and previews it"; bl_options = {'REGISTER'}
 
 	useImage: BoolProperty(default=False)
@@ -142,9 +142,9 @@ class HMMoveBackOp(bpy.types.Operator):
 
 #-------------------------------------------- Delete
 
-class HMDeleteOp(bpy.types.Operator):
+class DeleteOp(bpy.types.Operator):
 	"""Delete Result operator."""
-	bl_idname = "hydra.hmdelete"; bl_label = "Delete this layer"
+	bl_idname = "hydra.hm_delete"; bl_label = "Delete this layer"
 	bl_description = "Deletes the generated heightmap"; bl_options = {'REGISTER'}
 
 	useImage: BoolProperty(default=False)
@@ -159,9 +159,9 @@ class HMDeleteOp(bpy.types.Operator):
 		hyd.map_current = ""
 		return {'FINISHED'}
 
-class HMClearOp(bpy.types.Operator):
+class ClearOp(bpy.types.Operator):
 	"""Clear object textures operator."""
-	bl_idname = "hydra.hmclear"; bl_label = "Clear"
+	bl_idname = "hydra.hm_clear"; bl_label = "Clear"
 	bl_description = "Clear textures"; bl_options = {'REGISTER'}
 
 	useImage: BoolProperty(default=False)
@@ -183,9 +183,9 @@ class HMClearOp(bpy.types.Operator):
 
 #-------------------------------------------- Apply
 
-class HMModifierOp(bpy.types.Operator):
+class ModifierOp(bpy.types.Operator):
 	"""Apply as modifier operator."""
-	bl_idname = "hydra.hmapplymod"; bl_label = "As Modifier"
+	bl_idname = "hydra.hm_apply_mod"; bl_label = "As Modifier"
 	bl_description = "Apply texture as a modifier"; bl_options = {'REGISTER'}
 
 	def invoke(self, ctx, event):
@@ -199,9 +199,9 @@ class HMModifierOp(bpy.types.Operator):
 		self.report({'INFO'}, f"Successfuly applied map as a modifier")
 		return {'FINISHED'}
 	
-class HMGeometryOp(bpy.types.Operator):
+class GeometryOp(bpy.types.Operator):
 	"""Apply as modifier operator."""
-	bl_idname = "hydra.hmapplygeo"; bl_label = "As Geometry Modifier"
+	bl_idname = "hydra.hm_apply_geo"; bl_label = "As Geometry Modifier"
 	bl_description = "Apply texture as a Geometry Nodes modifier"; bl_options = {'REGISTER'}
 
 	def invoke(self, ctx, event):
@@ -217,9 +217,9 @@ class HMGeometryOp(bpy.types.Operator):
 		data.report(self, callerName="Erosion")
 		return {'FINISHED'}
 	
-class HMGeometryInsertOp(bpy.types.Operator):
+class GeometryInsertOp(bpy.types.Operator):
 	"""Apply as modifier operator."""
-	bl_idname = "hydra.hmapplygeoinsert"; bl_label = "Into Geometry Modifier"
+	bl_idname = "hydra.hm_apply_geo_insert"; bl_label = "Into Geometry Modifier"
 	bl_description = "Apply texture into an existing Geometry Nodes modifier"; bl_options = {'REGISTER'}
 
 	def invoke(self, ctx, event):
@@ -235,9 +235,9 @@ class HMGeometryInsertOp(bpy.types.Operator):
 		data.report(self, callerName="Erosion")
 		return {'FINISHED'}
 
-class HMDisplaceOp(bpy.types.Operator):
+class DisplaceOp(bpy.types.Operator):
 	"""Apply as displacement map operator."""
-	bl_idname = "hydra.hmapplydisp"; bl_label = "As Displacement"
+	bl_idname = "hydra.hm_apply_disp"; bl_label = "As Displacement"
 	bl_description = "Apply texture as a displacement node in the object's shader"; bl_options = {'REGISTER'}
 
 	def invoke(self, ctx, event):
@@ -251,9 +251,9 @@ class HMDisplaceOp(bpy.types.Operator):
 		self.report({'INFO'}, f"Successfuly applied map as a displacement")
 		return {'FINISHED'}
 
-class HMBumpOp(bpy.types.Operator):
+class BumpOp(bpy.types.Operator):
 	"""Apply as bump map operator."""
-	bl_idname = "hydra.hmapplybump"; bl_label = "As Bump"
+	bl_idname = "hydra.hm_apply_bump"; bl_label = "As Bump"
 	bl_description = "Apply texture as a bumpmap node in the object's shader"; bl_options = {'REGISTER'}
 
 	def invoke(self, ctx, event):
@@ -267,9 +267,9 @@ class HMBumpOp(bpy.types.Operator):
 		self.report({'INFO'}, f"Successfuly applied map as a bumpmap")
 		return {'FINISHED'}
 
-class HMImageOp(bpy.types.Operator):
+class ImageOp(bpy.types.Operator):
 	"""Export as image operator."""
-	bl_idname = "hydra.hmapplyimg"; bl_label = "As Image"
+	bl_idname = "hydra.hm_apply_img"; bl_label = "As Image"
 	bl_description = "Save heightmap to a Blender Image"; bl_options = {'REGISTER'}
 
 	save_target: StringProperty(default="")
@@ -284,9 +284,9 @@ class HMImageOp(bpy.types.Operator):
 		self.report({'INFO'}, f"Created texture: {self.name}")
 		return {'FINISHED'}
 	
-class HMUpdateOp(bpy.types.Operator):
+class UpdateOp(bpy.types.Operator):
 	"""Update displacement texture."""
-	bl_idname = "hydra.hmapplyupdate"; bl_label = "Only Update"
+	bl_idname = "hydra.hm_apply_update"; bl_label = "Only Update"
 	bl_description = "Only update existing deformations"; bl_options = {'REGISTER'}
 
 	def invoke(self, ctx, event):
@@ -300,9 +300,9 @@ class HMUpdateOp(bpy.types.Operator):
 
 #-------------------------------------------- Reload
 
-class HMReloadOp(bpy.types.Operator):
+class ReloadOp(bpy.types.Operator):
 	"""Reload base map as source operator."""
-	bl_idname = "hydra.hmreload"; bl_label = "Reload"
+	bl_idname = "hydra.hm_reload"; bl_label = "Reload"
 	bl_description = "Load base mesh heightmap as a source"; bl_options = {'REGISTER'}
 
 	useImage: BoolProperty(default=False)
@@ -319,9 +319,9 @@ class HMReloadOp(bpy.types.Operator):
 		self.report({'INFO'}, f"Reloaded base map.")
 		return {'FINISHED'}
 	
-class HMForceReloadOp(bpy.types.Operator):
+class ForceReloadOp(bpy.types.Operator):
 	"""Recalculate base and source maps operator."""
-	bl_idname = "hydra.hmforcereload"; bl_label = "Recalculate"
+	bl_idname = "hydra.hm_force_reload"; bl_label = "Recalculate"
 	bl_description = "Create a base heightmap from the current object"; bl_options = {'REGISTER'}
 
 	useImage: BoolProperty(default=False)
@@ -362,56 +362,26 @@ class NavOp(bpy.types.Operator):
 				self.report({'ERROR'}, f"Failed to find image.")
 		return {'FINISHED'}
 
-#-------------------------------------------- Decoupling
-
-class InstantiateOp(bpy.types.Operator):
-	"""Isolate and unlock entity operator."""
-	bl_idname = "hydra.instantiate"
-	bl_label = "Decouple"
-	bl_description = "Decouples this entity from it's owner, preventing overwriting. Allows erosion of this entity"
-	bl_options = {'REGISTER', 'UNDO'}
-	
-	useImage: BoolProperty(default=False)
-	"""Apply to object if `True`. Else apply to image."""
-
-	def invoke(self, context, event):
-		if self.useImage:
-			target = context.area.spaces.active.image
-		else:
-			target = context.active_object
-
-		if target.name.startswith("HYD_"):
-			target.name = target.name[4:]
-
-		target.hydra_erosion.is_generated = False
-
-		if self.useImage:
-			self.report({"INFO"}, "Image decoupled.")
-		else:
-			self.report({"INFO"}, "Object decoupled.")
-		return {'FINISHED'}
-
 #-------------------------------------------- Exports
 
 def get_exports()->list:
 	return [
-		HMClearOp,
-		HMMergeOp,
-		HMMergeShapeOp,
-		HMPreviewOp,
-		HMNoPreviewOp,
-		HMMoveOp,
-		HMMoveBackOp,
-		HMDeleteOp,
-		HMModifierOp,
-		HMGeometryOp,
-		HMGeometryInsertOp,
-		HMImageOp,
-		HMUpdateOp,
-		HMDisplaceOp,
-		HMBumpOp,
-		HMReloadOp,
-		HMForceReloadOp,
-		NavOp,
-		InstantiateOp
+		ClearOp,
+		MergeOp,
+		MergeShapeOp,
+		PreviewOp,
+		NoPreviewOp,
+		MoveOp,
+		MoveBackOp,
+		DeleteOp,
+		ModifierOp,
+		GeometryOp,
+		GeometryInsertOp,
+		ImageOp,
+		UpdateOp,
+		DisplaceOp,
+		BumpOp,
+		ReloadOp,
+		ForceReloadOp,
+		NavOp
 	]
