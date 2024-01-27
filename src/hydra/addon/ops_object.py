@@ -9,15 +9,14 @@ from Hydra.addon import ops_common
 
 #-------------------------------------------- Heightmap
 
-class HeightmapOperator(bpy.types.Operator):
+class HeightmapOperator(ops_common.ObjectOperator):
 	"""Standalone heightmap operator."""
 	bl_idname = "hydra.genheight"
 	bl_label = "Heightmap"
 	bl_description = "Generate heightmap into an image"
 
 	def invoke(self, ctx, event):
-		common.data.clear()
-		act = ctx.object
+		act = self.get_target(ctx)
 
 		size = tuple(act.hydra_erosion.img_size)
 		act.hydra_erosion.img_size = tuple(act.hydra_erosion.heightmap_gen_size)
@@ -33,29 +32,6 @@ class HeightmapOperator(bpy.types.Operator):
 		nav.goto_image(img)
 		self.report({'INFO'}, f"Successfuly created heightmap: {img.name}")
 		return {'FINISHED'}
-
-#-------------------------------------------- Erosion
-
-class ErodeOperator(ops_common.ErosionOperator, ops_common.ObjectOperator):
-	"""Water erosion operator."""
-	bl_idname = "hydra.erode"
-
-#-------------------------------------------- Flow
-
-class FlowOperator(ops_common.FlowOperator, ops_common.ObjectOperator):
-	"""Flowmap generation operator."""
-	bl_idname = "hydra.flow"
-
-#-------------------------------------------- Thermal
-
-class ThermalOperator(ops_common.ThermalOperator, ops_common.ObjectOperator):
-	bl_idname = "hydra.thermal"
-
-#-------------------------------------------- Decoupling
-
-class DecoupleOperator(ops_common.DecoupleOperator, ops_common.ObjectOperator):
-	"""Decouple operator."""
-	bl_idname = "hydra.decouple"
 
 #-------------------------------------------- Debug
 
@@ -74,10 +50,6 @@ class NukeGUIOperator(bpy.types.Operator):
 
 def get_exports()->list:
 	return [
-		ErodeOperator,
-		ThermalOperator,
-		FlowOperator,
 		HeightmapOperator,
-		DecoupleOperator,
 		NukeGUIOperator
 	]

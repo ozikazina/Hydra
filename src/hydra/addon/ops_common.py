@@ -3,6 +3,17 @@ from Hydra import common, opengl
 from Hydra.sim import flow, thermal, heightmap, erosion_particle, erosion_mei
 from Hydra.utils import nav, apply
 
+class HydraOperator(bpy.types.Operator):
+	bl_options = {'REGISTER'}
+
+	def get_target(self, ctx):
+		if ctx.space_data.type == common._SPACE_IMAGE:
+			ret = ctx.area.spaces.active.image
+			ret.hydra_erosion.img_size = ret.size
+			return ret
+		else:
+			return ctx.object
+
 class ImageOperator(bpy.types.Operator):
 	bl_options = {'REGISTER'}
 
@@ -25,8 +36,9 @@ class ObjectOperator(bpy.types.Operator):
 
 #-------------------------------------------- Erosion
 	
-class ErosionOperator(bpy.types.Operator):
+class ErosionOperator(HydraOperator):
 	bl_label = "Erode"
+	bl_idname = "hydra.erode"
 	bl_description = "Erode object"
 
 	def invoke(self, ctx, event):
@@ -51,12 +63,12 @@ class ErosionOperator(bpy.types.Operator):
 
 #-------------------------------------------- Flow
 	
-class FlowOperator(bpy.types.Operator):
+class FlowOperator(HydraOperator):
 	bl_label = "Generate Flow"
+	bl_idname = "hydra.flow"
 	bl_description = "Generates a map of flow concentration using particle erosion. Uses eroded heightmaps, if they exist"
 
 	def invoke(self, ctx, event):
-		common.data.clear()
 		target = self.get_target(ctx)
 		img = flow.generate_flow(target)
 		nav.goto_image(img)
@@ -65,9 +77,10 @@ class FlowOperator(bpy.types.Operator):
 
 #-------------------------------------------- Thermal
 	
-class ThermalOperator():
+class ThermalOperator(HydraOperator):
 	"""Thermal erosion operator."""
 	bl_label = "Erode"
+	bl_idname = "hydra.thermal"
 	bl_description = "Erode object"
 	
 	def invoke(self, ctx, event):
@@ -82,9 +95,10 @@ class ThermalOperator():
 	
 #-------------------------------------------- Decoupling
 
-class DecoupleOperator(bpy.types.Operator):
+class DecoupleOperator(HydraOperator):
 	"""Isolate and unlock entity operator."""
 	bl_label = "Decouple"
+	bl_idname = "hydra.decouple"
 	bl_description = "Decouples this entity from it's owner, preventing overwriting. Allows erosion of this entity"
 
 	def invoke(self, ctx, event):
@@ -131,6 +145,10 @@ class ReloadShadersOperator(bpy.types.Operator):
 
 def get_exports()->list:
 	return [
+		ErosionOperator,
+		FlowOperator,
+		ThermalOperator,
+		DecoupleOperator,
 		CleanupOperator,
 		ReloadShadersOperator
 	]

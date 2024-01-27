@@ -1,6 +1,8 @@
 import bpy, bpy.types
 from Hydra import common
 
+#-------------------------------------------- Base classes
+
 class HydraPanel(bpy.types.Panel):
 	bl_region_type = 'UI'
 	bl_category = "Hydra"
@@ -11,15 +13,17 @@ class HydraPanel(bpy.types.Panel):
 		return cls.bl_space_type == name
 	
 	@classmethod
-	def get_op_name(cls, name: str)->str:
+	def get_target(cls, ctx):
 		if cls.is_space_type(common._SPACE_IMAGE):
-			return f"hydra.{name}_img"
-		return f"hydra.{name}"
+			return ctx.area.spaces.active.image
+		else:
+			return ctx.object
 
 class ImagePanel(HydraPanel):
 	bl_space_type = 'IMAGE_EDITOR'
 
-	def get_settings(self, ctx):
+	@classmethod
+	def get_settings(cls, ctx):
 		return ctx.area.spaces.active.image.hydra_erosion
 
 	def draw_size_fragment(self, container, ctx, settings):
@@ -38,8 +42,12 @@ class ObjectPanel(HydraPanel):
 	bl_space_type = 'VIEW_3D'
 	bl_context = "objectmode"
 
-	def get_settings(self, ctx):
-		return ctx.object.hydra_erosion
+	@classmethod
+	def get_settings(cls, ctx):
+		ob = ctx.object
+		if not ob:
+			return None
+		return ob.hydra_erosion
 
 	def draw_size_fragment(self, container, ctx, settings):
 		if common.data.has_map(settings.map_base):
@@ -53,7 +61,7 @@ class ObjectPanel(HydraPanel):
 	def poll(cls, ctx):
 		ob = ctx.object
 		if not ob:
-			return
+			return False
 		if ob.hydra_erosion.is_generated:
 			return False
 		return ob.type == "MESH" and len(ob.data.vertices) != 0
@@ -70,10 +78,10 @@ class ErosionPanel():
 		col = self.layout.column()
 		if hyd.out_color and hyd.color_src not in bpy.data.images:
 			box = col.box()
-			box.operator(self.get_op_name("erode"), text="No color source", icon="RNDCURVE")
+			box.operator("hydra.erode", text="No color source", icon="RNDCURVE")
 			box.enabled = False
 		else:
-			col.operator(self.get_op_name("erode"), text="Erode", icon="RNDCURVE")
+			col.operator("hydra.erode", text="Erode", icon="RNDCURVE")
 
 		self.draw_size_fragment(col.box(), ctx, hyd)
 
@@ -89,7 +97,7 @@ class FlowPanel():
 		hyd = self.get_settings(ctx)
 		col = self.layout.column()
 
-		col.operator(self.get_op_name("flow"), text="Generate Flowmap", icon="MATFLUID")
+		col.operator("hydra.flow", text="Generate Flowmap", icon="MATFLUID")
 
 		col.separator()
 		self.draw_size_fragment(col, ctx, hyd)
@@ -119,7 +127,7 @@ class ThermalPanel():
 		hyd = self.get_settings(ctx)
 		
 		col = self.layout.column()
-		col.operator(self.get_op_name("thermal"), text="Erode", icon="RNDCURVE")
+		col.operator("hydra.thermal", text="Erode", icon="RNDCURVE")
 
 		self.draw_size_fragment(col.box(), ctx, hyd)
 
@@ -133,6 +141,212 @@ class ThermalPanel():
 		split = box.split(factor=0.4)
 		split.label(text="Direction: ")
 		split.prop(hyd, "thermal_solver", text="")
+
+#-------------------------------------------- Heightmap System
+
+class HeightmapSystemPanel():
+	bl_label = "Heightmaps"
+
+	def draw(self, ctx):
+		col = self.layout.column()
+		hyd = self.get_settings(ctx)
+		target = self.get_target(ctx)
+
+		has_any = False
+
+		if common.data.has_map(hyd.map_base):
+			has_any = True
+			col.operator('hydra.hm_clear', icon="CANCEL")
+			col.separator()
+
+		if common.data.has_map(hyd.map_result):
+			has_any = True
+			name = common.data.maps[hyd.map_result].name
+
+			if isinstance(target, bpy.types.Image):
+				box = col.box()
+				split = box.split(factor=0.5)
+				split.label(text="Current:")
+				split.label(text=name)
+				cols = box.column_flow(columns=3, align=True)
+				cols.operator('hydra.hm_preview', text="", icon="HIDE_OFF")
+				cols.operator('hydra.hm_move', text="", icon="TRIA_DOWN_BAR")
+				cols.operator('hydra.hm_delete', text="", icon="PANEL_CLOSE")
+
+				op = box.operator('hydra.hm_apply_img', text="", icon="IMAGE_DATA")
+				# op.save_target = hyd.map_current
+				# op.name = f"HYD_{target.name}_Eroded"
+			else:
+				box = col.box()
+				split = box.split(factor=0.5)
+				split.label(text="Result:")
+				split.label(text=name)
+				cols = box.column_flow(columns=3, align=True)
+				if common.data.lastPreview == target.name:
+					cols.operator('hydra.hm_remove_preview', text="", icon="HIDE_ON")
+				else:
+					cols.operator('hydra.hm_preview', text="", icon="HIDE_OFF")
+				cols.operator('hydra.hm_move', text="", icon="TRIA_DOWN_BAR")
+				cols.operator('hydra.hm_delete', text="", icon="PANEL_CLOSE")
+
+				grid = box.grid_flow(columns=1, align=True)
+
+				cols = grid.column_flow(columns=2, align=True)
+				op = cols.operator('hydra.hm_apply_img', text="", icon="IMAGE_DATA")
+				# op.save_target = hyd.map_result
+				# op.name = f"HYD_{target.name}_Eroded"
+				cols.operator('hydra.hm_apply_geo', text="", icon="GEOMETRY_NODES")
+				# cols.operator('hydra.hmapplygeoinsert', text="", icon="OUTLINER_DATA_POINTCLOUD")
+				# op = cols.operator('hydra.hmapplyupdate', text="", icon="IMAGE_REFERENCE")
+
+				cols = grid.column_flow(columns=3, align=True)
+				cols.operator('hydra.hm_apply_mod', text="", icon="MOD_DISPLACE")
+				cols.operator('hydra.hm_apply_disp', text="", icon="RNDCURVE")
+				cols.operator('hydra.hm_apply_bump', text="", icon="MOD_NOISE")
+				
+				if any(m.name.startswith("HYD_") for m in target.modifiers):
+					cols = box.column_flow(columns=2, align=True)
+					cols.operator('hydra.hm_merge', text="", icon="MESH_DATA")
+					cols.operator('hydra.hm_merge_shape', text="", icon="SHAPEKEY_DATA")
+
+		if common.data.has_map(hyd.map_source):
+			has_any = True
+			name = common.data.maps[hyd.map_source].name
+			box = col.box()
+			split = box.split(factor=0.5)
+			split.label(text="Source:")
+			split.label(text=name)
+			cols = box.column_flow(columns=3, align=True)
+			cols.operator('hydra.hm_force_reload', text="", icon="GRAPH")
+			cols.operator('hydra.hm_move_back', text="", icon="TRIA_UP_BAR")
+			cols.operator('hydra.hm_reload', text="", icon="FILE_REFRESH")
+
+		if not has_any:
+			col.label(text="No maps have been cached yet.")
+
+#-------------------------------------------- Subpanels
+
+class ErosionSettingsPanel(bpy.types.Panel):
+	"""Subpanel for water erosion particle settings."""
+	bl_label = "Erosion settings"
+	bl_options = set()
+
+	def draw(self, ctx):
+		p = self.layout.box()
+		hyd = self.get_settings(ctx)
+		if hyd.erosion_solver == "particle":
+			p.prop(hyd, "part_iter_num")
+			p.prop(hyd, "part_lifetime")
+			p.prop(hyd, "part_acceleration", slider=True)
+			p.prop(hyd, "part_drag", slider=True)
+			
+			p.prop(hyd, "part_fineness", slider=True)
+			p.prop(hyd, "part_deposition", slider=True)
+			p.prop(hyd, "part_capacity", slider=True)
+		else:
+			p.prop(hyd, "mei_iter_num")
+			p.prop(hyd, "mei_dt")
+			p.prop(hyd, "mei_rain")
+			p.prop(hyd, "mei_evaporation")
+			p.prop(hyd, "mei_capacity")
+			p.prop(hyd, "mei_deposition")
+			p.prop(hyd, "mei_erosion")
+			p.prop(hyd, "mei_scale")
+			p.prop(hyd, "mei_length")
+			p.prop(hyd, "mei_min_alpha")
+
+class ErosionExtrasPanel():
+	"""Subpanel for water erosion extra settings."""
+	bl_label = "Extras"
+
+	@classmethod
+	def poll(cls, ctx):
+		return cls.get_settings(ctx).erosion_solver == "particle"
+
+	def draw(self, ctx):
+		p = self.layout.box()
+		hyd = self.get_settings(ctx)
+
+		p.prop(hyd, "out_color")
+		if (hyd.out_color):
+			p.prop_search(hyd, "color_src", bpy.data, "images")
+			p.prop(hyd, "interpolate_color")
+			p.prop(hyd, "color_mixing", slider=True)
+
+		p.prop(hyd, "out_depth")
+		if (hyd.out_depth):
+			p.prop(hyd, "depth_contrast", slider=True)
+
+		p.prop(hyd, "out_sediment")
+		if (hyd.out_sediment):
+			p.prop(hyd, "sed_contrast", slider=True)
+		
+		# fragmentNav(p, f"HYD_{act.name}_Color", "Color")
+		# fragmentNav(p, f"HYD_{act.name}_Depth", "Depth")
+		# fragmentNav(p, f"HYD_{act.name}_Sediment", "Sediment")
+
+class ErosionAdvancedPanel():
+	"""Subpanel for water erosion advanced settings."""
+	bl_label = "Advanced"
+
+	@classmethod
+	def poll(cls, ctx):
+		print("check")
+		return cls.get_settings(ctx).erosion_solver == "particle"
+	
+	def draw(self, ctx):
+		p = self.layout.box()
+		hyd = ctx.object.hydra_erosion
+		p.prop(hyd, "interpolate_erosion")
+		split = p.split()
+		split.label(text="Chunk size")
+		split.prop(hyd, "part_subdiv", text="")
+		p.prop(hyd, "part_maxjump")
+
+#-------------------------------------------- Info
+		
+class InfoPanel():
+	bl_label = "Hydra - Info"
+
+	def draw(self, ctx):
+		col = self.layout.column()
+
+		# fragmentSize(col.box())
+
+		col.separator()
+		col.operator('hydra.decouple', icon="DUPLICATE")
+
+		# if owner := common.get_owner(target.name, apply.P_VIEW_NAME):
+		# 	if owner in bpy.data.objects:
+		# 		col.separator()
+		# 		col.label(text="Owner:")
+		# 		box = col.box()
+		# 		split = box.split()
+		# 		split.label(text=owner)
+		# 		op = split.operator('hydra.nav', text="", icon="IMAGE_DATA")
+		# 		op.target = owner
+		# 		op.object = True
+		# 	elif owner in bpy.data.images:
+		# 		col.separator()
+		# 		col.label(text="Original:")
+		# 		box = col.box()
+		# 		split = box.split()
+		# 		split.label(text=owner)
+		# 		split.operator('hydra.nav', text="", icon="IMAGE_DATA").target = owner
+		# elif owner := common.getOwner(obj.name, apply.P_LAND_NAME):
+		# 	col.separator()
+		# 	col.label(text="Original:")
+		# 	box = col.box()
+		# 	split = box.split()
+		# 	split.label(text=owner)
+		# 	split.operator('hydra.nav', text="", icon="IMAGE_DATA").target = owner
+
+	@classmethod
+	def poll(cls, ctx):
+		hyd = cls.get_settings(ctx)
+		if not hyd:
+			return False
+		return hyd.is_generated
 
 #-------------------------------------------- Exports
 	
