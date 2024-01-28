@@ -24,7 +24,7 @@ class HydraPanel(bpy.types.Panel):
 		if name in bpy.data.images:
 			split = container.split()
 			split.label(text=label)
-			split.operator('hydra.nav_img', text="", icon="IMAGE_DATA").target = name
+			split.operator('hydra.nav_img', text="", icon="TRIA_RIGHT_BAR").target = name
 
 class ImagePanel(HydraPanel):
 	bl_space_type = 'IMAGE_EDITOR'
@@ -343,9 +343,9 @@ class InfoPanel():
 			split = box.split()
 			split.label(text=owner)
 			if owner in bpy.data.objects:
-				split.operator('hydra.nav_obj', text="", icon="IMAGE_DATA").target = owner
+				split.operator('hydra.nav_obj', text="", icon="TRIA_RIGHT_BAR").target = owner
 			elif owner in bpy.data.images:
-				split.operator('hydra.nav_img', text="", icon="IMAGE_DATA").target = owner
+				split.operator('hydra.nav_img', text="", icon="TRIA_RIGHT_BAR").target = owner
 			else:
 				split.label(text="Not found")
 

@@ -42,12 +42,12 @@ class HeightmapPanel(ui_common.ObjectPanel):
 			split.label(text=name)
 			split.operator('hydra.hm_apply_img', text="", icon="IMAGE_DATA").save_target = hyd.map_source
 		
-		if data.has_map(hyd.map_current):
+		if data.has_map(hyd.map_result):
 			col.separator()
 			split = box.split()
-			name = data.get_map(hyd.map_current).name
+			name = data.get_map(hyd.map_result).name
 			split.label(text=name)
-			split.operator('hydra.hm_apply_img', text="", icon="IMAGE_DATA").save_target = hyd.map_current
+			split.operator('hydra.hm_apply_img', text="", icon="IMAGE_DATA").save_target = hyd.map_result
 
 #-------------------------------------------- Erosion
 
@@ -103,7 +103,7 @@ class CleanupPanel(ui_common.ObjectPanel):
 	def draw(self, ctx):
 		col = self.layout.column()
 		col.operator('hydra.release_cache', text="Clear cache", icon="SHADING_BBOX")
-		col.operator('hydra.hmnoview', text="Remove previews", icon="HIDE_ON")
+		col.operator('hydra.hm_remove_preview', text="Remove previews", icon="HIDE_ON")
 	
 #-------------------------------------------- Debug
 

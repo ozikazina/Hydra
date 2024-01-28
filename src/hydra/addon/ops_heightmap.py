@@ -332,10 +332,6 @@ class NavToObjOp(ops_common.HydraOperator):
 		else:
 			self.report({'ERROR'}, f"Failed to find image.")
 		return {'FINISHED'}
-	
-	@classmethod
-	def poll(cls, ctx):
-		return cls.target in bpy.data.objects
 
 #-------------------------------------------- Exports
 

@@ -24,7 +24,7 @@ class HeightmapOperator(ops_common.ObjectOperator):
 		normalized = act.hydra_erosion.heightmap_gen_type == "normalized"
 		world_scale = act.hydra_erosion.heightmap_gen_type == "world"
 		local_scale = act.hydra_erosion.heightmap_gen_type == "object"
-		txt = heightmap.gen_heightmap(act, normalized=normalized, world_scale=world_scale, local_scale=local_scale)
+		txt = heightmap.generate_heightmap(act, normalized=normalized, world_scale=world_scale, local_scale=local_scale)
 
 		img = texture.write_image(f"HYD_{act.name}_Heightmap", txt)
 		txt.release()
