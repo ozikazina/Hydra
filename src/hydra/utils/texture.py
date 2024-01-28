@@ -27,7 +27,7 @@ def get_or_make_image(size: tuple[int,int], name: str)->bpy.types.Image:
 
 	return img
 
-def write_image(name: str, txt: mgl.Texture)->bpy.types.Image:
+def write_image(name: str, texture: mgl.Texture)->bpy.types.Image:
 	"""Writes texture to an `Image` of the specified name.
 	
 	:param name: Image name.
@@ -36,18 +36,8 @@ def write_image(name: str, txt: mgl.Texture)->bpy.types.Image:
 	:type txt: :class:`moderngl.Texture`
 	:return: Created image.
 	:rtype: :class:`bpy.types.Image`"""
-	img = get_or_make_image(txt.size, name)
-	fill_image(img, txt)
-	img.pack()
-	return img
+	image = get_or_make_image(texture.size, name)
 
-def fill_image(image: bpy.types.Image, texture: mgl.Texture)->None:
-	"""Writes single channel texture data to an image.
-	
-	:param image: Image to be written to.
-	:type image: :class:`bpy.types.Image`
-	:param texture: Texture to be read.
-	:type texture: :class:`moderngl.Texture`"""
 	if texture.components == 1:
 		pixels = np.frombuffer(texture.read(), dtype=np.float32)
 		pixels = [x for p in pixels for x in (p,p,p,1)]
@@ -56,6 +46,9 @@ def fill_image(image: bpy.types.Image, texture: mgl.Texture)->None:
 		raise ValueError("Two or three channel fill isn't supported.")
 	elif texture.components == 4:
 		image.pixels = np.frombuffer(texture.read(), dtype=np.float32)
+		
+	image.pack()
+	return image
 
 def create_texture(size: tuple[int,int], pixels: bytes|None = None, image: bpy.types.Image|None = None, channels: int = 1)->mgl.Texture:
 	"""Creates a :class:`moderngl.Texture` of the specified size."""
@@ -90,7 +83,6 @@ def create_texture(size: tuple[int,int], pixels: bytes|None = None, image: bpy.t
 	elif pixels is not None:
 		return ctx.texture(size, channels, dtype="f4", data=pixels)
 	else:
-		# pixels = np.zeros(size[0]*size[1], dtype="f4").tobytes()
 		return ctx.texture(size, channels, dtype="f4")
 
 def clone(txt: mgl.Texture)->mgl.Texture:

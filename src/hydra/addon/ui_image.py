@@ -3,8 +3,8 @@ from Hydra.addon import ui_common
 
 class LandscapePanel(ui_common.ImagePanel):
 	"""Panel for landscape generation."""
-	bl_label = "Hydra - Generate"
-	bl_idname = "HYDRA_PT_imggenerate"
+	bl_label = "Hydra - Landscape"
+	bl_idname = "HYDRA_PT_LandscapePanel"
 
 	def draw(self, ctx):
 		act = ctx.area.spaces.active.image
@@ -35,7 +35,7 @@ class ErosionSettingsPanel(ui_common.ErosionSettingsPanel, ui_common.ImagePanel)
 	bl_parent_id = "HYDRA_PT_ErosionPanelImage"
 	bl_idname = "HYDRA_PT_ErosionSettingsPanelImage"
 
-class ErosionAdvancedPanel(ui_common.ErosionSettingsPanel, ui_common.ImagePanel):
+class ErosionAdvancedPanel(ui_common.ErosionAdvancedPanel, ui_common.ImagePanel):
 	"""Subpanel for water erosion advanced settings."""
 	bl_parent_id = "HYDRA_PT_ErosionPanelImage"
 	bl_idname = "HYDRA_PT_ErosionAdvancedPanelImage"

@@ -9,13 +9,13 @@ import math
 
 # -------------------------------------------------- Previews
 
-P_MOD_NAME = "HYD_Preview_Modifier"
+PREVIEW_MOD_NAME = "HYD_Preview_Modifier"
 """Preview modifier name."""
-P_IMG_NAME = "HYD_Preview_Image"
+PREVIEW_DISP_NAME = "HYDP_Preview_Displacement"
 """Preview temporary image name."""
-P_VIEW_NAME = "HYD_Image_Preview"	#different from object preview heightmap
+PREVIEW_IMG_NAME = "HYDP_Image_Preview"	#different from object preview heightmap
 """Image preview name."""
-P_GEO_NAME = "HYD_Preview"
+PREVIEW_GEO_NAME = "HYDP_Preview"
 """Geometry Nodes group name."""
 
 def show_gen_modifier(obj: bpy.types.Object, visible: bool):
@@ -26,7 +26,7 @@ def show_gen_modifier(obj: bpy.types.Object, visible: bool):
 	:param visible: Modifier visibility.
 	:type visible: :class:`bool`"""
 	mod = next((x for x in obj.modifiers if x.name.startswith("HYD_")), None)
-	if mod and mod.name != P_MOD_NAME:
+	if mod and mod.name != PREVIEW_MOD_NAME:
 		mod.show_viewport = visible
 
 def add_preview(target: bpy.types.Object|bpy.types.Image):
@@ -43,29 +43,29 @@ def add_preview(target: bpy.types.Object|bpy.types.Image):
 		return
 
 	if isinstance(target, bpy.types.Image):
-		img = texture.write_image(P_VIEW_NAME, data.maps[hyd.map_result].texture)
+		img = texture.write_image(PREVIEW_IMG_NAME, data.maps[hyd.map_result].texture)
 		nav.goto_image(img)
 	else:
 		if data.lastPreview and data.lastPreview in bpy.data.objects:
 			last = bpy.data.objects[data.lastPreview]
-			if last != target and P_MOD_NAME in last.modifiers:
-				last.modifiers.remove(last.modifiers[P_MOD_NAME])
+			if last != target and PREVIEW_MOD_NAME in last.modifiers:
+				last.modifiers.remove(last.modifiers[PREVIEW_MOD_NAME])
 
-		if data.lastPreview != target.name and P_GEO_NAME in bpy.data.node_groups:
-			g = bpy.data.node_groups[P_GEO_NAME]
+		if data.lastPreview != target.name and PREVIEW_GEO_NAME in bpy.data.node_groups:
+			g = bpy.data.node_groups[PREVIEW_GEO_NAME]
 			bpy.data.node_groups.remove(g)
 
 		show_gen_modifier(target, False)
 
-		if P_MOD_NAME in target.modifiers:
-			mod = target.modifiers[P_MOD_NAME]
+		if PREVIEW_MOD_NAME in target.modifiers:
+			mod = target.modifiers[PREVIEW_MOD_NAME]
 			common.data.add_message("Updated existing preview.")
 		else:
-			mod = target.modifiers.new(P_MOD_NAME, "NODES")
+			mod = target.modifiers.new(PREVIEW_MOD_NAME, "NODES")
 			common.data.add_message("Created preview modifier.")
 		
-		img = heightmap.get_displacement(target, P_IMG_NAME)
-		mod.node_group = nodes.get_or_make_displace_group(P_GEO_NAME, img)
+		img = heightmap.get_displacement(target, PREVIEW_DISP_NAME)
+		mod.node_group = nodes.get_or_make_displace_group(PREVIEW_GEO_NAME, img)
 
 		common.data.lastPreview = target.name
 
@@ -76,29 +76,29 @@ def remove_preview():
 	data = common.data
 	if str(data.lastPreview) in bpy.data.objects:
 		last = bpy.data.objects[data.lastPreview]
-		if P_MOD_NAME in last.modifiers:
-			last.modifiers.remove(last.modifiers[P_MOD_NAME])
+		if PREVIEW_MOD_NAME in last.modifiers:
+			last.modifiers.remove(last.modifiers[PREVIEW_MOD_NAME])
 		show_gen_modifier(last, True)
 	elif data.lastPreview: #invalid data
-		previewed = [i for i in bpy.data.objects if P_MOD_NAME in i.modifiers]
+		previewed = [i for i in bpy.data.objects if PREVIEW_MOD_NAME in i.modifiers]
 		for i in previewed:
-			i.modifiers.remove(i.modifiers[P_MOD_NAME])
+			i.modifiers.remove(i.modifiers[PREVIEW_MOD_NAME])
 			show_gen_modifier(i, True)
 
-	if P_MOD_NAME in bpy.data.textures:
-		txt = bpy.data.textures[P_MOD_NAME]
+	if PREVIEW_MOD_NAME in bpy.data.textures:
+		txt = bpy.data.textures[PREVIEW_MOD_NAME]
 		bpy.data.textures.remove(txt)
 	
-	if P_IMG_NAME in bpy.data.images:
-		img = bpy.data.images[P_IMG_NAME]
+	if PREVIEW_DISP_NAME in bpy.data.images:
+		img = bpy.data.images[PREVIEW_DISP_NAME]
 		bpy.data.images.remove(img)
 
-	if P_VIEW_NAME in bpy.data.images:
-		img = bpy.data.images[P_VIEW_NAME]
+	if PREVIEW_IMG_NAME in bpy.data.images:
+		img = bpy.data.images[PREVIEW_IMG_NAME]
 		bpy.data.images.remove(img)
 
-	if P_GEO_NAME in bpy.data.node_groups:
-		g = bpy.data.node_groups[P_GEO_NAME]
+	if PREVIEW_GEO_NAME in bpy.data.node_groups:
+		g = bpy.data.node_groups[PREVIEW_GEO_NAME]
 		bpy.data.node_groups.remove(g)
 
 	data.lastPreview = ""
@@ -286,8 +286,6 @@ def add_modifier(obj: bpy.types.Object, img: bpy.types.Image):
 
 # -------------------------------------------------- Landscape
 
-P_LAND_TEMP_NAME = "HYD_TEMP_DISPLACE"
-
 def add_landscape(img: bpy.types.Image):
 	hyd = img.hydra_erosion
 
@@ -309,16 +307,16 @@ def add_landscape(img: bpy.types.Image):
 	for polygon in act.data.polygons:
 		polygon.use_smooth = True
 
-	mod = act.modifiers.new(P_LAND_TEMP_NAME, "NODES")
+	mod = act.modifiers.new(PREVIEW_MOD_NAME, "NODES")
 	
-	mod.node_group = nodes.get_or_make_displace_group(P_LAND_TEMP_NAME, image=img)
+	mod.node_group = nodes.get_or_make_displace_group(PREVIEW_MOD_NAME, image=img)
 
 	bpy.ops.object.mode_set(mode="OBJECT")	# modifiers can't be applied in EDIT mode
 
 	bpy.ops.object.transform_apply(scale=True, location=False, rotation=False, properties=False, isolate_users=False)
-	bpy.ops.object.modifier_apply(modifier=P_LAND_TEMP_NAME)
+	bpy.ops.object.modifier_apply(modifier=PREVIEW_MOD_NAME)
 	
-	bpy.data.node_groups.remove(bpy.data.node_groups[P_LAND_TEMP_NAME])
+	bpy.data.node_groups.remove(bpy.data.node_groups[PREVIEW_MOD_NAME])
 
 	nav.goto_object(act)
 

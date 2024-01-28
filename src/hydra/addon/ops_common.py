@@ -1,4 +1,6 @@
-import bpy, bpy.types
+import bpy
+from bpy.props import BoolProperty
+
 from Hydra import common, opengl
 from Hydra.sim import flow, thermal, heightmap, erosion_particle, erosion_mei
 from Hydra.utils import nav, apply
@@ -6,7 +8,8 @@ from Hydra.utils import nav, apply
 class HydraOperator(bpy.types.Operator):
 	bl_options = {'REGISTER'}
 
-	def get_target(self, ctx):
+	@classmethod
+	def get_target(cls, ctx):
 		if ctx.space_data.type == common._SPACE_IMAGE:
 			ret = ctx.area.spaces.active.image
 			ret.hydra_erosion.img_size = ret.size
@@ -17,7 +20,8 @@ class HydraOperator(bpy.types.Operator):
 class ImageOperator(bpy.types.Operator):
 	bl_options = {'REGISTER'}
 
-	def get_target(self, ctx):
+	@classmethod
+	def get_target(cls, ctx):
 		ret = ctx.area.spaces.active.image
 		ret.hydra_erosion.img_size = ret.size
 		return ret
@@ -28,6 +32,7 @@ class ImageOperator(bpy.types.Operator):
 class ObjectOperator(bpy.types.Operator):
 	bl_options = {'REGISTER'}
 
+	@classmethod
 	def get_target(self, ctx):
 		return ctx.object
 	
@@ -41,9 +46,17 @@ class ErosionOperator(HydraOperator):
 	bl_idname = "hydra.erode"
 	bl_description = "Erode object"
 
+	apply: BoolProperty(
+		name="Apply",
+		default=False
+	)
+
 	def invoke(self, ctx, event):
 		target = self.get_target(ctx)
 		hyd = target.hydra_erosion
+
+		if self.apply:
+			heightmap.set_result_as_source(target)
 
 		if hyd.erosion_solver == "particle":
 			results = erosion_particle.erode(target)
@@ -82,9 +95,17 @@ class ThermalOperator(HydraOperator):
 	bl_label = "Erode"
 	bl_idname = "hydra.thermal"
 	bl_description = "Erode object"
+
+	apply: BoolProperty(
+		name="Apply",
+		default=False
+	)
 	
 	def invoke(self, ctx, event):
 		target = self.get_target(ctx)
+
+		if self.apply:
+			heightmap.set_result_as_source(target)
 
 		thermal.erode(target)
 

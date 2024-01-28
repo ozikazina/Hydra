@@ -26,7 +26,7 @@ class PreviewOp(ops_common.HydraOperator):
 		
 		return {'FINISHED'}
 	
-class remove_previewOp(ops_common.HydraOperator):
+class RemovePreviewOp(ops_common.HydraOperator):
 	"""Heightmap modifier preview removal operator."""
 	bl_idname = "hydra.hm_remove_preview"
 	bl_label = "Remove preview"
@@ -70,6 +70,12 @@ class MergeShapeOp(ops_common.HydraOperator):
 	bl_description = "Applies the preview or modifier as a shape key"
 	bl_options = {'REGISTER'}
 
+	@classmethod
+	def poll(cls, ctx):
+		target = cls.get_target(ctx)
+		m = next((m for m in target.modifiers if m.name.startswith("HYD_")), None)
+		return m and m.type == "DISPLACE"
+
 	def invoke(self, ctx, event):
 		hyd = next((x for x in ctx.object.modifiers if x.name.startswith("HYD_")), None)
 		if hyd:
@@ -89,7 +95,7 @@ class MergeShapeOp(ops_common.HydraOperator):
 		if name in bpy.data.objects:
 			bpy.data.objects.remove(bpy.data.objects[name])
 		heightmap.set_result_as_source(ctx.object)
-		nav.gotoShape()
+		nav.goto_shape()
 		return {'FINISHED'}
 
 #-------------------------------------------- Move
@@ -127,11 +133,9 @@ class MoveBackOp(ops_common.HydraOperator):
 
 class DeleteOp(ops_common.HydraOperator):
 	"""Delete Result operator."""
-	bl_idname = "hydra.hm_delete"; bl_label = "Delete this layer"
-	bl_description = "Deletes the generated heightmap"; bl_options = {'REGISTER'}
-
-	useImage: BoolProperty(default=False)
-	"""Apply to image if `True`. Else apply to object."""
+	bl_idname = "hydra.hm_delete"
+	bl_label = "Delete this layer"
+	bl_description = "Deletes the generated heightmap"
 
 	def invoke(self, ctx, event):
 		target = self.get_target(ctx)
@@ -145,8 +149,9 @@ class DeleteOp(ops_common.HydraOperator):
 
 class ClearOp(ops_common.HydraOperator):
 	"""Clear object textures operator."""
-	bl_idname = "hydra.hm_clear"; bl_label = "Clear"
-	bl_description = "Clear textures"; bl_options = {'REGISTER'}
+	bl_idname = "hydra.hm_clear"
+	bl_label = "Clear"
+	bl_description = "Clear textures"
 
 	def invoke(self, ctx, event):
 		target = self.get_target(ctx)
@@ -168,8 +173,9 @@ class ClearOp(ops_common.HydraOperator):
 
 class ModifierOp(ops_common.HydraOperator):
 	"""Apply as modifier operator."""
-	bl_idname = "hydra.hm_apply_mod"; bl_label = "As Modifier"
-	bl_description = "Apply texture as a modifier"; bl_options = {'REGISTER'}
+	bl_idname = "hydra.hm_apply_mod"
+	bl_label = "As Modifier"
+	bl_description = "Apply texture as a modifier"
 
 	def invoke(self, ctx, event):
 		target = self.get_target(ctx)
@@ -184,8 +190,9 @@ class ModifierOp(ops_common.HydraOperator):
 	
 class GeometryOp(ops_common.HydraOperator):
 	"""Apply as modifier operator."""
-	bl_idname = "hydra.hm_apply_geo"; bl_label = "As Geometry Modifier"
-	bl_description = "Apply texture as a Geometry Nodes modifier"; bl_options = {'REGISTER'}
+	bl_idname = "hydra.hm_apply_geo"
+	bl_label = "As Geometry Modifier"
+	bl_description = "Apply texture as a Geometry Nodes modifier"
 
 	def invoke(self, ctx, event):
 		target = self.get_target(ctx)
@@ -201,8 +208,9 @@ class GeometryOp(ops_common.HydraOperator):
 
 class DisplaceOp(ops_common.HydraOperator):
 	"""Apply as displacement map operator."""
-	bl_idname = "hydra.hm_apply_disp"; bl_label = "As Displacement"
-	bl_description = "Apply texture as a displacement node in the object's shader"; bl_options = {'REGISTER'}
+	bl_idname = "hydra.hm_apply_disp"
+	bl_label = "As Displacement"
+	bl_description = "Apply texture as a displacement node in the object's shader"
 
 	def invoke(self, ctx, event):
 		target = self.get_target(ctx)
@@ -217,8 +225,9 @@ class DisplaceOp(ops_common.HydraOperator):
 
 class BumpOp(ops_common.HydraOperator):
 	"""Apply as bump map operator."""
-	bl_idname = "hydra.hm_apply_bump"; bl_label = "As Bump"
-	bl_description = "Apply texture as a bumpmap node in the object's shader"; bl_options = {'REGISTER'}
+	bl_idname = "hydra.hm_apply_bump"
+	bl_label = "As Bump"
+	bl_description = "Apply texture as a bumpmap node in the object's shader"
 
 	def invoke(self, ctx, event):
 		target = self.get_target(ctx)
@@ -233,8 +242,9 @@ class BumpOp(ops_common.HydraOperator):
 
 class ImageOp(ops_common.HydraOperator):
 	"""Export as image operator."""
-	bl_idname = "hydra.hm_apply_img"; bl_label = "As Image"
-	bl_description = "Save heightmap to a Blender Image"; bl_options = {'REGISTER'}
+	bl_idname = "hydra.hm_apply_img"
+	bl_label = "As Image"
+	bl_description = "Save heightmap to a Blender Image"
 
 	save_target: StringProperty(default="")
 	"""Heightmap ID."""
@@ -255,7 +265,6 @@ class ReloadOp(ops_common.HydraOperator):
 	bl_idname = "hydra.hm_reload"
 	bl_label = "Reload"
 	bl_description = "Load base mesh heightmap as a source"
-	bl_options = {'REGISTER'}
 
 	def invoke(self, ctx, event):
 		target = self.get_target(ctx)
@@ -277,7 +286,6 @@ class ForceReloadOp(ops_common.HydraOperator):
 	bl_idname = "hydra.hm_force_reload"
 	bl_label = "Recalculate"
 	bl_description = "Create a base heightmap from the current object"
-	bl_options = {'REGISTER'}
 
 	def invoke(self, ctx, event):
 		target = self.get_target(ctx)
@@ -293,28 +301,41 @@ class ForceReloadOp(ops_common.HydraOperator):
 
 #-------------------------------------------- Goto
 
-class NavOp(ops_common.HydraOperator):
+class NavToImgOp(ops_common.HydraOperator):
 	"""Navigate to entity operator."""
-	bl_idname = "hydra.nav"; bl_label = "View"
-	bl_description = "View this image"; bl_options = {'REGISTER'}
+	bl_idname = "hydra.nav_img"
+	bl_label = "View"
+	bl_description = "View this image"
 
 	target: StringProperty(default="")
 	"""Target name."""
-	useImage: BoolProperty(default=False)
-	"""Apply to image if `True`. Else apply to object."""
 
 	def invoke(self, ctx, event):
-		if not self.useImage:
-			if self.target in bpy.data.objects:
-				nav.gotoObject(bpy.data.objects[self.target])
-			else:
-				self.report({'ERROR'}, f"Failed to find object.")
+		if self.target in bpy.data.images:
+			nav.goto_image(bpy.data.images[self.target])
 		else:
-			if self.target in bpy.data.images:
-				nav.gotoImage(bpy.data.images[self.target])
-			else:
-				self.report({'ERROR'}, f"Failed to find image.")
+			self.report({'ERROR'}, f"Failed to find image.")
 		return {'FINISHED'}
+	
+class NavToObjOp(ops_common.HydraOperator):
+	"""Navigate to object operator."""
+	bl_idname = "hydra.nav_obj"
+	bl_label = "View"
+	bl_description = "View this object"
+
+	target: StringProperty(default="")
+	"""Target name."""
+
+	def invoke(self, ctx, event):
+		if self.target in bpy.data.objects:
+			nav.goto_object(bpy.data.objects[self.target])
+		else:
+			self.report({'ERROR'}, f"Failed to find image.")
+		return {'FINISHED'}
+	
+	@classmethod
+	def poll(cls, ctx):
+		return cls.target in bpy.data.objects
 
 #-------------------------------------------- Exports
 
@@ -324,7 +345,7 @@ def get_exports()->list:
 		MergeOp,
 		MergeShapeOp,
 		PreviewOp,
-		remove_previewOp,
+		RemovePreviewOp,
 		MoveOp,
 		MoveBackOp,
 		DeleteOp,
@@ -335,5 +356,6 @@ def get_exports()->list:
 		BumpOp,
 		ReloadOp,
 		ForceReloadOp,
-		NavOp
+		NavToImgOp,
+		NavToObjOp
 	]
