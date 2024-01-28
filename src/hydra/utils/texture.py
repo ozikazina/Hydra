@@ -20,11 +20,11 @@ def get_or_make_image(size: tuple[int,int], name: str)->bpy.types.Image:
 	else:
 		img = bpy.data.images[name]
 	
-	img.use_generated_float = True
+	# img.use_generated_float = True
 	if tuple(img.size) != size:
 		img.scale(size[0], size[1])
 	img.hydra_erosion.is_generated = True
-
+	img.colorspace_settings.name = "Non-Color"
 	return img
 
 def write_image(name: str, texture: mgl.Texture)->bpy.types.Image:
@@ -46,7 +46,7 @@ def write_image(name: str, texture: mgl.Texture)->bpy.types.Image:
 		raise ValueError("Two or three channel fill isn't supported.")
 	elif texture.components == 4:
 		image.pixels = np.frombuffer(texture.read(), dtype=np.float32)
-		
+	
 	image.pack()
 	return image
 

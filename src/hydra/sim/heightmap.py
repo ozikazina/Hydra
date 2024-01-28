@@ -71,7 +71,7 @@ def generate_heightmap_from_image(img:bpy.types.Image)->mgl.Texture:
 	:rtype: :class:`moderngl.Texture`"""
 	pixels = np.array(img.pixels).astype('f4')[::4].copy()#has to be contiguous in memory
 	txt = common.data.context.texture(tuple(img.size), 1, dtype='f4', data=pixels)
-	if not img.is_float:
+	if img.colorspace_settings.name == "sRGB":
 		prog: mgl.ComputeShader = common.data.shaders["linear"]
 		txt.bind_to_image(1, read=True, write=True)
 		prog["map"].value = 1

@@ -31,7 +31,10 @@ class ImagePanel(HydraPanel):
 
 	@classmethod
 	def get_settings(cls, ctx):
-		return ctx.area.spaces.active.image.hydra_erosion
+		img = ctx.area.spaces.active.image
+		if not img or tuple(img.size) == (0,0):
+			return None
+		return img.hydra_erosion
 
 	def draw_size_fragment(self, container, ctx, settings):
 		split = container.split(factor=0.5)
@@ -189,9 +192,11 @@ class HeightmapSystemPanel():
 				cols.operator('hydra.hm_move', text="", icon="TRIA_DOWN_BAR")
 				cols.operator('hydra.hm_delete', text="", icon="PANEL_CLOSE")
 
-				op = box.operator('hydra.hm_apply_img', text="", icon="IMAGE_DATA")
+				cols = box.column_flow(columns=2, align=True)
+				op = cols.operator('hydra.hm_apply_img', text="", icon="IMAGE_DATA")
 				op.save_target = hyd.map_result
 				op.name = f"HYD_{target.name}_Eroded"
+				cols.operator('hydra.override_original', text="", icon="IMAGE_REFERENCE")
 			else:
 				box = col.box()
 				split = box.split(factor=0.5)
@@ -311,7 +316,6 @@ class ErosionAdvancedPanel():
 
 	@classmethod
 	def poll(cls, ctx):
-		print("check")
 		return cls.get_settings(ctx).erosion_solver == "particle"
 	
 	def draw(self, ctx):
