@@ -26,7 +26,7 @@ class HeightmapPanel(ui_common.ObjectPanel):
 
 		if data.has_map(hyd.map_base):
 			col.separator()
-			size = data.maps[hyd.map_base].size
+			size = data.get_map(hyd.map_base).size
 			split = col.split()
 			split.label(text="Cached:")
 			split.label(text=str(size))
@@ -38,14 +38,14 @@ class HeightmapPanel(ui_common.ObjectPanel):
 		if data.has_map(hyd.map_source):
 			col.separator()
 			split = box.split()
-			name = data.maps[hyd.map_source].name
+			name = data.get_map(hyd.map_source).name
 			split.label(text=name)
 			split.operator('hydra.hm_apply_img', text="", icon="IMAGE_DATA").save_target = hyd.map_source
 		
 		if data.has_map(hyd.map_current):
 			col.separator()
 			split = box.split()
-			name = data.maps[hyd.map_current].name
+			name = data.get_map(hyd.map_current).name
 			split.label(text=name)
 			split.operator('hydra.hm_apply_img', text="", icon="IMAGE_DATA").save_target = hyd.map_current
 

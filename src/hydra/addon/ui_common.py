@@ -92,11 +92,40 @@ class ErosionPanel():
 			grid = col.grid_flow(columns=1, align=True)
 			grid.operator("hydra.erode", text="Erode", icon="RNDCURVE").apply = False
 			if common.data.has_map(hyd.map_result):
-				grid.operator("hydra.erode", text="Apply & Continue", icon="ANIM").apply = True
+				grid.operator("hydra.erode", text="Set & Continue", icon="ANIM").apply = True
 
 		self.draw_size_fragment(col.box(), ctx, hyd)
 
 		col.prop(hyd, "erosion_solver", text="Solver")
+
+#-------------------------------------------- Thermal
+
+class ThermalPanel():
+	bl_label = "Hydra - Thermal"
+	bl_description = "Erosion settings for material transport"
+
+	def draw(self, ctx):
+		hyd = self.get_settings(ctx)
+		
+		col = self.layout.column()
+
+		grid = col.grid_flow(columns=1, align=True)
+		grid.operator("hydra.thermal", text="Erode", icon="RNDCURVE").apply = False
+		if common.data.has_map(hyd.map_result):
+			grid.operator("hydra.thermal", text="Set & Continue", icon="ANIM").apply = True
+
+		self.draw_size_fragment(col.box(), ctx, hyd)
+
+		col.separator()
+		col.label(text="Erosion settings")
+
+		box = col.box()
+		box.prop(hyd, "thermal_iter_num")
+		box.prop(hyd, "thermal_strength", slider=True)
+		box.prop(hyd, "thermal_angle", slider=True)
+		split = box.split(factor=0.4)
+		split.label(text="Direction: ")
+		split.prop(hyd, "thermal_solver", text="")
 
 #-------------------------------------------- Flow
 
@@ -128,35 +157,6 @@ class FlowPanel():
 		box.prop(hyd, "part_acceleration", slider=True)
 		box.prop(hyd, "part_drag", slider=True)
 
-#-------------------------------------------- Thermal
-
-class ThermalPanel():
-	bl_label = "Hydra - Thermal"
-	bl_description = "Erosion settings for material transport"
-
-	def draw(self, ctx):
-		hyd = self.get_settings(ctx)
-		
-		col = self.layout.column()
-
-		grid = col.grid_flow(columns=1, align=True)
-		grid.operator("hydra.thermal", text="Erode", icon="RNDCURVE").apply = False
-		if common.data.has_map(hyd.map_result):
-			grid.operator("hydra.thermal", text="Apply & Continue", icon="ANIM").apply = True
-
-		self.draw_size_fragment(col.box(), ctx, hyd)
-
-		col.separator()
-		col.label(text="Erosion settings")
-
-		box = col.box()
-		box.prop(hyd, "thermal_iter_num")
-		box.prop(hyd, "thermal_strength", slider=True)
-		box.prop(hyd, "thermal_angle", slider=True)
-		split = box.split(factor=0.4)
-		split.label(text="Direction: ")
-		split.prop(hyd, "thermal_solver", text="")
-
 #-------------------------------------------- Heightmap System
 
 class HeightmapSystemPanel():
@@ -177,7 +177,7 @@ class HeightmapSystemPanel():
 
 		if common.data.has_map(hyd.map_result):
 			has_any = True
-			name = common.data.maps[hyd.map_result].name
+			name = common.data.get_map(hyd.map_result).name
 
 			if isinstance(target, bpy.types.Image):
 				box = col.box()
@@ -230,7 +230,7 @@ class HeightmapSystemPanel():
 
 		if common.data.has_map(hyd.map_source):
 			has_any = True
-			name = common.data.maps[hyd.map_source].name
+			name = common.data.get_map(hyd.map_source).name
 			box = col.box()
 			split = box.split(factor=0.5)
 			split.label(text="Source:")

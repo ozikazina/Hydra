@@ -147,8 +147,8 @@ def get_displacement(obj: bpy.types.Object, name:str)->bpy.types.Image:
 	data = common.data
 	hyd = obj.hydra_erosion
 
-	target = subtract(data.maps[hyd.map_result].texture,
-		data.maps[hyd.map_base].texture,
+	target = subtract(data.get_map(hyd.map_result).texture,
+		data.get_map(hyd.map_base).texture,
 		scale=obj.hydra_erosion.org_scale/obj.hydra_erosion.height_scale)
 
 	ret = texture.write_image(name, target)
@@ -168,7 +168,7 @@ def set_result_as_source(obj: bpy.types.Object | bpy.types.Image, as_base: bool 
 	obj.hydra_erosion.map_result = ""
 	if as_base:
 		common.data.try_release_map(obj.hydra_erosion.map_base)
-		src = common.data.maps[obj.hydra_erosion.map_source]
+		src = common.data.get_map(obj.hydra_erosion.map_source)
 		target = texture.clone(src.texture)
 		obj.hydra_erosion.map_base = common.data.create_map(src.name, target)
 

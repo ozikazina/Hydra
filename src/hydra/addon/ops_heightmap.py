@@ -120,7 +120,7 @@ class MoveBackOp(ops_common.HydraOperator):
 		data = common.data
 
 		data.try_release_map(hyd.map_result)
-		src = data.maps[hyd.map_source]
+		src = data.get_map(hyd.map_source)
 
 		txt = texture.clone(src.texture)
 		hmid = data.create_map(src.name, txt)
@@ -253,7 +253,7 @@ class ImageOp(ops_common.HydraOperator):
 
 	def invoke(self, ctx, event):
 		data = common.data
-		img = texture.write_image(self.name, data.maps[self.save_target].texture)
+		img = texture.write_image(self.name, data.get_map(self.save_target).texture)
 		nav.goto_image(img)
 		self.report({'INFO'}, f"Created texture: {self.name}")
 		return {'FINISHED'}
@@ -273,7 +273,7 @@ class ReloadOp(ops_common.HydraOperator):
 
 		data.try_release_map(hyd.map_source)
 
-		base = data.maps[hyd.map_base]
+		base = data.get_map(hyd.map_base)
 		txt = texture.clone(base.texture)
 
 		hyd.map_source = data.create_map(base.name, txt)

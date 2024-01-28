@@ -25,7 +25,7 @@ def erode(obj: bpy.types.Image | bpy.types.Object):
 
 	size = hyd.get_size()
 
-	height = texture.clone(data.maps[hyd.map_source].texture)
+	height = texture.clone(data.get_map(hyd.map_source).texture)
 	request = texture.create_texture(size, channels=4)
 	free = texture.create_texture(size)
 
@@ -76,7 +76,7 @@ def erode(obj: bpy.types.Image | bpy.types.Object):
 	
 	data.try_release_map(hyd.map_result)
 	
-	name = common.increment_layer(data.maps[hyd.map_source].name, "Thermal 1")
+	name = common.increment_layer(data.get_map(hyd.map_source).name, "Thermal 1")
 
 	hmid = data.create_map(name, height)
 	hyd.map_result = hmid

@@ -47,7 +47,7 @@ class HydraData(object):
 		self.context: mgl.Context = None
 		"""Addon's ModernGL context. Attached to Blender's OpenGL context."""
 
-		self.maps: dict[str, Heightmap] = {}
+		self._maps_: dict[str, Heightmap] = {}
 		"""Heightmap dictionary. Uses UUID strings as keys."""
 
 		self.programs: dict[str, mgl.Program] = {}
@@ -73,16 +73,20 @@ class HydraData(object):
 
 		:return: `True` if map exists in the :attr:`maps` list. `False` otherwise.
 		:rtype: :class:`bool`"""
-		return id in self.maps
+		return id in self._maps_
+
+	def get_map(self, id: str | None)->Heightmap | None:
+		if id in self._maps_:
+			return self._maps_[id]
 
 	def try_release_map(self, id: str | None):
 		"""Release specified map. Does nothing on invalid `id`.
 
 		:param id: Map ID.
 		:type id: :class:`str` or :class:`None`"""
-		if id in self.maps:
-			self.maps[id].release()
-			del self.maps[id]
+		if id in self._maps_:
+			self._maps_[id].release()
+			del self._maps_[id]
 	
 	def create_map(self, name: str, txt: mgl.Texture)->str:
 		"""Creates and adds a heightmap into maps. Returns map ID.
@@ -94,7 +98,7 @@ class HydraData(object):
 		:return: New map UUID string.
 		:rtype: :class:`str`"""
 		id = str(uuid.uuid4())
-		self.maps[id] = Heightmap(name, txt)
+		self._maps_[id] = Heightmap(name, txt)
 		return id
 	
 	def report(self, caller, callerName:str="Hydra"):
@@ -113,9 +117,9 @@ class HydraData(object):
 	
 	def free_all(self):
 		"""Frees all allocated maps."""
-		for i in self.maps.values():
+		for i in self._maps_.values():
 			i.release()
-		self.maps = {}
+		self._maps_ = {}
 
 	def add_message(self, message: str, error: bool=False):
 		"""Adds an info message.

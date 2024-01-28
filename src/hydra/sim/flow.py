@@ -26,9 +26,9 @@ def generate_flow(obj: bpy.types.Image | bpy.types.Object)->bpy.types.Image:
 	size = hyd.get_size()
 
 	if data.has_map(hyd.map_result):
-		height = data.maps[hyd.map_result].texture
+		height = data.get_map(hyd.map_result).texture
 	else:
-		height = data.maps[hyd.map_source].texture
+		height = data.get_map(hyd.map_source).texture
 	amount = texture.create_texture(size)
 
 	subdiv = int(hyd.flow_subdiv)

@@ -44,7 +44,7 @@ class ObjectOperator(bpy.types.Operator):
 class ErosionOperator(HydraOperator):
 	bl_label = "Erode"
 	bl_idname = "hydra.erode"
-	bl_description = "Erode object"
+	bl_description = "Erode object using current settings, or set current result as source and continue"
 
 	apply: BoolProperty(
 		name="Apply",
@@ -73,28 +73,14 @@ class ErosionOperator(HydraOperator):
 
 		common.data.report(self, callerName="Erosion")
 		return {'FINISHED'}
-
-#-------------------------------------------- Flow
 	
-class FlowOperator(HydraOperator):
-	bl_label = "Generate Flow"
-	bl_idname = "hydra.flow"
-	bl_description = "Generates a map of flow concentration using particle erosion. Uses eroded heightmaps, if they exist"
-
-	def invoke(self, ctx, event):
-		target = self.get_target(ctx)
-		img = flow.generate_flow(target)
-		nav.goto_image(img)
-		self.report({"INFO"}, f"Successfuly created image: {img.name}")
-		return {'FINISHED'}
-
 #-------------------------------------------- Thermal
 	
 class ThermalOperator(HydraOperator):
 	"""Thermal erosion operator."""
 	bl_label = "Erode"
 	bl_idname = "hydra.thermal"
-	bl_description = "Erode object"
+	bl_description = "Erode object using current settings, or set current result as source and continue"
 
 	apply: BoolProperty(
 		name="Apply",
@@ -112,6 +98,20 @@ class ThermalOperator(HydraOperator):
 		apply.add_preview(target)
 
 		common.data.report(self, callerName="Erosion")
+		return {'FINISHED'}
+	
+#-------------------------------------------- Flow
+	
+class FlowOperator(HydraOperator):
+	bl_label = "Generate Flow"
+	bl_idname = "hydra.flow"
+	bl_description = "Generates a map of flow concentration using particle erosion. Uses eroded heightmaps, if they exist"
+
+	def invoke(self, ctx, event):
+		target = self.get_target(ctx)
+		img = flow.generate_flow(target)
+		nav.goto_image(img)
+		self.report({"INFO"}, f"Successfuly created image: {img.name}")
 		return {'FINISHED'}
 	
 #-------------------------------------------- Decoupling

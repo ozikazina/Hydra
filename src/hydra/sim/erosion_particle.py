@@ -28,7 +28,7 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 	fbo = ctx.simple_framebuffer((math.ceil(size[0]/subdiv),math.ceil(size[1]/subdiv)), 1, dtype="f4")
 	scope = ctx.scope(fbo)
 	
-	height = texture.clone(data.maps[hyd.map_source].texture)
+	height = texture.clone(data.get_map(hyd.map_source).texture)
 	sediment = texture.create_texture(size) if hyd.out_sediment else None
 	depth = texture.create_texture(size) if hyd.out_depth else None
 	color = texture.create_texture(size, image=bpy.data.images[hyd.color_src]) if hyd.out_color else None
@@ -84,7 +84,7 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 
 	data.try_release_map(hyd.map_result)
 	
-	name = common.increment_layer(data.maps[hyd.map_source].name, "Particle 1")
+	name = common.increment_layer(data.get_map(hyd.map_source).name, "Particle 1")
 	hmid = data.create_map(name, height)
 	hyd.map_result = hmid
 

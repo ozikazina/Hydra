@@ -23,7 +23,7 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 
 	size = hyd.get_size()
 	
-	height = texture.clone(data.maps[hyd.map_source].texture) #height
+	height = texture.clone(data.get_map(hyd.map_source).texture) #height
 	pipe = texture.create_texture(size, channels=4) #pipe
 	velocity = texture.create_texture(size, channels=2) #velocity
 	water = texture.create_texture(size) #water
@@ -115,7 +115,7 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 	hyd = obj.hydra_erosion
 	data.try_release_map(hyd.map_result)
 	
-	name = common.increment_layer(data.maps[hyd.map_source].name, "Mei 1")
+	name = common.increment_layer(data.get_map(hyd.map_source).name, "Mei 1")
 	hmid = data.create_map(name, height)
 	hyd.map_result = hmid
 
