@@ -47,27 +47,31 @@ def generate_flow(obj: bpy.types.Image | bpy.types.Object)->bpy.types.Image:
 	prog["iterations"] = hyd.part_lifetime
 	prog["drag"] = 1-hyd.part_drag	#multiplicative factor
 
-	groupsX = math.ceil(size[0]/(subdiv * 32))
-	groupsY = math.ceil(size[1]/(subdiv * 32))
+	groups_x = math.ceil(size[0]/(subdiv * 32))
+	groups_y = math.ceil(size[1]/(subdiv * 32))
 
 	time = datetime.now()
 	for y in range(subdiv):
 		for x in range(subdiv):
 			prog["off"] = (x,y)
-			prog.run(group_x=groupsX, group_y=groupsY)
+			prog.run(group_x=groups_x, group_y=groups_y)
 	ctx.finish()
 
-	finalAmount = texture.create_texture(amount.size)
-	finalAmount.bind_to_image(3, read=True, write=True)
+	final_amount = texture.create_texture(amount.size)
+	final_amount.bind_to_image(3, read=True, write=True)
 	prog = data.shaders["plug"]
 	prog["inMap"].value = 2
 	prog["outMap"].value = 3
+
+	groups_x = math.ceil(size[0]/32)
+	groups_y = math.ceil(size[1]/32)
+
 	prog.run(group_x=size[0], group_y=size[1])
 
 	print((datetime.now() - time).total_seconds())
 
-	imgName = f"HYD_{obj.name}_Flow"
-	ret = texture.write_image(imgName, finalAmount)
+	img_name = f"HYD_{obj.name}_Flow"
+	ret = texture.write_image(img_name, final_amount)
 	amount.release()
-	finalAmount.release()
+	final_amount.release()
 	return ret

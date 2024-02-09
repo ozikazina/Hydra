@@ -20,10 +20,12 @@ def get_or_make_image(size: tuple[int,int], name: str)->bpy.types.Image:
 	else:
 		img = bpy.data.images[name]
 	
+	img.colorspace_settings.name = "Non-Color"
+
 	if tuple(img.size) != size:
 		img.scale(size[0], size[1])
+
 	img.hydra_erosion.is_generated = True
-	img.colorspace_settings.name = "Non-Color"
 	return img
 
 def write_image(name: str, texture: mgl.Texture)->bpy.types.Image:
