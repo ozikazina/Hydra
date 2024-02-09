@@ -61,8 +61,13 @@ def register():
 	if not _hydra_invalid:
 		common.data = common.HydraData()
 		common.data.init_context()
-		opengl.init_context()
-		startup.invalid = False
+		try:
+			opengl.init_context()
+			startup.invalid = False
+		except Exception as e:
+			print(f"Failed to initialize OpenGL context: {e}")
+			bpy.context.window_manager.popup_menu(lambda s,_: s.layout.label(text="Failed to initialize OpenGL context. Check console for details."), title="Hydra", icon="ERROR")
+			startup.invalid = True
 
 		bpy.types.Object.hydra_erosion = PointerProperty(type=properties.ErosionGroup)
 		bpy.types.Image.hydra_erosion = PointerProperty(type=properties.ErosionGroup)

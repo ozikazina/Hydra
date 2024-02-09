@@ -1,6 +1,6 @@
 #version 430
 
-layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+layout(local_size_x = 32, local_size_y = 32, local_size_z = 1) in;
 
 layout (r32f) uniform image2D mapH;
 
@@ -28,51 +28,34 @@ void main(void) {
 	
 	float len = 1.0;
 	
-	float lx = bx;
-	float ly = by;
-	
-	ivec2 neigh[4];
-	
-	if (diagonal) {
-		neigh =  ivec2[4](base + ivec2(-1,-1), base + ivec2(-1,1), base + ivec2(1,1), base + ivec2(1,-1));
-		lx *= sqrt(2);
-		ly *= sqrt(2);
-	}
-	else {
-		neigh = ivec2[4](base + ivec2(-1,0), base + ivec2(0,1), base + ivec2(1,0), base + ivec2(0,-1));
-	}
+	float lx = diagonal ? bx : bx * sqrt(2);
+	float ly = diagonal ? by : by * sqrt(2);
 	
 	float h = getH(base);
-	
-	vec4 s = vec4(0.0);
-	vec4 d = vec4(0.0);
+
+	vec4 p = vec4(0.0);
 
 	float dh;
 
-	dh = getH(neigh[0]);
-	if (abs(dh - h) > alpha * lx) {
-		if (dh > h) d.x = dh - h - alpha * lx;	//demand
-		else s.x = dh - h + alpha * lx;	//supply
-	}
+	dh = getH(base + ivec2(-1, diagonal ? -1 : 0)) - h;
+	p.x = dh + (dh > 0 ? -1 : 1) * alpha * lx;
+	p.x *= int(abs(dh) > alpha * lx);
 
-	dh = getH(neigh[1]);
-	if (abs(dh - h) > alpha * ly) {
-		if (dh > h) d.y = dh - h - alpha * ly;
-		else s.y = dh - h + alpha * ly;
-	}
+	dh = getH(base + ivec2(diagonal ? -1 : 0, 1)) - h;
+	p.y = dh + (dh > 0 ? -1 : 1) * alpha * ly;
+	p.y *= int(abs(dh) > alpha * ly);
 	
-	dh = getH(neigh[2]);
-	if (abs(dh - h) > alpha * lx) {
-		if (dh > h) d.z = dh - h - alpha * lx;
-		else s.z = dh - h + alpha * lx;
-	}
+	dh = getH(base + ivec2(1, diagonal ? 1 : 0)) - h;
+	p.z = dh + (dh > 0 ? -1 : 1) * alpha * lx;
+	p.z *= int(abs(dh) > alpha * lx);
 	
-	dh = getH(neigh[3]);
-	if (abs(dh - h) > alpha * ly) {
-		if (dh > h) d.w = dh - h - alpha * lx;
-		else s.w = dh - h + alpha * ly;
-	}
+	dh = getH(base + ivec2(diagonal ? 1 : 0, -1)) - h;
+	p.w = dh + (dh > 0 ? -1 : 1) * alpha * ly;
+	p.w *= int(abs(dh) > alpha * ly);
 	
+	vec4 d = 0.5 * (p + abs(p));	//positive part
+	vec4 s = p - d;	//negative part
+
 	float mx = max(max(d.x, d.y), max(d.z, d.w));
 	float mn = min(min(s.x, s.y), min(s.z, s.w));
 

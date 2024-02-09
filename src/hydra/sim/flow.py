@@ -47,8 +47,8 @@ def generate_flow(obj: bpy.types.Image | bpy.types.Object)->bpy.types.Image:
 	prog["iterations"] = hyd.part_lifetime
 	prog["drag"] = 1-hyd.part_drag	#multiplicative factor
 
-	groupsX = math.ceil(size[0]/subdiv)
-	groupsY = math.ceil(size[1]/subdiv)
+	groupsX = math.ceil(size[0]/(subdiv * 32))
+	groupsY = math.ceil(size[1]/(subdiv * 32))
 
 	time = datetime.now()
 	for y in range(subdiv):

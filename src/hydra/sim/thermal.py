@@ -53,6 +53,9 @@ def erode(obj: bpy.types.Image | bpy.types.Object):
 	diagonal = hyd.thermal_solver == "diagonal"
 	alternate = hyd.thermal_solver == "both"
 
+	group_x = math.ceil(size[0] / 32)
+	group_y = math.ceil(size[1] / 32)
+
 	time = datetime.now()
 	for i in range(hyd.thermal_iter_num):
 		if alternate:
@@ -60,12 +63,12 @@ def erode(obj: bpy.types.Image | bpy.types.Object):
 
 		progA["diagonal"] = diagonal
 		progA["mapH"].value = mapI
-		progA.run(group_x = size[0], group_y = size[1])
+		progA.run(group_x = group_x, group_y = group_y)
 
 		progB["diagonal"] = diagonal
 		progB["mapH"].value = mapI
 		progB["outH"].value = mapO
-		progB.run(group_x = size[0], group_y = size[1])
+		progB.run(group_x = group_x, group_y = group_y)
 		
 		temp = mapI
 		mapI = mapO

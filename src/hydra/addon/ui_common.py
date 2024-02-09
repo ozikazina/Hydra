@@ -57,7 +57,11 @@ class ObjectPanel(HydraPanel):
 		ob = ctx.object
 		if not ob:
 			return None
-		return ob.hydra_erosion
+		
+		try:
+			return ob.hydra_erosion
+		except AttributeError:
+			return None
 
 	def draw_size_fragment(self, container, ctx, settings):
 		if common.data.has_map(settings.map_base):
@@ -72,9 +76,13 @@ class ObjectPanel(HydraPanel):
 		ob = ctx.object
 		if not ob:
 			return False
-		if ob.hydra_erosion.is_generated:
+		if ob.type != "MESH" or len(ob.data.vertices) == 0:
 			return False
-		return ob.type == "MESH" and len(ob.data.vertices) != 0
+		
+		try:
+			return not ob.hydra_erosion.is_generated
+		except AttributeError:
+			return False
 
 #-------------------------------------------- Erosion
 
