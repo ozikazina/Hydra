@@ -4,7 +4,8 @@ from Hydra.utils import texture
 from Hydra.sim import heightmap
 from Hydra import common
 
-import bpy, bpy.types
+import bpy, bpy.types, math
+from datetime import datetime
 
 # --------------------------------------------------------- Erosion
 
@@ -30,8 +31,6 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 	sediment = texture.create_texture(size) #sediment
 	temp = texture.create_texture(size)	#temp
 
-	print("Preparation finished")
-
 	height.bind_to_image(1, read=True, write=True) #don't use 0 -> default value -> cross-contamination
 	pipe.bind_to_image(2, read=True, write=True)
 	velocity.bind_to_image(3, read=True, write=True)
@@ -45,13 +44,22 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 	prog.run(group_x=size[0], group_y=size[1])
 	ctx.finish()
 
+	group_x = math.ceil(size[0] / 32)
+	group_y = math.ceil(size[1] / 32)
+
+	capacity = hyd.mei_capacity
+
+	time = datetime.now()
 	for i in range(hyd.mei_iter_num):
+		if i % 10 == 9:
+			capacity *= 0.95
+
 		prog = data.shaders["mei1"]
 		prog["d_map"].value = 4
 		prog["dt"] = hyd.mei_dt
 		prog["Ke"] = hyd.mei_evaporation
 		prog["Kr"] = hyd.mei_rain
-		prog.run(group_x=size[0], group_y=size[1])
+		prog.run(group_x=group_x, group_y=group_y)
 
 		prog = data.shaders["mei2"]
 		prog["b_map"].value = 1
@@ -59,7 +67,7 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 		prog["d_map"].value = 4
 		prog["lx"] = hyd.mei_length[0]
 		prog["ly"] = hyd.mei_length[1]
-		prog.run(group_x=size[0], group_y=size[1])
+		prog.run(group_x=group_x, group_y=group_y)
 	
 		prog = data.shaders["mei3"]
 		prog["pipe_map"].value = 2
@@ -68,7 +76,7 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 		prog["dt"] = hyd.mei_dt
 		prog["lx"] = hyd.mei_length[0]
 		prog["ly"] = hyd.mei_length[1]
-		prog.run(group_x=size[0], group_y=size[1])
+		prog.run(group_x=group_x, group_y=group_y)
 
 		prog = data.shaders["mei4"]
 		prog["b_map"].value = 1
@@ -76,12 +84,12 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 		prog["v_map"].value = 3
 		prog["d_map"].value = 4
 		prog["dmean_map"].value = 6
-		prog["Kc"] = hyd.mei_capacity
+		prog["Kc"] = capacity
 		prog["lx"] = hyd.mei_length[0]
 		prog["ly"] = hyd.mei_length[1]
 		prog["minalpha"] = hyd.mei_min_alpha
 		prog["scale"] = 1 / hyd.mei_scale
-		prog.run(group_x=size[0], group_y=size[1])
+		prog.run(group_x=group_x, group_y=group_y)
 
 		prog = data.shaders["mei5"]
 		prog["b_map"].value = 1
@@ -89,16 +97,18 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 		prog["c_map"].value = 6
 		prog["Ks"] = hyd.mei_erosion
 		prog["Kd"] = hyd.mei_deposition
-		prog.run(group_x=size[0], group_y=size[1])
+
+		prog.run(group_x=group_x, group_y=group_y)
 
 		prog = data.shaders["mei6"]
 		prog["s_alt_map"].value = 5
 		prog["v_map"].value = 3
 		prog["s_map"].value = 6
 		prog["dt"] = hyd.mei_dt
-		prog.run(group_x=size[0], group_y=size[1])
+		prog.run(group_x=group_x, group_y=group_y)
 
-		ctx.finish()
+	ctx.finish()
+	print((datetime.now() - time).total_seconds())
 
 	pipe.release()
 	velocity.release()

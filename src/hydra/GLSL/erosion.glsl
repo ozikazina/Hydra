@@ -1,9 +1,6 @@
 #version 430
 
-// layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
-
-in vec4 gl_FragCoord;
-out vec4 FragColor;
+layout(local_size_x = 32, local_size_y = 32, local_size_z = 1) in;
 
 layout (r32f) uniform image2D img;
 layout (r32f) uniform image2D depth;
@@ -86,7 +83,8 @@ void colorize(vec2 pos, vec4 col) {
 
 void main(void) {
 	float heights[] = float[4](0,0,0,0);
-	ivec2 base = ivec2(gl_FragCoord.xy) * square_size + off;
+	ivec2 base = ivec2(gl_GlobalInvocationID.xy) * square_size + off;;
+
 	vec2 vel = vec2(0,0);
 	vec2 pos = vec2(base) + vec2(0.5,0.5);
 	float capacity = 0.0;
@@ -172,6 +170,4 @@ void main(void) {
 		
 		if (pos.x <= 0 || pos.y <= 0) break;
 	}//i loop
-
-	FragColor = vec4(0, 0, 0, 1);
 }//main

@@ -23,19 +23,19 @@ void main(void) {
 	
 	inp = -imageLoad(requests, base + ivec2(-1, diagonal ? -1 : 0)).z;
 	sw = inp > 0 ? 1 : -1;
-	nh += inp * sw > request.x * sw ? request.x : inp;
+	nh += (inp * sw > request.x * sw) ? request.x : inp;
 	
 	inp = imageLoad(requests, base + ivec2(diagonal ? -1 : 0, 1)).w;
 	sw = inp > 0 ? 1 : -1;
-	nh += inp * sw > request.y * sw ? request.y : inp;
+	nh += (inp * sw > request.y * sw) ? request.y : inp;
 	
 	inp = imageLoad(requests, base + ivec2(1, diagonal ? 1 : 0)).x;
 	sw = inp > 0 ? 1 : -1;
-	nh += inp * sw > request.z * sw ? request.z : inp;
+	nh += (inp * sw > request.z * sw) ? request.z : inp;
 	
 	inp = imageLoad(requests, base + ivec2(diagonal ? 1 : 0, -1)).y;
 	sw = inp > 0 ? 1 : -1;
-	nh += inp * sw > request.w * sw ? request.w : inp;
+	nh += (inp * sw > request.w * sw) ? request.w : inp;
 	
 	nh = max(nh, 0);
 	
