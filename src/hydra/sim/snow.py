@@ -51,15 +51,13 @@ def simulate(obj: bpy.types.Image | bpy.types.Object):
 	free.bind_to_image(3, read=True, write=True)
 
 	progA["requests"].value = 2
-	progA["Ks"] = hyd.thermal_strength * 0.5	#0-1 -> 0-0.5, higher is unstable
-	progA["alpha"] = math.tan(math.tau * hyd.thermal_angle / 360) * 2 / size[0] # images are scaled to 2 z/x -> angle depends only on image width
+	progA["Ks"] = 0.5
+	progA["alpha"] = math.tan(math.tau * hyd.snow_angle / 360) * 2 / size[0] # images are scaled to 2 z/x -> angle depends only on image width
 	progA["by"] = hyd.scale_ratio
 	progA["offset"].value = 4
 	progA["useOffset"] = True
 
 	progB["requests"].value = 2
-
-	# snowProg["offset"].value = 4
 
 	snowProg["snow_add"] = hyd.snow_add / hyd.mei_scale
 
@@ -70,7 +68,7 @@ def simulate(obj: bpy.types.Image | bpy.types.Object):
 	snowProg.run(group_x = group_x, group_y = group_y)
 
 	time = datetime.now()
-	for i in range(hyd.thermal_iter_num):
+	for i in range(hyd.snow_iter_num):
 		diagonal = (i&1) == 1
 
 		progA["diagonal"] = diagonal

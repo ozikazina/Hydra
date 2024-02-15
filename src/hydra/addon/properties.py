@@ -258,10 +258,10 @@ class ErosionGroup(bpy.types.PropertyGroup):
 	)
 
 	mei_scale: FloatProperty(
-		default=500,
+		default=100,
 		min=1, max=2000,
 		name="Model scale",
-		description="Scale of the simulation"
+		description="Scale of the simulation roughly in meters. A hill is 100, a mountain is 500+ and so on"
 	)
 
 	mei_length: FloatVectorProperty(
@@ -300,7 +300,7 @@ class ErosionGroup(bpy.types.PropertyGroup):
 
 	thermal_angle: FloatProperty(
 		default=45,
-		min=0, max=85,
+		min=10, max=85,
 		name="Angle",
 		description="Maximum angle the surface can have in degrees"
 	)
@@ -359,7 +359,7 @@ class ErosionGroup(bpy.types.PropertyGroup):
 
 	snow_add: FloatProperty(
 		default=0.5,
-		min=0.0, max=1.0,
+		min=0.1, max=1.0,
 		name="Snow amount",
 		description="Amount of snow added to the object, scaled by model scale"
 	)
@@ -373,7 +373,7 @@ class ErosionGroup(bpy.types.PropertyGroup):
 
 	snow_angle: FloatProperty(
 		default=38,
-		min=0, max=85,
+		min=10, max=85,
 		name="Angle",
 		description="Maximum angle the surface can have in degrees"
 	)
