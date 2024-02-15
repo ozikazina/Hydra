@@ -3,6 +3,9 @@
 layout(local_size_x = 32, local_size_y = 32, local_size_z = 1) in;
 
 layout (r32f) uniform image2D mapH;
+layout (r32f) uniform image2D offset;
+
+uniform bool useOffset = false;
 
 layout (rgba32f) uniform image2D requests;
 
@@ -16,7 +19,12 @@ uniform float alpha = 0.005;
 uniform bool diagonal = false;
 
 float getH(ivec2 pos) {
-	return imageLoad(mapH, pos).x;
+	if (useOffset) {
+		return imageLoad(mapH, pos).x + imageLoad(offset, pos).x;
+	}
+	else {
+		return imageLoad(mapH, pos).x;
+	}
 }
 
 //  1y
@@ -57,11 +65,12 @@ void main(void) {
 	vec4 s = p - d;	//negative part
 
 	float mx = max(max(d.x, d.y), max(d.z, d.w));
-	float mn = min(min(s.x, s.y), min(s.z, s.w));
+	h = imageLoad(mapH, base).x;
+	float mn = max(-h, min(min(s.x, s.y), min(s.z, s.w)));
 
-	float Cd = clamp(Ks * mx / (d.x + d.y + d.z + d.w), 0, 1);
-	float Cs = clamp(Ks * mn / (s.x + s.y + s.z + s.w), 0, 1);
-	
+	float Cd = min(Ks * mx / (d.x + d.y + d.z + d.w), 1);
+	float Cs = min(Ks * mn / (s.x + s.y + s.z + s.w), 1);
+
 	vec4 ret = s * Cs + d * Cd;
 	
 	imageStore(requests, base, ret);

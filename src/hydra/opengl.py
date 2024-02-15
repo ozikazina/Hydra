@@ -55,6 +55,10 @@ def init_context():
 		comp = f.read()
 	data.shaders["thermalB"] = ctx.compute_shader(comp)
 
+	with open(Path(base, "snow.glsl"), "r") as f:
+		comp = f.read()
+	data.shaders["snow"] = ctx.compute_shader(comp)
+
 	with open(Path(base, "linear.glsl"), "r") as f:
 		comp = f.read()
 	data.shaders["linear"] = ctx.compute_shader(comp)

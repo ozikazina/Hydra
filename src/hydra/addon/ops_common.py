@@ -2,7 +2,7 @@ import bpy
 from bpy.props import BoolProperty
 
 from Hydra import common, opengl
-from Hydra.sim import flow, thermal, heightmap, erosion_particle, erosion_mei
+from Hydra.sim import flow, thermal, heightmap, erosion_particle, erosion_mei, snow
 from Hydra.utils import nav, apply
 
 class HydraOperator(bpy.types.Operator):
@@ -100,6 +100,23 @@ class ThermalOperator(HydraOperator):
 		common.data.report(self, callerName="Erosion")
 		return {'FINISHED'}
 	
+#-------------------------------------------- Snow
+
+class SnowOperator(HydraOperator):
+	"""Snow erosion operator."""
+	bl_label = "Erode"
+	bl_idname = "hydra.snow"
+	bl_description = "Simulate snow layer on current object"
+	
+	def invoke(self, ctx, event):
+		target = self.get_target(ctx)
+
+		img = snow.simulate(target)
+		nav.goto_image(img)
+
+		common.data.report(self, callerName="Erosion")
+		return {'FINISHED'}
+
 #-------------------------------------------- Flow
 	
 class FlowOperator(HydraOperator):
@@ -169,6 +186,7 @@ def get_exports()->list:
 		ErosionOperator,
 		FlowOperator,
 		ThermalOperator,
+		SnowOperator,
 		DecoupleOperator,
 		CleanupOperator,
 		ReloadShadersOperator

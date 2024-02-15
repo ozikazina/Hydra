@@ -87,6 +87,12 @@ class ThermalHeightPanel(ui_common.HeightmapSystemPanel, ui_common.ObjectPanel):
 	bl_parent_id = "HYDRA_PT_ThermalPanel"
 	bl_idname = "HYDRA_PT_ThermalHeightPanel"
 
+#-------------------------------------------- Snow
+
+class SnowPanel(ui_common.SnowPanel, ui_common.ObjectPanel):
+	"""Panel for snow simulation."""
+	bl_idname = "HYDRA_PT_SnowPanel"
+
 #-------------------------------------------- Info
 
 class InfoPanel(ui_common.InfoPanel, ui_common.ObjectPanel):
@@ -135,6 +141,7 @@ def get_exports()->list:
 		ErosionHeightmapPanel,
 		ErosionExtrasPanel,
 		ErosionAdvancedPanel,
+		SnowPanel,
 		ThermalPanel,
 		ThermalHeightPanel,
 		FlowPanel,

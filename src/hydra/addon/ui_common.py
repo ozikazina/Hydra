@@ -138,6 +138,33 @@ class ThermalPanel():
 		split.label(text="Direction: ")
 		split.prop(hyd, "thermal_solver", text="")
 
+#-------------------------------------------- Snow
+
+class SnowPanel():
+	bl_label = "Hydra - Snow"
+	bl_description = "Erosion settings for snow simulation"
+
+	def draw(self, ctx):
+		hyd = self.get_settings(ctx)
+		
+		col = self.layout.column()
+
+		grid = col.grid_flow(columns=1, align=True)
+		grid.operator("hydra.snow", text="Erode", icon="RNDCURVE")
+
+		self.draw_size_fragment(col.box(), ctx, hyd)
+
+		col.separator()
+		col.label(text="Erosion settings")
+
+		box = col.box()
+		box.prop(hyd, "snow_add", slider=True)
+		box.prop(hyd, "mei_scale")
+
+		box = col.box()
+		box.prop(hyd, "snow_iter_num")
+		box.prop(hyd, "snow_angle", slider=True)
+
 #-------------------------------------------- Flow
 
 class FlowPanel():
