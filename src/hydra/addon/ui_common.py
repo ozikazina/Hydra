@@ -134,6 +134,13 @@ class ThermalPanel():
 		box.prop(hyd, "thermal_iter_num")
 		box.prop(hyd, "thermal_strength", slider=True)
 		box.prop(hyd, "thermal_angle", slider=True)
+
+		box.prop(hyd, "thermal_use_stride")
+		if hyd.thermal_use_stride:
+			sub = box.box()
+			sub.prop(hyd, "thermal_stride")
+			sub.prop(hyd, "thermal_stride_grad")
+		
 		split = box.split(factor=0.4)
 		split.label(text="Direction: ")
 		split.prop(hyd, "thermal_solver", text="")

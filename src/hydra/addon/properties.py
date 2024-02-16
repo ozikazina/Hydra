@@ -323,8 +323,23 @@ class ErosionGroup(bpy.types.PropertyGroup):
 		description="Solver neighborhood type"
 	)
 
-	thermal_offset_img: StringProperty(
-		name="Offset"
+	thermal_use_stride: BoolProperty(
+		default=True,
+		name="Use stride",
+		description="Use stride to speed up erosion below 45 degrees"
+	)
+
+	thermal_stride: IntProperty(
+		default=1,
+		min=1, max=10,
+		name="Stride",
+		description="Stride size in pixels. Higher values make low angle erosion faster"
+	)
+
+	thermal_stride_grad: BoolProperty(
+		default=True,
+		name="Step down",
+		description="Periodically halves stride for smoother erosion"
 	)
 
 	#------------------------- Snow

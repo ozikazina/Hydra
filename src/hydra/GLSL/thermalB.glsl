@@ -7,6 +7,8 @@ layout (rgba32f) uniform image2D requests;
 
 layout (r32f) uniform image2D outH;
 
+uniform int ds = 1;
+
 uniform bool diagonal = false;
 
 //  1y
@@ -21,19 +23,19 @@ void main(void) {
 
 	float inp, sw;
 	
-	inp = -imageLoad(requests, base + ivec2(-1, diagonal ? -1 : 0)).z;
+	inp = -imageLoad(requests, base + ivec2(-ds, diagonal ? -ds : 0)).z;
 	sw = inp < 0 ? -1 : 1;
 	nh += (request.x * sw < inp * sw) ? request.x : inp;
 	
-	inp = -imageLoad(requests, base + ivec2(diagonal ? -1 : 0, 1)).w;
+	inp = -imageLoad(requests, base + ivec2(diagonal ? -ds : 0, ds)).w;
 	sw = inp < 0 ? -1 : 1;
 	nh += (request.y * sw < inp * sw) ? request.y : inp;
 	
-	inp = -imageLoad(requests, base + ivec2(1, diagonal ? 1 : 0)).x;
+	inp = -imageLoad(requests, base + ivec2(ds, diagonal ? ds : 0)).x;
 	sw = inp < 0 ? -1 : 1;
 	nh += (request.z * sw < inp * sw) ? request.z : inp;
 	
-	inp = -imageLoad(requests, base + ivec2(diagonal ? 1 : 0, -1)).y;
+	inp = -imageLoad(requests, base + ivec2(diagonal ? ds : 0, -ds)).y;
 	sw = inp < 0 ? -1 : 1;
 	nh += (request.w * sw < inp * sw) ? request.w : inp;
 	

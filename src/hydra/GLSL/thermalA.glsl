@@ -17,6 +17,7 @@ uniform float Ks = 0.5;
 uniform float alpha = 0.005;
 
 uniform bool diagonal = false;
+uniform int ds = 1;
 
 float getH(ivec2 pos) {
 	if (useOffset) {
@@ -36,8 +37,8 @@ void main(void) {
 	
 	float len = 1.0;
 	
-	float lx = diagonal ? bx : bx * sqrt(2);
-	float ly = diagonal ? by : by * sqrt(2);
+	float lx = (diagonal ? bx : bx * sqrt(2)) * ds;
+	float ly = (diagonal ? by : by * sqrt(2)) * ds;
 	
 	float h = getH(base);
 
@@ -45,19 +46,19 @@ void main(void) {
 
 	float dh;
 
-	dh = getH(base + ivec2(-1, diagonal ? -1 : 0)) - h;
+	dh = getH(base + ivec2(-ds, diagonal ? -ds : 0)) - h;
 	p.x = dh + (dh > 0 ? -1 : 1) * alpha * lx;
 	p.x *= int(abs(dh) > alpha * lx);
 
-	dh = getH(base + ivec2(diagonal ? -1 : 0, 1)) - h;
+	dh = getH(base + ivec2(diagonal ? -ds : 0, ds)) - h;
 	p.y = dh + (dh > 0 ? -1 : 1) * alpha * ly;
 	p.y *= int(abs(dh) > alpha * ly);
 	
-	dh = getH(base + ivec2(1, diagonal ? 1 : 0)) - h;
+	dh = getH(base + ivec2(ds, diagonal ? ds : 0)) - h;
 	p.z = dh + (dh > 0 ? -1 : 1) * alpha * lx;
 	p.z *= int(abs(dh) > alpha * lx);
 	
-	dh = getH(base + ivec2(diagonal ? 1 : 0, -1)) - h;
+	dh = getH(base + ivec2(diagonal ? ds : 0, -ds)) - h;
 	p.w = dh + (dh > 0 ? -1 : 1) * alpha * ly;
 	p.w *= int(abs(dh) > alpha * ly);
 	

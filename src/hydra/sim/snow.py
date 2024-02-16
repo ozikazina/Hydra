@@ -56,8 +56,10 @@ def simulate(obj: bpy.types.Image | bpy.types.Object):
 	progA["by"] = hyd.scale_ratio
 	progA["offset"].value = 4
 	progA["useOffset"] = True
+	progA["ds"] = 1
 
 	progB["requests"].value = 2
+	progB["ds"] = 1
 
 	snowProg["snow_add"] = hyd.snow_add / hyd.mei_scale
 
@@ -87,6 +89,11 @@ def simulate(obj: bpy.types.Image | bpy.types.Object):
 	ctx.finish()
 
 	print((datetime.now() - time).total_seconds())
+
+	prog = data.shaders["scaling"]
+	prog["A"].value = mapI	# snow
+	prog["scale"] = hyd.mei_scale / hyd.snow_add
+	prog.run(group_x = size[0], group_y = size[1])
 	
 	img_name = f"HYD_{obj.name}_Snow"
 	ret = texture.write_image(img_name, snow)
