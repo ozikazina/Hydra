@@ -6,7 +6,7 @@ import moderngl as mgl
 from Hydra.utils import model
 from Hydra import common
 
-def get_or_make_image(size: tuple[int,int], name: str)->bpy.types.Image:
+def get_or_make_image(size: 'tuple[int,int]', name: str)->bpy.types.Image:
 	"""Gets or creates an image of the specified name. If sizes are different, then it gets scaled to `size`.
 	
 	:param size: Resolution tuple.
@@ -51,7 +51,7 @@ def write_image(name: str, texture: mgl.Texture)->bpy.types.Image:
 	image.pack()
 	return image
 
-def create_texture(size: tuple[int,int], pixels: bytes|None = None, image: bpy.types.Image|None = None, channels: int = 1)->mgl.Texture:
+def create_texture(size: 'tuple[int,int]', pixels: bytes|None = None, image: bpy.types.Image|None = None, channels: int = 1)->mgl.Texture:
 	"""Creates a :class:`moderngl.Texture` of the specified size."""
 
 	if channels < 1 or channels > 4:

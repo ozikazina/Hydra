@@ -122,6 +122,7 @@ def subtract(modified: mgl.Texture, base: mgl.Texture, scale: float=1.0)->mgl.Te
 	prog["A"].value = 1
 	base.bind_to_image(2, read=True, write=False)
 	prog["B"].value = 2
+	prog["factor"] = 1.0
 	#A=A-B
 	prog.run(base.width, base.height)
 

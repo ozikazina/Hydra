@@ -114,6 +114,8 @@ class SnowOperator(HydraOperator):
 		img = snow.simulate(target)
 		nav.goto_image(img)
 
+		apply.add_preview(target)
+
 		common.data.report(self, callerName="Erosion")
 		return {'FINISHED'}
 

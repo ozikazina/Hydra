@@ -18,24 +18,20 @@ def simulate(obj: bpy.types.Image | bpy.types.Object):
 	ctx = data.context
 	hyd = obj.hydra_erosion
 
-	print("Preparing for thermal erosion")
+	print("Preparing for snow simulation")
 
 	if not data.has_map(hyd.map_base):
 		heightmap.prepare_heightmap(obj)
 
 	size = hyd.get_size()
 
-	if data.has_map(hyd.map_result):
-		offset = data.get_map(hyd.map_result).texture
-	else:
-		offset = data.get_map(hyd.map_source).texture
+	offset = data.get_map(hyd.map_source).texture
 
 	snow = texture.create_texture(size)
 	request = texture.create_texture(size, channels=4)
 	free = texture.create_texture(size)
 
 	print("Preparation finished")
-
 
 	progA = data.shaders["thermalA"]
 	progB = data.shaders["thermalB"]
@@ -90,16 +86,29 @@ def simulate(obj: bpy.types.Image | bpy.types.Object):
 
 	print((datetime.now() - time).total_seconds())
 
+	snow_img = texture.clone(snow)
+	snow_img.bind_to_image(5, read=True, write=True)
 	prog = data.shaders["scaling"]
-	prog["A"].value = mapI	# snow
+	prog["A"].value = 5	# snow
 	prog["scale"] = hyd.mei_scale / hyd.snow_add
 	prog.run(group_x = size[0], group_y = size[1])
-	
+
 	img_name = f"HYD_{obj.name}_Snow"
-	ret = texture.write_image(img_name, snow)
+	ret = texture.write_image(img_name, snow_img)
+	snow_img.release()
+
+	prog = data.shaders["diff"]
+	prog["A"].value = mapI
+	prog["B"].value = 4	# offset - source map
+	prog["factor"] = -1.0	#add instead of subtract
+	prog.run(group_x = size[0], group_y = size[1])
+
+	data.try_release_map(hyd.map_result)
+	name = common.increment_layer(data.get_map(hyd.map_source).name, "Snow 1")
+	hmid = data.create_map(name, snow)
+	hyd.map_result = hmid
 
 	request.release()
-	snow.release()
 	free.release()
 
 	print("Erosion finished")
