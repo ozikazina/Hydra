@@ -85,7 +85,7 @@ def erode(obj: bpy.types.Image | bpy.types.Object):
 		mapI = mapO
 		mapO = temp
 
-		if hyd.thermal_stride_grad and i >= next_pass:
+		if hyd.thermal_use_stride and hyd.thermal_stride_grad and i >= next_pass:
 			stride = math.ceil(stride / 2)
 			next_pass += (hyd.thermal_iter_num - i) // 2
 
