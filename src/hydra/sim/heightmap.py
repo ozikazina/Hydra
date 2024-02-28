@@ -164,14 +164,19 @@ def set_result_as_source(obj: bpy.types.Object | bpy.types.Image, as_base: bool 
 	:type obj: :class:`bpy.types.Object` or :class:`bpy.types.Image`
 	:param asBase: Applies as base as well if `True`.
 	:type asBase: :class:`bool`"""
-	common.data.try_release_map(obj.hydra_erosion.map_source)
-	obj.hydra_erosion.map_source = obj.hydra_erosion.map_result
-	obj.hydra_erosion.map_result = ""
+	hyd = obj.hydra_erosion
+	if hyd.map_result == hyd.map_source:
+		hyd.map_result = ""
+		return
+	
+	common.data.try_release_map(hyd.map_source)
+	hyd.map_source = hyd.map_result
+	hyd.map_result = ""
 	if as_base:
-		common.data.try_release_map(obj.hydra_erosion.map_base)
-		src = common.data.get_map(obj.hydra_erosion.map_source)
+		common.data.try_release_map(hyd.map_base)
+		src = common.data.get_map(hyd.map_source)
 		target = texture.clone(src.texture)
-		obj.hydra_erosion.map_base = common.data.create_map(src.name, target)
+		hyd.map_base = common.data.create_map(src.name, target)
 
 def nuke_gui():
 	"""Gives an authentic developer experience."""

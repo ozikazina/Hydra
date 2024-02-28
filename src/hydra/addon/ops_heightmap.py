@@ -119,7 +119,9 @@ class MoveBackOp(ops_common.HydraOperator):
 		hyd = target.hydra_erosion
 		data = common.data
 
-		data.try_release_map(hyd.map_result)
+		if hyd.map_result != hyd.map_source:
+			data.try_release_map(hyd.map_result)
+			
 		src = data.get_map(hyd.map_source)
 
 		txt = texture.clone(src.texture)

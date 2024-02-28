@@ -81,11 +81,11 @@ def create_texture(size: 'tuple[int,int]', pixels: bytes|None = None, image: bpy
 		vao.release()
 		color.release()
 		return dest
-	elif pixels is not None:
-		return ctx.texture(size, channels, dtype="f4", data=pixels)
 	else:
-		return ctx.texture(size, channels, dtype="f4")
-
+		if pixels is None:	#pixels have to be cleared to zero if not specified!
+			pixels = np.zeros(size[0] * size[1] * channels, dtype='f4').tobytes()
+		return ctx.texture(size, channels, dtype="f4", data=pixels)
+	
 def clone(txt: mgl.Texture)->mgl.Texture:
 	"""Clones a :class:`moderngl.Texture`.
 	

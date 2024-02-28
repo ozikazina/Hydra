@@ -10,10 +10,6 @@ from datetime import datetime
 # --------------------------------------------------------- Flow
 
 def simulate(obj: bpy.types.Image | bpy.types.Object):
-	"""Erodes the specified entity. Can be run multiple times.
-	
-	:param obj: Object or image to erode.
-	:type obj: :class:`bpy.types.Object` or :class:`bpy.types.Image`"""
 	data = common.data
 	ctx = data.context
 	hyd = obj.hydra_erosion
@@ -31,8 +27,6 @@ def simulate(obj: bpy.types.Image | bpy.types.Object):
 	request = texture.create_texture(size, channels=4)
 	free = texture.create_texture(size)
 
-	print("Preparation finished")
-
 	progA = data.shaders["thermalA"]
 	progB = data.shaders["thermalB"]
 	snowProg = data.shaders["snow"]
@@ -42,9 +36,9 @@ def simulate(obj: bpy.types.Image | bpy.types.Object):
 	temp = 3
 
 	snow.bind_to_image(1, read=True, write=True)
-	offset.bind_to_image(4, read=True)
 	request.bind_to_image(2, read=True, write=True)
 	free.bind_to_image(3, read=True, write=True)
+	offset.bind_to_image(4, read=True)
 
 	progA["requests"].value = 2
 	progA["Ks"] = 0.5
