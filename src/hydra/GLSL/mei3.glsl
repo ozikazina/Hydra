@@ -18,8 +18,8 @@ void main(void) {
 	ivec2 pos = ivec2(gl_GlobalInvocationID.xy);
 
     vec4 pipe = imageLoad(pipe_map, pos);
-    float dv =  imageLoad(pipe_map, pos + ivec2(-1, 0)).z + imageLoad(pipe_map, pos + ivec2(+1, 0)).x +
-                imageLoad(pipe_map, pos + ivec2(0, -1)).w + imageLoad(pipe_map, pos + ivec2(0, +1)).y -
+    float dv =  imageLoad(pipe_map, pos + ivec2(-1, -1)).z + imageLoad(pipe_map, pos + ivec2(+1, +1)).x +
+                imageLoad(pipe_map, pos + ivec2(+1, -1)).w + imageLoad(pipe_map, pos + ivec2(-1, +1)).y -
                 (pipe.x + pipe.y + pipe.z + pipe.w);
 
     dv *= dt / (lx * ly);

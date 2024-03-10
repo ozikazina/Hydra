@@ -11,7 +11,12 @@ uniform float dt = 0.25;
 void main(void) {
 	ivec2 pos = ivec2(gl_GlobalInvocationID.xy);
 
-    vec2 vpos = vec2(pos) - dt * imageLoad(v_map, pos).xy;
+	mat2 adj = mat2(
+		1 / sqrt(2), -1 / sqrt(2),
+		1 / sqrt(2), 1 / sqrt(2)
+	);
+
+    vec2 vpos = vec2(pos) - dt * imageLoad(v_map, pos).xy * adj;
 	ivec2 corner = ivec2(vpos);
 	vec2 factor = vpos - vec2(corner);
 
