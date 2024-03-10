@@ -216,14 +216,14 @@ class ErosionGroup(bpy.types.PropertyGroup):
 	)
 
 	mei_dt: FloatProperty(
-		default=0.5,
-		min=0.01, max=1.0,
+		default=0.25,
+		min=0.01, max=0.25,
 		name="Time step",
 		description="Time step for the simulation"
 	)
 
 	mei_rain: FloatProperty(
-		default=1,
+		default=0.1,
 		min=0.01, max=10.0,
 		name="Rain",
 		description="Amount of rain per iteration"
@@ -237,8 +237,8 @@ class ErosionGroup(bpy.types.PropertyGroup):
 	)
 
 	mei_capacity: FloatProperty(
-		default=1,
-		min=0.01, max=50.0,
+		default=0.5,
+		min=0.01, max=10.0,
 		name="Capacity",
 		description="Erosion capacity of water per cell"
 	)
@@ -258,7 +258,7 @@ class ErosionGroup(bpy.types.PropertyGroup):
 	)
 
 	mei_scale: FloatProperty(
-		default=100,
+		default=200,
 		min=1, max=2000,
 		name="Model scale",
 		description="Scale of the simulation roughly in meters. A hill is 100, a mountain is 500+ and so on"
@@ -274,7 +274,7 @@ class ErosionGroup(bpy.types.PropertyGroup):
 	)
 
 	mei_min_alpha: FloatProperty(
-		default=0.025,
+		default=0.01,
 		min=0.0, max=0.1,
 		name="Minimum angle",
 		description="Minimum angle value"

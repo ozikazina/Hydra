@@ -27,18 +27,18 @@ void main(void) {
 	vec4 pipe = imageLoad(pipe_map, pos);
 
 	float hN = heightAt(pos + ivec2(-1, 0));
-	pipe.x = max(0, pipe.x + A * (h-hN) / lx);
+	pipe.x = max(0, pipe.x + dt * A * (h-hN) / lx);
 
 	hN = heightAt(pos + ivec2(+1, 0));
-	pipe.z = max(0, pipe.z + A * (h-hN) / lx);
+	pipe.z = max(0, pipe.z + dt * A * (h-hN) / lx);
 
 	hN = heightAt(pos + ivec2(0, -1));
-	pipe.y = max(0, pipe.y + A * (h-hN) / ly);
+	pipe.y = max(0, pipe.y + dt * A * (h-hN) / ly);
 
 	hN = heightAt(pos + ivec2(0, +1));
-	pipe.w = max(0, pipe.w + A * (h-hN) / ly);
+	pipe.w = max(0, pipe.w + dt * A * (h-hN) / ly);
 
-	float K = min(1, imageLoad(d_map, pos).r * lx * ly / ((pipe.x + pipe.y + pipe.z + pipe.w)));
+	float K = min(1, imageLoad(d_map, pos).r * lx * ly / (dt * (pipe.x + pipe.y + pipe.z + pipe.w)));
 
 	pipe *= K;
 	imageStore(pipe_map, pos, pipe);

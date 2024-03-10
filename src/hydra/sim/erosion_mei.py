@@ -51,9 +51,6 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 
 	time = datetime.now()
 	for i in range(hyd.mei_iter_num):
-		if i % 10 == 9:
-			capacity *= 0.95
-
 		prog = data.shaders["mei1"]
 		prog["d_map"].value = 4
 		prog["dt"] = hyd.mei_dt
