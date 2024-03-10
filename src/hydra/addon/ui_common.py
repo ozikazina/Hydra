@@ -134,16 +134,16 @@ class ThermalPanel():
 		box.prop(hyd, "thermal_iter_num")
 		box.prop(hyd, "thermal_strength", slider=True)
 		box.prop(hyd, "thermal_angle", slider=True)
+		
+		split = box.split(factor=0.4)
+		split.label(text="Direction: ")
+		split.prop(hyd, "thermal_solver", text="")
 
 		box.prop(hyd, "thermal_use_stride")
 		if hyd.thermal_use_stride:
 			sub = box.box()
 			sub.prop(hyd, "thermal_stride")
 			sub.prop(hyd, "thermal_stride_grad")
-		
-		split = box.split(factor=0.4)
-		split.label(text="Direction: ")
-		split.prop(hyd, "thermal_solver", text="")
 
 #-------------------------------------------- Snow
 
@@ -318,7 +318,6 @@ class ErosionSettingsPanel(bpy.types.Panel):
 			p.prop(hyd, "mei_deposition")
 			p.prop(hyd, "mei_erosion")
 			p.prop(hyd, "mei_scale")
-			p.prop(hyd, "mei_length")
 			p.prop(hyd, "mei_min_alpha")
 
 class ErosionExtrasPanel():

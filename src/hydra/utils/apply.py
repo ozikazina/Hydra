@@ -167,6 +167,7 @@ def add_bump(obj: bpy.types.Object, img: bpy.types.Image):
 	tree.links.new(bump.inputs["Height"], imgNode.outputs["Color"])
 	nodes.minimize_node(imgNode)
 	nodes.stagger_nodes(shader, [bump], [imgNode], [coords])
+	nodes.frame_nodes(tree.nodes, coords, imgNode, bump, label="Hydra Bump", color=nodes.COLOR_VECTOR)
 
 H_NAME_DISP = "Hydra Displacement"
 """Displacement map node name."""
@@ -206,6 +207,7 @@ def add_displacement(obj: bpy.types.Object, img: bpy.types.Image):
 	if not out.inputs["Displacement"].is_linked:
 		disp = tree.nodes.new("ShaderNodeDisplacement")
 		disp.inputs["Midlevel"].default_value = 0
+		disp.inputs["Midlevel"].hide = True
 		disp.inputs["Scale"].default_value = 1
 		tree.links.new(out.inputs["Displacement"], disp.outputs["Displacement"])
 		norm = nodes.setup_vector_node(tree, disp)
@@ -224,6 +226,7 @@ def add_displacement(obj: bpy.types.Object, img: bpy.types.Image):
 	nodes.minimize_node(imgNode)
 	
 	nodes.stagger_nodes(out, [disp], [imgNode, norm], [coords], forwards=True)
+	nodes.frame_nodes(tree.nodes, coords, imgNode, norm, disp, label="Hydra Displacement", color=nodes.COLOR_VECTOR)
 
 # -------------------------------------------------- Modifier
 

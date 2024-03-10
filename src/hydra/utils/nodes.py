@@ -1,17 +1,80 @@
 import bpy
 from Hydra import common
 
+# -------------------------------------------------- Constants
+
+COLOR_DISPLACE = (0.1,0.393,0.324)
+COLOR_VECTOR = (0.172,0.172,0.376)
+
 # -------------------------------------------------- Node Utils
 
-def minimize_node(node):
+def minimize_node(node, collapse_node:bool=True):
 	"""Hides unused inputs and minimizes the specified node.
 	
 	:param node: Node to minimize."""
-	node.hide = True
+	if collapse_node:
+		node.hide = True
+	
 	for n in node.inputs:
 		n.hide = True
 	for n in node.outputs:
 		n.hide = True
+
+def stagger_nodes(baseNode:bpy.types.ShaderNode, *args, forwards:bool=False):
+	"""Spaces and shifts specified nodes around.
+	
+	:param baseNode: Rightmost node.
+	:type baseNode: :class:`bpy.types.ShaderNode`
+	:param args: Node arguments to be shifted.
+	:type args: :class:`bpy.types.ShaderNode`
+	:param forwards: Shift direction. `True` shifts `baseNode` forward.
+	:type forwards: :class:`bool`"""
+	baseY = baseNode.location[1] - baseNode.height
+	if forwards:
+		x = baseNode.location[0]
+		for layer in args[::-1]:
+			maxwidth = 0
+			y = baseY
+			for node in layer:
+				node.location[0] = x
+				maxwidth = max(maxwidth, node.width)
+				node.location[1] = y
+				y -= node.height + 40
+			x += maxwidth + 20
+		baseNode.location[0] = x + 20
+	else:
+		x = baseNode.location[0] - 20
+		for layer in args:
+			maxwidth = 0
+			y = baseY
+			for node in layer:
+				node.location[0] = x - node.width - 20
+				maxwidth = max(maxwidth, node.width)
+				node.location[1] = y
+				y -= node.height + 40
+			x -= maxwidth + 20
+
+def space_nodes(*args, forwards:bool=False):
+	offset = 50
+	for n in args[::-1 if forwards else 1]:
+		if forwards:
+			n.location.x += offset
+		else:
+			n.location.x -= offset
+		offset += 50
+
+def frame_nodes(nodes, *args, label:str|None = None, color:tuple[float,float,float]|None=None):
+	frame = nodes.new("NodeFrame")
+	frame.label = label
+	if color is not None:
+		frame.color = color
+		frame.use_custom_color = True
+	
+	for n in args:
+		n.parent = frame
+	return frame
+
+# -------------------------------------------------- Node Setup
 
 def setup_vector_node(nodes, node: bpy.types.ShaderNode)->bpy.types.ShaderNode:
 	"""Creates a Z Normal node and connects it to the specified node.
@@ -46,42 +109,9 @@ def setup_image_node(nodes, name:str, imageSrc:str)->tuple[bpy.types.ShaderNode,
 	img.interpolation = 'Cubic'
 	coords = nodes.nodes.new("ShaderNodeTexCoord")
 	nodes.links.new(img.inputs["Vector"], coords.outputs["Generated"])
-	minimize_node(coords)
+	minimize_node(coords, collapse_node=False)
 	return (img, coords)
-	
-def stagger_nodes(baseNode:bpy.types.ShaderNode, *args, forwards:bool=False):
-	"""Spaces and shifts specified nodes around.
-	
-	:param baseNode: Rightmost node.
-	:type baseNode: :class:`bpy.types.ShaderNode`
-	:param args: Node arguments to be shifted.
-	:type args: :class:`bpy.types.ShaderNode`
-	:param forwards: Shift direction. `True` shifts `baseNode` forward.
-	:type forwards: :class:`bool`"""
-	x = baseNode.location[0]
-	baseY = baseNode.location[1] - baseNode.height
-	if forwards:
-		for layer in args[::-1]:
-			maxwidth = 0
-			y = baseY
-			for node in layer:
-				node.location[0] = x
-				maxwidth = max(maxwidth, node.width)
-				node.location[1] = y
-				y -= node.height + 10
-			x += maxwidth + 20
-		baseNode.location[0] = x
-	else:
-		for layer in args:
-			maxwidth = 0
-			y = baseY
-			for node in layer:
-				node.location[0] = x - node.width - 20
-				maxwidth = max(maxwidth, node.width)
-				node.location[1] = y
-				y -= node.height + 10
-			x -= maxwidth + 20
-			
+
 def make_bsdf(nodes)->bpy.types.ShaderNode:
 	"""Creates a Principled BSDF node.
 	
@@ -218,5 +248,10 @@ def get_or_make_displace_group(name, image: bpy.types.Image=None):
 		links.new(n_displace.outputs["Geometry"], n_output.inputs["Displaced"])
 
 		stagger_nodes(n_output, [n_displace], [n_combine], [n_scale], [n_image], [n_normalize], [n_subpos, n_subbound], [n_pos, n_bounds], [n_input], forwards=False)
+
+		f_coords = frame_nodes(nodes, n_bounds, n_pos, n_subpos, n_subbound, n_normalize, label="Texture Coordinates", color=COLOR_VECTOR)
+		f_displace = frame_nodes(nodes, n_image, n_scale, n_combine, n_displace, label="Displacement", color=COLOR_DISPLACE)
+
+		space_nodes(f_displace, f_coords, n_input, forwards=False)
 
 		return g

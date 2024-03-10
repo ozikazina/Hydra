@@ -324,7 +324,7 @@ class ErosionGroup(bpy.types.PropertyGroup):
 	)
 
 	thermal_use_stride: BoolProperty(
-		default=True,
+		default=False,
 		name="Use stride",
 		description="Use stride to speed up erosion below 45 degrees"
 	)
@@ -337,7 +337,7 @@ class ErosionGroup(bpy.types.PropertyGroup):
 	)
 
 	thermal_stride_grad: BoolProperty(
-		default=True,
+		default=False,
 		name="Step down",
 		description="Periodically halves stride for smoother erosion"
 	)
