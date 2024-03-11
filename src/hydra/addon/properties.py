@@ -344,34 +344,6 @@ class ErosionGroup(bpy.types.PropertyGroup):
 
 	#------------------------- Snow
 
-	snow_melt_max: FloatProperty(
-		default=0.9,
-		min=0.1, max=1.0,
-		name="Melt max",
-		description="Maximum percentage of snow melted per iteration"
-	)
-
-	snow_melt_min: FloatProperty(
-		default=0.4,
-		min=0.1, max=0.9,
-		name="Melt min",
-		description="Minimum percentage of snow melted per iteration"
-	)
-
-	snow_melt_start: FloatProperty(
-		default=0.0,
-		min=0.0, max=1.0,
-		name="Melt start",
-		description="Percent of the model height where snow melts at the minimum rate"
-	)
-
-	snow_melt_end: FloatProperty(
-		default=0.25,
-		min=0.0, max=1.0,
-		name="Melt end",
-		description="Percent of the model height where snow melts at the maximum rate"
-	)
-
 	snow_add: FloatProperty(
 		default=0.5,
 		min=0.1, max=1.0,
@@ -380,7 +352,7 @@ class ErosionGroup(bpy.types.PropertyGroup):
 	)
 
 	snow_iter_num: IntProperty(
-		default=200,
+		default=500,
 		min=1, max=3000, soft_max=1000,
 		name="Iterations",
 		description="Number of iterations of snow simulation"
@@ -391,6 +363,12 @@ class ErosionGroup(bpy.types.PropertyGroup):
 		min=10, max=85,
 		name="Angle",
 		description="Maximum angle the surface can have in degrees"
+	)
+
+	snow_texture_only: BoolProperty(
+		default=False,
+		name="Texture only",
+		description="Only create snow texture"
 	)
 
 	#------------------------- Utils

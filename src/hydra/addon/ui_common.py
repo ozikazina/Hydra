@@ -157,10 +157,15 @@ class SnowPanel():
 		col = self.layout.column()
 
 		grid = col.grid_flow(columns=1, align=True)
-		grid.operator("hydra.snow", text="Erode", icon="RNDCURVE")
+		
+		grid.operator("hydra.snow", text="Simulate", icon="RNDCURVE")
+		if not hyd.snow_texture_only and common.data.has_map(hyd.map_result):
+			grid.operator("hydra.snow", text="Set & Continue", icon="ANIM").apply = True
 
 		self.draw_size_fragment(col.box(), ctx, hyd)
 
+		col.separator()
+		col.prop(hyd, "snow_texture_only")
 		col.separator()
 		col.label(text="Erosion settings")
 
@@ -171,6 +176,7 @@ class SnowPanel():
 		box = col.box()
 		box.prop(hyd, "snow_iter_num")
 		box.prop(hyd, "snow_angle", slider=True)
+
 
 #-------------------------------------------- Flow
 
@@ -311,13 +317,13 @@ class ErosionSettingsPanel(bpy.types.Panel):
 			p.prop(hyd, "part_capacity", slider=True)
 		else:
 			p.prop(hyd, "mei_iter_num")
-			p.prop(hyd, "mei_dt")
-			p.prop(hyd, "mei_rain")
-			p.prop(hyd, "mei_evaporation")
-			p.prop(hyd, "mei_capacity")
-			p.prop(hyd, "mei_deposition")
-			p.prop(hyd, "mei_erosion")
 			p.prop(hyd, "mei_scale")
+			p.prop(hyd, "mei_dt")
+			p.prop(hyd, "mei_rain", slider=True)
+			p.prop(hyd, "mei_evaporation", slider=True)
+			p.prop(hyd, "mei_capacity", slider=True)
+			p.prop(hyd, "mei_deposition", slider=True)
+			p.prop(hyd, "mei_erosion", slider=True)
 			p.prop(hyd, "mei_min_alpha")
 
 class ErosionExtrasPanel():

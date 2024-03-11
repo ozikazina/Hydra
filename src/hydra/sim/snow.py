@@ -21,7 +21,10 @@ def simulate(obj: bpy.types.Image | bpy.types.Object):
 
 	size = hyd.get_size()
 
-	offset = data.get_map(hyd.map_source).texture
+	if hyd.snow_texture_only and data.has_map(hyd.map_result):
+		offset = data.get_map(hyd.map_result).texture
+	else:
+		offset = data.get_map(hyd.map_source).texture
 
 	snow = texture.create_texture(size)
 	request = texture.create_texture(size, channels=4)
@@ -38,7 +41,7 @@ def simulate(obj: bpy.types.Image | bpy.types.Object):
 	snow.bind_to_image(1, read=True, write=True)
 	request.bind_to_image(2, read=True, write=True)
 	free.bind_to_image(3, read=True, write=True)
-	offset.bind_to_image(4, read=True)
+	offset.bind_to_image(4, read=True, write=False)
 
 	progA["requests"].value = 2
 	progA["Ks"] = 0.5
@@ -80,7 +83,8 @@ def simulate(obj: bpy.types.Image | bpy.types.Object):
 
 	print((datetime.now() - time).total_seconds())
 
-	snow_img = texture.clone(snow)
+
+	snow_img = snow if hyd.snow_texture_only else texture.clone(snow)
 	snow_img.bind_to_image(5, read=True, write=True)
 	prog = data.shaders["scaling"]
 	prog["A"].value = 5	# snow
@@ -91,16 +95,17 @@ def simulate(obj: bpy.types.Image | bpy.types.Object):
 	ret = texture.write_image(img_name, snow_img)
 	snow_img.release()
 
-	prog = data.shaders["diff"]
-	prog["A"].value = mapI
-	prog["B"].value = 4	# offset - source map
-	prog["factor"] = -1.0	#add instead of subtract
-	prog.run(group_x = size[0], group_y = size[1])
+	if not hyd.snow_texture_only:
+		prog = data.shaders["diff"]
+		prog["A"].value = mapI
+		prog["B"].value = 4	# offset - source map
+		prog["factor"] = -1.0	#add instead of subtract
+		prog.run(group_x = size[0], group_y = size[1])
 
-	data.try_release_map(hyd.map_result)
-	name = common.increment_layer(data.get_map(hyd.map_source).name, "Snow 1")
-	hmid = data.create_map(name, snow)
-	hyd.map_result = hmid
+		data.try_release_map(hyd.map_result)
+		name = common.increment_layer(data.get_map(hyd.map_source).name, "Snow 1")
+		hmid = data.create_map(name, snow)
+		hyd.map_result = hmid
 
 	request.release()
 	free.release()

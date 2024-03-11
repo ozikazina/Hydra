@@ -93,6 +93,15 @@ class SnowPanel(ui_common.SnowPanel, ui_common.ObjectPanel):
 	"""Panel for snow simulation."""
 	bl_idname = "HYDRA_PT_SnowPanel"
 
+class SnowHeightPanel(ui_common.HeightmapSystemPanel, ui_common.ObjectPanel):
+	"""Subpanel for snow heightmap stack. Uses :class:`DefaultHeightmapPanel`."""
+	bl_parent_id = "HYDRA_PT_SnowPanel"
+	bl_idname = "HYDRA_PT_SnowHeightPanel"
+
+	@classmethod
+	def poll(cls, ctx):
+		return not cls.get_settings(ctx).snow_texture_only
+
 #-------------------------------------------- Info
 
 class InfoPanel(ui_common.InfoPanel, ui_common.ObjectPanel):
@@ -144,6 +153,7 @@ def get_exports()->list:
 		ThermalPanel,
 		ThermalHeightPanel,
 		SnowPanel,
+		SnowHeightPanel,
 		FlowPanel,
 		HeightmapPanel,
 		CleanupPanel,

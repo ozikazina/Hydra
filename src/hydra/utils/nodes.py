@@ -91,7 +91,7 @@ def setup_vector_node(nodes, node: bpy.types.ShaderNode)->bpy.types.ShaderNode:
 	minimize_node(norm)
 	return norm
 	
-def setup_image_node(nodes, name:str, imageSrc:str)->tuple[bpy.types.ShaderNode, bpy.types.ShaderNode]:
+def setup_image_node(tree:bpy.types.NodeTree, name:str, imageSrc:str)->tuple[bpy.types.ShaderNode, bpy.types.ShaderNode]:
 	"""Creates an Image Texture node and connects it to generated coordinates.
 	
 	:param nodes: Node graph.
@@ -101,14 +101,14 @@ def setup_image_node(nodes, name:str, imageSrc:str)->tuple[bpy.types.ShaderNode,
 	:type imageSrc: :class:`str`
 	:return: Created nodes.
 	:rtype: :class:`tuple[bpy.types.ShaderNode, bpy.types.ShaderNode]`"""
-	img = nodes.nodes.new("ShaderNodeTexImage")
+	img = tree.nodes.new("ShaderNodeTexImage")
 	img.name = name
 	img.label = name
 	img.image = imageSrc
 	img.extension = 'EXTEND'
 	img.interpolation = 'Cubic'
-	coords = nodes.nodes.new("ShaderNodeTexCoord")
-	nodes.links.new(img.inputs["Vector"], coords.outputs["Generated"])
+	coords = tree.nodes.new("ShaderNodeTexCoord")
+	tree.links.new(img.inputs["Vector"], coords.outputs["Generated"])
 	minimize_node(coords, collapse_node=False)
 	return (img, coords)
 
@@ -255,3 +255,18 @@ def get_or_make_displace_group(name, image: bpy.types.Image=None):
 		space_nodes(f_displace, f_coords, n_input, forwards=False)
 
 		return g
+
+def make_snow_nodes(tree: bpy.types.ShaderNodeTree, image: bpy.types.Image):
+	nodes = tree.nodes
+
+	ramp = nodes.new("ShaderNodeValToRGB")
+	ramp.name = "HYD_Snow_Ramp"
+	ramp.label = "Snow Ramp"
+
+	ramp.color_ramp.elements[0].color = (0.5,0.5,0.5,1)
+	ramp.color_ramp.elements[1].position = 0.5
+
+	img, coords = setup_image_node(nodes, "HYD_Snow_Texture", image)
+
+	tree.links.new(img.outputs["Color"], ramp.inputs["Fac"])
+	stagger_nodes(ramp, [img], [coords], forwards=False)

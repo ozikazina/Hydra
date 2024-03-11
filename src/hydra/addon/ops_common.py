@@ -108,13 +108,22 @@ class SnowOperator(HydraOperator):
 	bl_idname = "hydra.snow"
 	bl_description = "Simulate snow layer on current object"
 	
+	apply: BoolProperty(
+		name="Apply",
+		default=False
+	)
+
 	def invoke(self, ctx, event):
 		target = self.get_target(ctx)
+
+		if self.apply:
+			heightmap.set_result_as_source(target)
 
 		img = snow.simulate(target)
 		nav.goto_image(img)
 
-		apply.add_preview(target)
+		if not target.hydra_erosion.snow_texture_only:
+			apply.add_preview(target)
 
 		common.data.report(self, callerName="Erosion")
 		return {'FINISHED'}
