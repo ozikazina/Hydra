@@ -19,6 +19,8 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 
 	print("Preparing for water erosion")
 	data = common.data
+	use_vao: bool = common.get_preferences().particle_use_vao
+
 	hyd = obj.hydra_erosion
 	if not data.has_map(hyd.map_base):
 		heightmap.prepare_heightmap(obj)
@@ -32,11 +34,10 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 	depth = texture.create_texture(size) if hyd.out_depth else None
 	color = texture.create_texture(size, image=bpy.data.images[hyd.color_src]) if hyd.out_color else None
 
-	print("Preparation finished")
-
-	subdiv = int(hyd.part_subdiv)
-
-	prog = data.shaders["erosion"]
+	if use_vao:
+		prog = data.programs["erosion"]
+	else:
+		prog = data.shaders["erosion"]
 
 	height.bind_to_image(1, read=True, write=True)
 	prog["img"].value = 1	#don't use 0 -> default value -> cross-contamination
@@ -69,17 +70,32 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 	prog["iterations"] = hyd.part_lifetime
 	prog["drag"] = 1-hyd.part_drag	#multiplicative factor
 
-	group_x = math.ceil(size[0] / (subdiv * 32))
-	group_y = math.ceil(size[1] / (subdiv * 32))
-
-
 	time = datetime.now()
-	for i in range(hyd.part_iter_num):
-		for y in range(subdiv):
-			for x in range(subdiv):
-				prog["off"] = (x, y)
-				prog.run(group_x=group_x, group_y=group_y)
-		
+	if use_vao:
+		resX = math.ceil(size[0] / subdiv)
+		resY = math.ceil(size[1] / subdiv)
+
+		vao = model.create_vao(ctx, prog)
+		fbo = ctx.framebuffer(ctx.texture((resX, resY), 1, dtype="f1"))
+		with ctx.scope(fbo):
+			for _ in range(hyd.part_iter_num):
+				for y in range(subdiv):
+					for x in range(subdiv):
+						prog["off"] = (x, y)
+						vao.render()
+
+		fbo.release()
+		vao.release()
+	else:
+		group_x = math.ceil(size[0] / (subdiv * 32))
+		group_y = math.ceil(size[1] / (subdiv * 32))
+
+		for _ in range(hyd.part_iter_num):
+			for y in range(subdiv):
+				for x in range(subdiv):
+					prog["off"] = (x, y)
+					prog.run(group_x=group_x, group_y=group_y)
+			
 	ctx.finish()
 	print((datetime.now() - time).total_seconds())
 

@@ -11,8 +11,12 @@ class AddonPanel(bpy.types.AddonPreferences):
 	"""Addon preferences panel."""
 	bl_idname = "Hydra"
 
+	particle_use_vao: BoolProperty(name="Fragment shader for particle erosion", default=False,
+		description="Use a fragment shader for particle erosion. It is slightly faster for integrated GPUs"
+	)
+
 	skip_indexing: BoolProperty(name="Force heightmaps", default=False,
-		description="Can fixes heightmap generation if it fails. Skips vertex indexing, which fails outside Windows in ModernGL. Uses slightly more memory during generation"
+		description="Fixes heightmap generation if it fails. Skips vertex indexing, which fails outside Windows in ModernGL. Uses slightly more memory during generation"
 	)
 	"""Heightmap generation indexing override."""
 
@@ -29,13 +33,14 @@ class AddonPanel(bpy.types.AddonPreferences):
 	"""Split direction preference."""
 
 	debug_mode: BoolProperty(name="Debug mode", default=False,
-		description="Enables debug mode, giving access to additional operators."
+		description="Enables debug mode, giving access to additional operators"
 	)
 
 	def draw(self, context):
 		layout = self.layout
 
 		box = layout.box()
+		box.prop(self, "particle_use_vao")
 		box.prop(self, "skip_indexing")
 		split = box.split(factor=0.33)
 		split.label(text="Preview split direction: ")

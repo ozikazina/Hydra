@@ -39,6 +39,10 @@ def init_context():
 	with open(Path(base, "erosion.glsl"), "r") as f:
 		comp = f.read()
 	data.shaders["erosion"] = ctx.compute_shader(comp)
+
+	with open(Path(base, "erosion.frag"), "r") as f:
+		frag = f.read()
+	make_prog("erosion", vert, frag)
 	
 	with open(Path(base, "flow.glsl"), "r") as f:
 		comp = f.read()
