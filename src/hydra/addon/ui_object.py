@@ -100,7 +100,7 @@ class SnowHeightPanel(ui_common.HeightmapSystemPanel, ui_common.ObjectPanel):
 
 	@classmethod
 	def poll(cls, ctx):
-		return not cls.get_settings(ctx).snow_texture_only
+		return cls.get_settings(ctx).snow_output != "texture"
 
 #-------------------------------------------- Info
 

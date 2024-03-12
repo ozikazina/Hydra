@@ -6,7 +6,7 @@ import moderngl as mgl
 from Hydra.utils import model
 from Hydra import common
 
-def get_or_make_image(size: 'tuple[int,int]', name: str)->bpy.types.Image:
+def get_or_make_image(size: 'tuple[int,int]', name: str)->tuple[bpy.types.Image, bool]:
 	"""Gets or creates an image of the specified name. If sizes are different, then it gets scaled to `size`.
 	
 	:param size: Resolution tuple.
@@ -15,10 +15,13 @@ def get_or_make_image(size: 'tuple[int,int]', name: str)->bpy.types.Image:
 	:type name: :class:`str`
 	:return: Created image.
 	:rtype: :class:`bpy.types.Image`"""
+	updated = False
+
 	if name not in bpy.data.images:
 		img = bpy.data.images.new(name, size[0], size[1], alpha=False, float_buffer=True)
 	else:
 		img = bpy.data.images[name]
+		updated = True
 	
 	img.colorspace_settings.name = "Non-Color"
 
@@ -26,9 +29,9 @@ def get_or_make_image(size: 'tuple[int,int]', name: str)->bpy.types.Image:
 		img.scale(size[0], size[1])
 
 	img.hydra_erosion.is_generated = True
-	return img
+	return img, updated
 
-def write_image(name: str, texture: mgl.Texture)->bpy.types.Image:
+def write_image(name: str, texture: mgl.Texture)->tuple[bpy.types.Image, bool]:
 	"""Writes texture to an `Image` of the specified name.
 	
 	:param name: Image name.
@@ -37,7 +40,7 @@ def write_image(name: str, texture: mgl.Texture)->bpy.types.Image:
 	:type txt: :class:`moderngl.Texture`
 	:return: Created image.
 	:rtype: :class:`bpy.types.Image`"""
-	image = get_or_make_image(texture.size, name)
+	image, updated = get_or_make_image(texture.size, name)
 
 	if texture.components == 1:
 		pixels = np.frombuffer(texture.read(), dtype=np.float32)
@@ -49,7 +52,9 @@ def write_image(name: str, texture: mgl.Texture)->bpy.types.Image:
 		image.pixels = np.frombuffer(texture.read(), dtype=np.float32)
 	
 	image.pack()
-	return image
+	# if updated:
+	# 	common.data.add_message(f"Image updated: {name}.")
+	return image, updated
 
 def create_texture(size: 'tuple[int,int]', pixels: bytes|None = None, image: bpy.types.Image|None = None, channels: int = 1)->mgl.Texture:
 	"""Creates a :class:`moderngl.Texture` of the specified size."""

@@ -365,10 +365,15 @@ class ErosionGroup(bpy.types.PropertyGroup):
 		description="Maximum angle the surface can have in degrees"
 	)
 
-	snow_texture_only: BoolProperty(
-		default=False,
-		name="Texture only",
-		description="Only create snow texture"
+	snow_output: EnumProperty(
+		default="both",
+		items=(
+			("both", "All", "Generate both a texture and a displacement", 0),
+			("texture", "Texture", "Only generate a snow texture", 1),
+			("displacement", "Displacement", "Only displace the surface", 2),
+		),
+		name="Output type",
+		description="Snow output type"
 	)
 
 	#------------------------- Utils

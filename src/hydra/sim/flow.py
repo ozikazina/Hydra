@@ -71,7 +71,7 @@ def generate_flow(obj: bpy.types.Image | bpy.types.Object)->bpy.types.Image:
 	print((datetime.now() - time).total_seconds())
 
 	img_name = f"HYD_{obj.name}_Flow"
-	ret = texture.write_image(img_name, final_amount)
+	ret, _ = texture.write_image(img_name, final_amount)
 	amount.release()
 	final_amount.release()
 	return ret

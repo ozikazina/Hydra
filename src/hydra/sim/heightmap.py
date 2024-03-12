@@ -152,7 +152,7 @@ def get_displacement(obj: bpy.types.Object, name:str)->bpy.types.Image:
 		data.get_map(hyd.map_base).texture,
 		scale=obj.hydra_erosion.org_scale/obj.hydra_erosion.height_scale)
 
-	ret = texture.write_image(name, target)
+	ret, _ = texture.write_image(name, target)
 	target.release()
 
 	return ret

@@ -66,11 +66,14 @@ def get_or_make_area(type: str, uiType: str = "")->bpy.types.Area:
 	return target
 
 
-def goto_image(img: bpy.types.Image):
+def goto_image(img: bpy.types.Image|None):
 	"""Navigates Blender to the specified image.
 	
 	:param img: Image to navigate to.
 	:type img: :class:`bpy.types.Image`"""
+	if img is None:
+		return
+	
 	imgEditor = get_or_make_area("IMAGE_EDITOR")
 	space = imgEditor.spaces[0]
 	space.image = img

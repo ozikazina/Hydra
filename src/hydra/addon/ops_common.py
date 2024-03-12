@@ -120,9 +120,11 @@ class SnowOperator(HydraOperator):
 			heightmap.set_result_as_source(target)
 
 		img = snow.simulate(target)
-		nav.goto_image(img)
 
-		if not target.hydra_erosion.snow_texture_only:
+		if target.hydra_erosion.snow_output != "displacement":
+			nav.goto_image(img)
+
+		if target.hydra_erosion.snow_output != "texture":
 			apply.add_preview(target)
 
 		common.data.report(self, callerName="Erosion")

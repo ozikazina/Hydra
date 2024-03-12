@@ -21,7 +21,9 @@ def simulate(obj: bpy.types.Image | bpy.types.Object):
 
 	size = hyd.get_size()
 
-	if hyd.snow_texture_only and data.has_map(hyd.map_result):
+	texture_only = hyd.snow_output == "texture"
+
+	if texture_only and data.has_map(hyd.map_result):
 		offset = data.get_map(hyd.map_result).texture
 	else:
 		offset = data.get_map(hyd.map_source).texture
@@ -83,19 +85,21 @@ def simulate(obj: bpy.types.Image | bpy.types.Object):
 
 	print((datetime.now() - time).total_seconds())
 
+	ret = None
 
-	snow_img = snow if hyd.snow_texture_only else texture.clone(snow)
-	snow_img.bind_to_image(5, read=True, write=True)
-	prog = data.shaders["scaling"]
-	prog["A"].value = 5	# snow
-	prog["scale"] = hyd.mei_scale / hyd.snow_add
-	prog.run(group_x = size[0], group_y = size[1])
+	if hyd.snow_output != "displacement":
+		snow_img = snow if texture_only else texture.clone(snow)
+		snow_img.bind_to_image(5, read=True, write=True)
+		prog = data.shaders["scaling"]
+		prog["A"].value = 5	# snow
+		prog["scale"] = hyd.mei_scale / hyd.snow_add
+		prog.run(group_x = size[0], group_y = size[1])
 
-	img_name = f"HYD_{obj.name}_Snow"
-	ret = texture.write_image(img_name, snow_img)
-	snow_img.release()
+		img_name = f"HYD_{obj.name}_Snow"
+		ret, ret_updated = texture.write_image(img_name, snow_img)
+		snow_img.release()
 
-	if not hyd.snow_texture_only:
+	if hyd.snow_output != "texture":
 		prog = data.shaders["diff"]
 		prog["A"].value = mapI
 		prog["B"].value = 4	# offset - source map

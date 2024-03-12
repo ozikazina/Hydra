@@ -108,13 +108,13 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 	ret = {}
 
 	if depth:
-		ret["depth"] = texture.write_image(f"HYD_{obj.name}_Depth", depth)
+		ret["depth"], _ = texture.write_image(f"HYD_{obj.name}_Depth", depth)
 		depth.release()
 	if sediment:
-		ret["sediment"] = texture.write_image(f"HYD_{obj.name}_Sediment", sediment)
+		ret["sediment"], _ = texture.write_image(f"HYD_{obj.name}_Sediment", sediment)
 		sediment.release()
 	if color:
-		ret["color"] = texture.write_image(f"HYD_{obj.name}_Color", color)
+		ret["color"], _ = texture.write_image(f"HYD_{obj.name}_Color", color)
 		color.release()
 
 	print("Erosion finished")

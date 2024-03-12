@@ -159,13 +159,16 @@ class SnowPanel():
 		grid = col.grid_flow(columns=1, align=True)
 		
 		grid.operator("hydra.snow", text="Simulate", icon="RNDCURVE")
-		if not hyd.snow_texture_only and common.data.has_map(hyd.map_result):
+		if hyd.snow_output != "texture" and common.data.has_map(hyd.map_result):
 			grid.operator("hydra.snow", text="Set & Continue", icon="ANIM").apply = True
 
 		self.draw_size_fragment(col.box(), ctx, hyd)
 
 		col.separator()
-		col.prop(hyd, "snow_texture_only")
+		split = col.split(factor=0.4)
+		split.label(text="Output: ")
+		split.prop(hyd, "snow_output", text="")
+
 		col.separator()
 		col.label(text="Erosion settings")
 
