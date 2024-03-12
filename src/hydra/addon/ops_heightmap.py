@@ -255,7 +255,7 @@ class ImageOp(ops_common.HydraOperator):
 
 	def invoke(self, ctx, event):
 		data = common.data
-		img = texture.write_image(self.name, data.get_map(self.save_target).texture)
+		img, _ = texture.write_image(self.name, data.get_map(self.save_target).texture)
 		nav.goto_image(img)
 		self.report({'INFO'}, f"Created texture: {self.name}")
 		return {'FINISHED'}
