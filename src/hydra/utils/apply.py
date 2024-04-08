@@ -43,7 +43,7 @@ def add_preview(target: bpy.types.Object|bpy.types.Image):
 		return
 
 	if isinstance(target, bpy.types.Image):
-		img = texture.write_image(PREVIEW_IMG_NAME, data.get_map(hyd.map_result).texture)
+		img, _ = texture.write_image(PREVIEW_IMG_NAME, data.get_map(hyd.map_result).texture)
 		nav.goto_image(img)
 	else:
 		if data.lastPreview and data.lastPreview in bpy.data.objects:

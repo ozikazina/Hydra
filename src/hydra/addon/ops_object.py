@@ -26,7 +26,7 @@ class HeightmapOperator(ops_common.ObjectOperator):
 		local_scale = act.hydra_erosion.heightmap_gen_type == "object"
 		txt = heightmap.generate_heightmap(act, normalized=normalized, world_scale=world_scale, local_scale=local_scale)
 
-		img = texture.write_image(f"HYD_{act.name}_Heightmap", txt)
+		img, _ = texture.write_image(f"HYD_{act.name}_Heightmap", txt)
 		txt.release()
 		act.hydra_erosion.img_size = size
 		nav.goto_image(img)
