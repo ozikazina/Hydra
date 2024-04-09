@@ -37,20 +37,18 @@ def create_vao(ctx: mgl.Context, program: mgl.Program, vertices:list[tuple[float
 			content=[(vbo, "3f", "position")], index_buffer=ind
 		)
 
-def evaluate_mesh(obj: bpy.types.Object)->tuple[any, any]:
+def evaluate_mesh(obj: bpy.types.Object)->bpy.types.Mesh:
 	"""Evaluates an object as a mesh.
 	
 	:param obj: Object to be evaluated.
 	:type obj: :class:`bpy.types.Object`
-	:return: Created `BMesh` and a list of vertices.
-	:rtype: :class:`tuple[BMesh, list[Vertex]]`"""
+	:return: Evaluated mesh with calculated loop triangles.
+	:rtype: :class:`bpy.types.Mesh`"""
 	depsgraph = bpy.context.evaluated_depsgraph_get()
 	eval = obj.evaluated_get(depsgraph)
 	mesh = bpy.data.meshes.new_from_object(eval)
-	bm = bmesh.new()
-	bm.from_mesh(mesh)
-	bmesh.ops.triangulate(bm, faces=bm.faces)
-	return bm, mesh.vertices
+	mesh.calc_loop_triangles()
+	return mesh
 
 def get_resize_matrix(obj: bpy.types.Object) -> tuple[float]:
 	"""

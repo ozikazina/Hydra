@@ -7,6 +7,7 @@ import bpy
 import bpy.types
 import numpy as np
 import platform
+from datetime import datetime
 
 def generate_heightmap(obj: bpy.types.Object, normalized: bool=False, world_scale: bool=False, local_scale: bool=False)->mgl.Texture:
 	"""Creates a heightmap for the specified object and returns it.
@@ -19,15 +20,26 @@ def generate_heightmap(obj: bpy.types.Object, normalized: bool=False, world_scal
 	
 	data = common.data
 	ctx = data.context
-	mesh, verts = model.evaluate_mesh(obj)
+	mesh = model.evaluate_mesh(obj)
 
 	if platform.system() != "Windows" or common.get_preferences().skip_indexing:
 		print("Skipping vertex indexing.")
-		verts = [i.co for face in mesh.faces for i in face.verts]
+		verts = np.empty((len(mesh.vertices), 3), 'f')
+		
+		mesh.vertices.foreach_get(
+			"co", np.reshape(verts, len(mesh.vertices) * 3))
+
+		verts = [verts[i] for face in mesh.loop_triangles for i in face.vertices]
 		vao = model.create_vao(ctx, data.programs["heightmap"], vertices=verts)
 	else:
-		verts = [i.co for i in verts]
-		inds = [i.index for face in mesh.faces for i in face.verts]
+		verts = np.empty((len(mesh.vertices), 3), 'f')
+		inds = np.empty((len(mesh.loop_triangles), 3), 'i')
+
+		mesh.vertices.foreach_get(
+			"co", np.reshape(verts, len(mesh.vertices) * 3))
+		mesh.loop_triangles.foreach_get(
+			"vertices", np.reshape(inds, len(mesh.loop_triangles) * 3))
+
 		vao = model.create_vao(ctx, data.programs["heightmap"], vertices=verts, indices=inds)
 
 	size = obj.hydra_erosion.get_size()
