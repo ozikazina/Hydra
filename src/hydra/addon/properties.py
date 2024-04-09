@@ -279,6 +279,17 @@ class ErosionGroup(bpy.types.PropertyGroup):
 		name="Minimum angle",
 		description="Minimum angle value"
 	)
+
+	mei_direction: EnumProperty(
+		default="both",
+		items=(
+			("both", "All", "Alternate directions", 0),
+			("cardinal", "Cardinal", "Only move material in XY directions", 1),
+			("diagonal", "Diagonal", "Only move material on diagonals", 2),
+		),
+		name="Direction",
+		description="Solver neighborhood type"
+	)
 	
 	#------------------------- Flow
 	

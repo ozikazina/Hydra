@@ -15,6 +15,13 @@ uniform float ly = 1;
 uniform float minalpha = 0.025;
 uniform float scale = 1;
 
+uniform bool diagonal = true;
+
+#define LEFT   diagonal ? pos + ivec2(-1, -1) : pos + ivec2(-1, 0)
+#define RIGHT  diagonal ? pos + ivec2(+1, +1) : pos + ivec2(+1, 0)
+#define UP     diagonal ? pos + ivec2(+1, -1) : pos + ivec2(0, -1)
+#define DOWN   diagonal ? pos + ivec2(-1, +1) : pos + ivec2(0, +1)
+
 //  1y -1
 //0x  2z
 //  3w +1
@@ -29,20 +36,20 @@ void main(void) {
     vec4 pipe = imageLoad(pipe_map, pos);
     float dmean = imageLoad(dmean_map, pos).r;
 
-    float du = imageLoad(pipe_map, pos + ivec2(-1, -1)).z - imageLoad(pipe_map, pos + ivec2(+1, +1)).x
+    float du = imageLoad(pipe_map, LEFT).z - imageLoad(pipe_map, RIGHT).x
                + pipe.z - pipe.x;
 
     float u = 0.5 * du / (dmean * ly);
 
-    float dv = imageLoad(pipe_map, pos + ivec2(+1, -1)).w - imageLoad(pipe_map, pos + ivec2(-1, +1)).y
+    float dv = imageLoad(pipe_map, UP).w - imageLoad(pipe_map, DOWN).y
                + pipe.w - pipe.y;
     
     float v = 0.5 * dv / (dmean * lx);
 
     imageStore(v_map, pos, vec4(u,v,0,0));
 
-    float sx = 0.5 * abs(heightAt(pos + ivec2(+1, +1)) - heightAt(pos + ivec2(-1, -1))) * scale * 512;
-    float sy = 0.5 * abs(heightAt(pos + ivec2(-1, +1)) - heightAt(pos + ivec2(+1, -1))) * scale * 512;
+    float sx = 0.5 * abs(heightAt(RIGHT) - heightAt(LEFT)) * scale * 512;
+    float sy = 0.5 * abs(heightAt(DOWN) - heightAt(UP)) * scale * 512;
 
     float slope = 1 - 1 / sqrt(1 + sx * sx + sy * sy);
     slope = max(min(1, slope), minalpha);

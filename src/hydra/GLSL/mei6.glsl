@@ -8,15 +8,22 @@ layout (r32f) uniform image2D s_map;
 
 uniform float dt = 0.25;
 
+uniform bool diagonal = true;
+
 void main(void) {
 	ivec2 pos = ivec2(gl_GlobalInvocationID.xy);
 
-	mat2 adj = mat2(
+	mat2 rotation = mat2(
 		1 / sqrt(2), -1 / sqrt(2),
 		1 / sqrt(2), 1 / sqrt(2)
 	);
 
-    vec2 vpos = vec2(pos) - dt * imageLoad(v_map, pos).xy * adj;
+	vec2 vpos = dt * imageLoad(v_map, pos).xy;
+	if (diagonal) {
+		vpos *= rotation;
+	}
+    vpos = vec2(pos) - vpos;
+
 	ivec2 corner = ivec2(vpos);
 	vec2 factor = vpos - vec2(corner);
 

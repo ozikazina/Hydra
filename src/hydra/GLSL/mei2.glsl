@@ -11,6 +11,15 @@ uniform float lx = 1;
 uniform float ly = 1;
 
 const float A = 0.25;
+
+uniform bool diagonal = true;
+uniform bool erase = false;
+
+#define LEFT   diagonal ? pos + ivec2(-1, -1) : pos + ivec2(-1, 0)
+#define RIGHT  diagonal ? pos + ivec2(+1, +1) : pos + ivec2(+1, 0)
+#define UP     diagonal ? pos + ivec2(+1, -1) : pos + ivec2(0, -1)
+#define DOWN   diagonal ? pos + ivec2(-1, +1) : pos + ivec2(0, +1)
+
 //  1y -1
 //0x  2z
 //  3w +1
@@ -26,20 +35,24 @@ void main(void) {
 	float h = heightAt(pos); 
 	vec4 pipe = imageLoad(pipe_map, pos);
 
-	float hN = heightAt(pos + ivec2(-1, -1));
+	float hN = heightAt(LEFT);
 	pipe.x = max(0, pipe.x + dt * A * (h-hN) / lx);
 
-	hN = heightAt(pos + ivec2(+1, +1));
+	hN = heightAt(RIGHT);
 	pipe.z = max(0, pipe.z + dt * A * (h-hN) / lx);
 
-	hN = heightAt(pos + ivec2(+1, -1));
+	hN = heightAt(UP);
 	pipe.y = max(0, pipe.y + dt * A * (h-hN) / ly);
 
-	hN = heightAt(pos + ivec2(-1, +1));
+	hN = heightAt(DOWN);
 	pipe.w = max(0, pipe.w + dt * A * (h-hN) / ly);
 
 	float K = min(1, imageLoad(d_map, pos).r * lx * ly / (dt * (pipe.x + pipe.y + pipe.z + pipe.w)));
 
 	pipe *= K;
+	if (erase) {
+		pipe = vec4(0);
+	}
+	
 	imageStore(pipe_map, pos, pipe);
 }//main

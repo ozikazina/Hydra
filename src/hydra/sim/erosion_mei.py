@@ -49,8 +49,13 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 
 	capacity = hyd.mei_capacity
 
+	diagonal:bool = hyd.mei_direction == "diagonal"
+	alternate:bool = hyd.mei_direction == "both"
+
 	time = datetime.now()
 	for i in range(hyd.mei_iter_num):
+		switch = alternate and i % 64 == 63
+
 		prog = data.shaders["mei1"]
 		prog["d_map"].value = 4
 		prog["dt"] = hyd.mei_dt
@@ -64,6 +69,8 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 		prog["d_map"].value = 4
 		prog["lx"] = hyd.mei_length[0]
 		prog["ly"] = hyd.mei_length[1]
+		prog["diagonal"] = diagonal
+		prog["erase"] = switch
 		prog.run(group_x=group_x, group_y=group_y)
 	
 		prog = data.shaders["mei3"]
@@ -73,6 +80,7 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 		prog["dt"] = hyd.mei_dt
 		prog["lx"] = hyd.mei_length[0]
 		prog["ly"] = hyd.mei_length[1]
+		prog["diagonal"] = diagonal
 		prog.run(group_x=group_x, group_y=group_y)
 
 		prog = data.shaders["mei4"]
@@ -86,6 +94,7 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 		prog["ly"] = hyd.mei_length[1]
 		prog["minalpha"] = hyd.mei_min_alpha
 		prog["scale"] = 1 / hyd.mei_scale
+		prog["diagonal"] = diagonal
 		prog.run(group_x=group_x, group_y=group_y)
 
 		prog = data.shaders["mei5"]
@@ -102,6 +111,7 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 		prog["v_map"].value = 3
 		prog["s_map"].value = 6
 		prog["dt"] = hyd.mei_dt
+		prog["diagonal"] = diagonal
 		prog.run(group_x=group_x, group_y=group_y)
 
 	ctx.finish()

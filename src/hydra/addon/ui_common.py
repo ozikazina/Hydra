@@ -319,6 +319,10 @@ class ErosionSettingsPanel(bpy.types.Panel):
 			p.prop(hyd, "part_deposition", slider=True)
 			p.prop(hyd, "part_capacity", slider=True)
 		else:
+			split = p.split(factor=0.4)
+			split.label(text="Direction: ")
+			split.prop(hyd, "mei_direction", text="")
+
 			p.prop(hyd, "mei_iter_num")
 			p.prop(hyd, "mei_scale")
 			p.prop(hyd, "mei_dt")
