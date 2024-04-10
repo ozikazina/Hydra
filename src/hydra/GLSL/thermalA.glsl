@@ -66,11 +66,14 @@ void main(void) {
 	vec4 s = p - d;	//negative part
 
 	float mx = max(max(d.x, d.y), max(d.z, d.w));
+
 	h = imageLoad(mapH, base).x;
+	//(Negative min) - can supply at most h material
 	float mn = max(-h, min(min(s.x, s.y), min(s.z, s.w)));
 
-	float Cd = min(Ks * mx / (d.x + d.y + d.z + d.w), 1);
-	float Cs = min(Ks * mn / (s.x + s.y + s.z + s.w), 1);
+	//clamp instead of min for NaNs
+	float Cd = clamp(Ks * mx / (d.x + d.y + d.z + d.w), 0, 1);
+	float Cs = clamp(Ks * mn / (s.x + s.y + s.z + s.w), 0, 1);
 
 	vec4 ret = s * Cs + d * Cd;
 	

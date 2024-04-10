@@ -47,7 +47,9 @@ void main(void) {
 	hN = heightAt(DOWN);
 	pipe.w = max(0, pipe.w + dt * A * (h-hN) / ly);
 
-	float K = min(1, imageLoad(d_map, pos).r * lx * ly / (dt * (pipe.x + pipe.y + pipe.z + pipe.w)));
+	//clamp instead of min due to NaNs
+	float K = clamp(imageLoad(d_map, pos).r * lx * ly / (dt * (pipe.x + pipe.y + pipe.z + pipe.w)),
+					0, 1);
 
 	pipe *= K;
 	if (erase) {

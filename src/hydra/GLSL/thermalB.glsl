@@ -39,7 +39,5 @@ void main(void) {
 	sw = inp < 0 ? -1 : 1;
 	nh += (request.w * sw < inp * sw) ? request.w : inp;
 	
-	// nh = max(nh, 0);
-	
 	imageStore(outH, base, vec4(nh));
 }
