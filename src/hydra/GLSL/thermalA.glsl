@@ -15,6 +15,7 @@ uniform float by = 1.0;
 uniform float Ks = 0.5;
 
 uniform float alpha = 0.005;
+uniform float max_drop = 0.1;
 
 uniform bool diagonal = false;
 uniform int ds = 1;
@@ -48,19 +49,19 @@ void main(void) {
 
 	dh = getH(base + ivec2(-ds, diagonal ? -ds : 0)) - h;
 	p.x = dh + (dh > 0 ? -1 : 1) * alpha * lx;
-	p.x *= int(abs(dh) > alpha * lx);
+	p.x *= int(abs(dh) > alpha * lx && abs(dh) < max_drop);
 
 	dh = getH(base + ivec2(diagonal ? -ds : 0, ds)) - h;
 	p.y = dh + (dh > 0 ? -1 : 1) * alpha * ly;
-	p.y *= int(abs(dh) > alpha * ly);
+	p.y *= int(abs(dh) > alpha * ly && abs(dh) < max_drop);
 	
 	dh = getH(base + ivec2(ds, diagonal ? ds : 0)) - h;
 	p.z = dh + (dh > 0 ? -1 : 1) * alpha * lx;
-	p.z *= int(abs(dh) > alpha * lx);
+	p.z *= int(abs(dh) > alpha * lx && abs(dh) < max_drop);
 	
 	dh = getH(base + ivec2(diagonal ? ds : 0, -ds)) - h;
 	p.w = dh + (dh > 0 ? -1 : 1) * alpha * ly;
-	p.w *= int(abs(dh) > alpha * ly);
+	p.w *= int(abs(dh) > alpha * ly && abs(dh) < max_drop);
 	
 	vec4 d = 0.5 * (p + abs(p));	//positive part
 	vec4 s = p - d;	//negative part

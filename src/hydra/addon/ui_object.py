@@ -87,6 +87,16 @@ class ThermalHeightPanel(ui_common.HeightmapSystemPanel, ui_common.ObjectPanel):
 	bl_parent_id = "HYDRA_PT_ThermalPanel"
 	bl_idname = "HYDRA_PT_ThermalHeightPanel"
 
+class ThermalSettingsPanel(ui_common.ThermalSettingsPanel, ui_common.ObjectPanel):
+	"""Subpanel for thermal erosion settings. Uses :class:`DefaultSettingsPanel`."""
+	bl_parent_id = "HYDRA_PT_ThermalPanel"
+	bl_idname = "HYDRA_PT_ThermalSettingsPanel"
+
+class ThermalAdvancedPanel(ui_common.ThermalAdvancedPanel, ui_common.ObjectPanel):
+	"""Subpanel for thermal erosion advanced settings. Uses :class:`DefaultAdvancedPanel`."""
+	bl_parent_id = "HYDRA_PT_ThermalPanel"
+	bl_idname = "HYDRA_PT_ThermalAdvancedPanel"
+
 #-------------------------------------------- Snow
 
 class SnowPanel(ui_common.SnowPanel, ui_common.ObjectPanel):
@@ -151,7 +161,9 @@ def get_exports()->list:
 		ErosionExtrasPanel,
 		ErosionAdvancedPanel,
 		ThermalPanel,
+		ThermalSettingsPanel,
 		ThermalHeightPanel,
+		ThermalAdvancedPanel,
 		SnowPanel,
 		SnowHeightPanel,
 		FlowPanel,

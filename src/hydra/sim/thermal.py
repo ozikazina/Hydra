@@ -43,18 +43,15 @@ def erode(obj: bpy.types.Image | bpy.types.Object):
 	request.bind_to_image(2, read=True, write=True)
 	free.bind_to_image(3, read=True, write=True)
 
-	if hyd.thermal_use_stride:
-		stride = hyd.thermal_stride
-		if hyd.thermal_stride_grad:
-			next_pass = hyd.thermal_iter_num // 2
-	else:
-		stride = 1
-
+	stride = hyd.thermal_stride
+	if hyd.thermal_stride_grad:
+		next_pass = hyd.thermal_iter_num // 2
 
 	progA["requests"].value = 2
 	progA["Ks"] = hyd.thermal_strength * 0.5	#0-1 -> 0-0.5, higher is unstable
 	progA["alpha"] = math.tan(math.tau * hyd.thermal_angle / 360) * 2 / size[0] # images are scaled to 2 z/x -> angle depends only on image width
 	progA["by"] = hyd.scale_ratio
+	progA["max_drop"] = hyd.part_maxjump
 	progA["useOffset"] = False
 
 	progB["requests"].value = 2
@@ -85,7 +82,7 @@ def erode(obj: bpy.types.Image | bpy.types.Object):
 		mapI = mapO
 		mapO = temp
 
-		if hyd.thermal_use_stride and hyd.thermal_stride_grad and i >= next_pass:
+		if hyd.thermal_stride_grad and i >= next_pass:
 			stride = math.ceil(stride / 2)
 			next_pass += (hyd.thermal_iter_num - i) // 2
 

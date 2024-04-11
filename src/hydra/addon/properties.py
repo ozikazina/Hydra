@@ -151,7 +151,7 @@ class ErosionGroup(bpy.types.PropertyGroup):
 		default=0.1,
 		min=0.01, soft_max=0.2, max=1,
 		name="Maximum drop",
-		description="Maximum height a particle can drop. Prevents deformations near borders"
+		description="Maximum height difference considered for erosion. Prevents deformations near borders"
 	)
 	
 	#------------------------- Particle
@@ -334,12 +334,6 @@ class ErosionGroup(bpy.types.PropertyGroup):
 		description="Solver neighborhood type"
 	)
 
-	thermal_use_stride: BoolProperty(
-		default=False,
-		name="Use stride",
-		description="Use stride to speed up erosion below 45 degrees"
-	)
-
 	thermal_stride: IntProperty(
 		default=1,
 		min=1, max=10,
@@ -349,7 +343,7 @@ class ErosionGroup(bpy.types.PropertyGroup):
 
 	thermal_stride_grad: BoolProperty(
 		default=False,
-		name="Step down",
+		name="Gradual stride",
 		description="Periodically halves stride for smoother erosion"
 	)
 

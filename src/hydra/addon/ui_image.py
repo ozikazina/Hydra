@@ -53,9 +53,18 @@ class ThermalPanel(ui_common.ThermalPanel, ui_common.ImagePanel):
 
 class ThermalHeightPanel(ui_common.HeightmapSystemPanel, ui_common.ImagePanel):
 	"""Subpanel for thermal erosion heightmap stack."""
-	bl_label = "Heightmaps"
 	bl_parent_id = "HYDRA_PT_ThermalPanelImage"
 	bl_idname = "HYDRA_PT_ThermalHeightPanelImage"
+
+class ThermalSettingsPanel(ui_common.ThermalSettingsPanel, ui_common.ImagePanel):
+	"""Subpanel for thermal erosion settings."""
+	bl_parent_id = "HYDRA_PT_ThermalPanelImage"
+	bl_idname = "HYDRA_PT_ThermalSettingsPanelImage"
+
+class ThermalAdvancedPanel(ui_common.ThermalAdvancedPanel, ui_common.ImagePanel):
+	"""Subpanel for thermal erosion advanced settings."""
+	bl_parent_id = "HYDRA_PT_ThermalPanelImage"
+	bl_idname = "HYDRA_PT_ThermalAdvancedPanelImage"
 
 #-------------------------------------------- Info
 
@@ -85,7 +94,9 @@ def get_exports()->list:
 		ErosionExtrasPanel,
 		ErosionAdvancedPanel,
 		ThermalPanel,
+		ThermalSettingsPanel,
 		ThermalHeightPanel,
+		ThermalAdvancedPanel,
 		FlowPanel,
 		LandscapePanel,
 		CleanupPanel

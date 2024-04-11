@@ -127,24 +127,6 @@ class ThermalPanel():
 
 		self.draw_size_fragment(col.box(), ctx, hyd)
 
-		col.separator()
-		col.label(text="Erosion settings")
-
-		box = col.box()
-		box.prop(hyd, "thermal_iter_num")
-		box.prop(hyd, "thermal_strength", slider=True)
-		box.prop(hyd, "thermal_angle", slider=True)
-		
-		split = box.split(factor=0.4)
-		split.label(text="Direction: ")
-		split.prop(hyd, "thermal_solver", text="")
-
-		box.prop(hyd, "thermal_use_stride")
-		if hyd.thermal_use_stride:
-			sub = box.box()
-			sub.prop(hyd, "thermal_stride")
-			sub.prop(hyd, "thermal_stride_grad")
-
 #-------------------------------------------- Snow
 
 class SnowPanel():
@@ -300,6 +282,35 @@ class HeightmapSystemPanel():
 			col.label(text="No maps have been cached yet.")
 
 #-------------------------------------------- Subpanels
+
+class ThermalSettingsPanel():
+	bl_label = "Erosion settings"
+	bl_options = set()
+
+	def draw(self, ctx):
+		hyd = self.get_settings(ctx)
+		col = self.layout.column()
+
+		box = col.box()
+		box.prop(hyd, "thermal_iter_num")
+		box.prop(hyd, "thermal_strength", slider=True)
+		box.prop(hyd, "thermal_angle", slider=True)
+		
+		split = box.split(factor=0.4)
+		split.label(text="Direction: ")
+		split.prop(hyd, "thermal_solver", text="")
+
+class ThermalAdvancedPanel():
+	bl_label = "Advanced"
+
+	def draw(self, ctx):
+		hyd = self.get_settings(ctx)
+		col = self.layout.column()
+
+		box = col.box()
+		box.prop(hyd, "part_maxjump")
+		box.prop(hyd, "thermal_stride")
+		box.prop(hyd, "thermal_stride_grad")
 
 class ErosionSettingsPanel(bpy.types.Panel):
 	"""Subpanel for water erosion particle settings."""
