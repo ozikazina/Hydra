@@ -12,6 +12,8 @@ uniform float ly = 1;
 
 const float A = 0.25;
 
+uniform float max_drop = 0.1;
+
 uniform bool diagonal = true;
 uniform bool erase = false;
 
@@ -35,17 +37,17 @@ void main(void) {
 	float h = heightAt(pos); 
 	vec4 pipe = imageLoad(pipe_map, pos);
 
-	float hN = heightAt(LEFT);
-	pipe.x = max(0, pipe.x + dt * A * (h-hN) / lx);
+	float hN = h - heightAt(LEFT);
+	pipe.x = max(0, pipe.x + dt * A * hN * int(hN < max_drop) / lx);
 
-	hN = heightAt(RIGHT);
-	pipe.z = max(0, pipe.z + dt * A * (h-hN) / lx);
+	hN = h - heightAt(RIGHT);
+	pipe.z = max(0, pipe.z + dt * A * hN * int(hN < max_drop) / lx);
 
-	hN = heightAt(UP);
-	pipe.y = max(0, pipe.y + dt * A * (h-hN) / ly);
+	hN = h - heightAt(UP);
+	pipe.y = max(0, pipe.y + dt * A * hN * int(hN < max_drop) / ly);
 
-	hN = heightAt(DOWN);
-	pipe.w = max(0, pipe.w + dt * A * (h-hN) / ly);
+	hN = h - heightAt(DOWN);
+	pipe.w = max(0, pipe.w + dt * A * hN * int(hN < max_drop) / ly);
 
 	//clamp instead of min due to NaNs
 	float K = clamp(imageLoad(d_map, pos).r * lx * ly / (dt * (pipe.x + pipe.y + pipe.z + pipe.w)),

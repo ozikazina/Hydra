@@ -69,6 +69,7 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 		prog["d_map"].value = 4
 		prog["lx"] = hyd.mei_length[0]
 		prog["ly"] = hyd.mei_length[1]
+		prog["max_drop"] = hyd.part_maxjump * hyd.mei_scale
 		prog["diagonal"] = diagonal
 		prog["erase"] = switch
 		prog.run(group_x=group_x, group_y=group_y)
