@@ -36,6 +36,11 @@ def init_context():
 		frag = f.read()
 	make_prog("redraw", vert, frag)
 
+	
+	with open(Path(base, "resize.frag"), "r") as f:
+		frag = f.read()
+	make_prog("resize", vert, frag)
+
 	with open(Path(base, "erosion.glsl"), "r") as f:
 		comp = f.read()
 	data.shaders["erosion"] = ctx.compute_shader(comp)
@@ -48,9 +53,9 @@ def init_context():
 		comp = f.read()
 	data.shaders["flow"] = ctx.compute_shader(comp)
 
-	with open(Path(base, "diff.glsl"), "r") as f:
+	with open(Path(base, "scaled_add.glsl"), "r") as f:
 		comp = f.read()
-	data.shaders["diff"] = ctx.compute_shader(comp)
+	data.shaders["scaled_add"] = ctx.compute_shader(comp)
 
 	with open(Path(base, "thermalA.glsl"), "r") as f:
 		comp = f.read()
@@ -79,3 +84,4 @@ def init_context():
 		with open(Path(base, f"mei{i}.glsl"), "r") as f:
 			comp = f.read()
 		data.shaders[f"mei{i}"] = ctx.compute_shader(comp)
+

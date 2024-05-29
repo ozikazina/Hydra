@@ -37,10 +37,10 @@ class ErosionGroup(bpy.types.PropertyGroup):
 	"""Original object width for correct angle calculations."""
 
 	img_size: IntVectorProperty(
-		default=(512,512),
+		default=(1024,1024),
 		name="Image size",
 		min=16,
-		max=2048,
+		max=4096,
 		description="Image size",
 		size=2
 	)
@@ -55,6 +55,15 @@ class ErosionGroup(bpy.types.PropertyGroup):
 		),
 		name="Erosion solver",
 		description="Solver type for erosion"
+	)
+
+	erosion_subres: FloatProperty(
+		default=50.0,
+		min=10, max=200.0,
+		soft_max=100.0,
+		subtype="PERCENTAGE",
+		name="Simulation resolution",
+		description="Percentage of heightmap resolution to simulate at"
 	)
 
 	out_color: BoolProperty(

@@ -109,6 +109,11 @@ class ErosionPanel():
 
 		col.prop(hyd, "erosion_solver", text="Solver")
 
+		if hyd.erosion_solver == "particle":
+			col.separator()
+			col.label(text="Simulation resolution:")
+			col.prop(hyd, "erosion_subres", text="", slider=True)
+
 #-------------------------------------------- Thermal
 
 class ThermalPanel():

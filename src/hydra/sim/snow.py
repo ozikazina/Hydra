@@ -100,10 +100,12 @@ def simulate(obj: bpy.types.Image | bpy.types.Object):
 		snow_img.release()
 
 	if hyd.snow_output != "texture":
-		prog = data.shaders["diff"]
+		# heightmap.add()
+		prog = data.shaders["scaled_add"]
 		prog["A"].value = mapI
 		prog["B"].value = 4	# offset - source map
-		prog["factor"] = -1.0	#add instead of subtract
+		prog["factor"] = 1.0
+		prog["scale"] = 1.0
 		prog.run(group_x = size[0], group_y = size[1])
 
 		data.try_release_map(hyd.map_result)

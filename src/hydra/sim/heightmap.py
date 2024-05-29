@@ -119,7 +119,7 @@ def prepare_heightmap(obj: bpy.types.Image | bpy.types.Object):
 		hmid = data.create_map("Base map", txt)
 		hyd.map_source = hmid
 
-def subtract(modified: mgl.Texture, base: mgl.Texture, scale: float=1.0)->mgl.Texture:
+def subtract(modified: mgl.Texture, base: mgl.Texture, factor: float = 1.0, scale: float = 1.0)->mgl.Texture:
 	"""Subtracts given textures and returns difference relative to `base` as a result. Also scales result if needed.
 	
 	:param modified: Current heightmap. Minuend.
@@ -128,22 +128,31 @@ def subtract(modified: mgl.Texture, base: mgl.Texture, scale: float=1.0)->mgl.Te
 	:type base: :class:`moderngl.Texture`
 	:return: A texture equal to (modified - base).
 	:rtype: :class:`moderngl.Texture`"""
-	txt = texture.clone(modified)
-	prog: mgl.ComputeShader = common.data.shaders["diff"]
+	return add(modified, base, -factor, scale)
+
+def add(A: mgl.Texture, B: mgl.Texture, factor: float = 1.0, scale: float = 1.0, )->mgl.Texture:
+	"""Adds given textures and returns the result.
+	
+	:param A: First texture.
+	:type A: :class:`moderngl.Texture`
+	:param B: Second texture.
+	:type B: :class:`moderngl.Texture`
+	:param scale: Scale factor for the result.
+	:type scale: :class:`float`
+	:param factor: Multiplication factor for the second texture.
+	:type factor: :class:`float`
+	:return: A texture equal to (scale * (A + factor * B)).
+	:rtype: :class:`moderngl.Texture`"""
+	txt = texture.clone(A)
+	prog: mgl.ComputeShader = common.data.shaders["scaled_add"]
 	txt.bind_to_image(1, read=True, write=True)
 	prog["A"].value = 1
-	base.bind_to_image(2, read=True, write=False)
+	B.bind_to_image(2, read=True, write=False)
 	prog["B"].value = 2
-	prog["factor"] = 1.0
-	#A=A-B
-	prog.run(base.width, base.height)
-
-	if scale != 1.0:
-		prog = common.data.shaders["scaling"]
-		prog["A"].value = 1
-		prog["scale"] = scale
-		#A *= scale
-		prog.run(base.width, base.height)
+	prog["factor"] = factor
+	prog["scale"] = scale
+	# A = scale * (A + factor * B)
+	prog.run(A.width, A.height)
 	
 	common.data.context.finish()
 	return txt
@@ -189,6 +198,41 @@ def set_result_as_source(obj: bpy.types.Object | bpy.types.Image, as_base: bool 
 		src = common.data.get_map(hyd.map_source)
 		target = texture.clone(src.texture)
 		hyd.map_base = common.data.create_map(src.name, target)
+
+def resize_texture(texture: mgl.Texture, target_size: tuple[int, int])->mgl.Texture:
+	"""Resizes a texture to the specified size.
+
+	:param texture: Texture to resize.
+	:type texture: :class:`moderngl.Texture`
+	:param target_size: New size.
+	:type target_size: :class:`tuple`
+	:return: Resized texture.
+	:rtype: :class:`moderngl.Texture`"""
+	prog: mgl.Program = common.data.programs["resize"]
+	ctx: mgl.Context = common.data.context
+
+	ret = ctx.texture(target_size, 1, dtype='f4')
+	sampler = ctx.sampler()
+	fbo = ctx.framebuffer(color_attachments=(ret))
+
+	print(ret.size)
+
+	vao = model.create_vao(ctx, prog)
+
+	with ctx.scope(fbo):
+		fbo.clear()
+		texture.use(1)
+		sampler.use(1)
+		vao.program["in_texture"] = 1
+		vao.render()
+		ctx.finish()
+
+	sampler.release()
+	vao.release()
+	fbo.release()
+
+	return ret
+
 
 def nuke_gui():
 	"""Gives an authentic developer experience."""

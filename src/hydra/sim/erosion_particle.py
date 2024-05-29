@@ -29,7 +29,14 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 	size = hyd.get_size()
 	subdiv = int(hyd.part_subdiv)
 	
-	height = texture.clone(data.get_map(hyd.map_source).texture)
+	if hyd.erosion_subres != 1:
+		size = (math.ceil(size[0] * hyd.erosion_subres / 100.0), math.ceil(size[1] * hyd.erosion_subres / 100.0))
+		height = heightmap.resize_texture(data.get_map(hyd.map_source).texture, size)
+		height_base = texture.clone(height)
+	else:
+		height = texture.clone(data.get_map(hyd.map_source).texture)
+		height_base = None
+	
 	sediment = texture.create_texture(size) if hyd.out_sediment else None
 	depth = texture.create_texture(size) if hyd.out_depth else None
 	color = texture.create_texture(size, image=bpy.data.images[hyd.color_src]) if hyd.out_color else None
@@ -98,6 +105,21 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 			
 	ctx.finish()
 	print((datetime.now() - time).total_seconds())
+
+	if height_base is not None: # resize back to original size
+		dif = heightmap.subtract(height, height_base) # get difference
+		texture.write_image("tst_diff", dif)
+		height_base.release()
+		height.release()
+
+		height = heightmap.resize_texture(dif, hyd.get_size()) # resize difference
+		texture.write_image("tst_resized", height)
+		dif.release()
+
+		nh = heightmap.add(height, data.get_map(hyd.map_source).texture) # add difference to original
+		height.release()
+
+		height = nh
 
 	data.try_release_map(hyd.map_result)
 	
