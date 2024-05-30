@@ -44,7 +44,7 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 	temp = texture.create_texture(size)	# capacity, water and sediment at different stages
 
 	if hyd.mei_out_color:
-		colorA = texture.create_texture(size, image=bpy.data.images[hyd.color_src])
+		colorA = texture.create_texture(size, channels=4, image=bpy.data.images[hyd.color_src])
 		colorB = texture.create_texture(size, channels=4)
 		colorSamplerA = ctx.sampler(texture=colorA)
 		colorSamplerB = ctx.sampler(texture=colorB)

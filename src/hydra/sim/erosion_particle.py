@@ -39,7 +39,7 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 	
 	sediment = texture.create_texture(size) if hyd.out_sediment else None
 	depth = texture.create_texture(size) if hyd.out_depth else None
-	color = texture.create_texture(size, image=bpy.data.images[hyd.color_src]) if hyd.out_color else None
+	color = texture.create_texture(size, image=bpy.data.images[hyd.color_src], channels=4) if hyd.out_color else None
 
 	if use_vao:
 		prog = data.programs["erosion"]
