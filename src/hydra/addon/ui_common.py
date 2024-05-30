@@ -380,6 +380,7 @@ class ErosionExtrasPanel():
 			p.prop(hyd, "mei_out_color")
 			if (hyd.mei_out_color):
 				p.prop_search(hyd, "color_src", bpy.data, "images")
+				p.prop(hyd, "mei_color_mixing", slider=True)
 
 			self.draw_nav_fragment(p, f"HYD_{target.name}_Color", "Color")
 

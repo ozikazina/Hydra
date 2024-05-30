@@ -146,6 +146,7 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 		prog["dt"] = hyd.mei_dt
 		prog["diagonal"] = diagonal
 		prog["use_color"] = hyd.mei_out_color
+		prog["color_scaling"] =  1 / (100 - 99 * (hyd.mei_color_mixing / 100))
 		prog["out_color_map"].value = BIND_COLOR
 		prog["color_sampler"] = LOC_COLOR
 		prog.run(group_x=group_x, group_y=group_y)

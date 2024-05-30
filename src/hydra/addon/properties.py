@@ -233,7 +233,8 @@ class ErosionGroup(bpy.types.PropertyGroup):
 
 	mei_rain: FloatProperty(
 		default=0.1,
-		min=0.01, max=10.0,
+		min=0.01, soft_max=1.0,
+		max=10,
 		name="Rain",
 		description="Amount of rain per iteration"
 	)
@@ -304,6 +305,14 @@ class ErosionGroup(bpy.types.PropertyGroup):
 		default=False,
 		name="Transport color",
 		description="Transport color during motion"
+	)
+
+	mei_color_mixing: FloatProperty(
+		default=50,
+		min=1, max=100.0,
+		subtype="PERCENTAGE",
+		name="Color mixing",
+		description="Defines how strongly a sediment colors the surface"
 	)
 	
 	#------------------------- Flow

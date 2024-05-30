@@ -13,7 +13,9 @@ uniform float dt = 0.25;
 uniform bool diagonal = true;
 
 uniform bool use_color = false;
-uniform float color_mixing = 0.25;
+uniform float color_scaling = 0.05;
+uniform float color_min = 0.05;
+uniform float color_max = 0.9;
 
 void main(void) {
 	ivec2 pos = ivec2(gl_GlobalInvocationID.xy);
@@ -23,19 +25,27 @@ void main(void) {
 		1 / sqrt(2), 1 / sqrt(2)
 	);
 
-	vec2 vpos = dt * imageLoad(v_map, pos).xy;
+	vec2 vel = imageLoad(v_map, pos).xy;
+	float color_factor = clamp(
+		(vel.x * vel.x + vel.y * vel.y) * color_scaling,	//non-linear scaling
+		color_min, color_max
+	);
+
+	vel *= dt;
 	if (diagonal) {
-		vpos *= rotation;
+		vel *= rotation;
 	}
 
-    vpos = (vec2(pos) - vpos + vec2(0.5)) / imageSize(out_s_map);
+    vec2 vpos = (vec2(pos) - vel + vec2(0.5)) / imageSize(out_s_map);
 
 	float s = texture(s_sampler, vpos).r;
     imageStore(out_s_map, pos, vec4(max(s, 0)));
 
 	if (use_color) {
 		vec4 new_color = texture(color_sampler, vpos);
-		vec4 current_color = texture(color_sampler, (vec2(pos) + vec2(0.5)) / imageSize(out_color_map));
-		imageStore(out_color_map, pos, new_color * color_mixing + current_color * (1 - color_mixing));
+		vec4 current_color = texture(color_sampler,
+			(vec2(pos) + vec2(0.5)) / imageSize(out_color_map)
+		);
+		imageStore(out_color_map, pos, new_color * color_factor + current_color * (1 - color_factor));
 	}
 }//main
