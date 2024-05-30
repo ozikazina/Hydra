@@ -95,7 +95,7 @@ class ErosionPanel():
 		
 		col = self.layout.column()
 
-		if hyd.out_color and hyd.color_src not in bpy.data.images:
+		if (hyd.out_color or hyd.mei_out_color) and hyd.color_src not in bpy.data.images:
 			box = col.box()
 			box.operator("hydra.erode", text="No color source", icon="RNDCURVE")
 			box.enabled = False
@@ -353,32 +353,35 @@ class ErosionExtrasPanel():
 	"""Subpanel for water erosion extra settings."""
 	bl_label = "Extras"
 
-	@classmethod
-	def poll(cls, ctx):
-		return cls.get_settings(ctx).erosion_solver == "particle"
-
 	def draw(self, ctx):
 		p = self.layout.box()
 		target = self.get_target(ctx)
 		hyd = self.get_settings(ctx)
 
-		p.prop(hyd, "out_color")
-		if (hyd.out_color):
-			p.prop_search(hyd, "color_src", bpy.data, "images")
-			p.prop(hyd, "interpolate_color")
-			p.prop(hyd, "color_mixing", slider=True)
+		if hyd.erosion_solver == "particle":
+			p.prop(hyd, "out_color")
+			if (hyd.out_color):
+				p.prop_search(hyd, "color_src", bpy.data, "images")
+				p.prop(hyd, "interpolate_color")
+				p.prop(hyd, "color_mixing", slider=True)
 
-		p.prop(hyd, "out_depth")
-		if (hyd.out_depth):
-			p.prop(hyd, "depth_contrast", slider=True)
+			p.prop(hyd, "out_depth")
+			if (hyd.out_depth):
+				p.prop(hyd, "depth_contrast", slider=True)
 
-		p.prop(hyd, "out_sediment")
-		if (hyd.out_sediment):
-			p.prop(hyd, "sed_contrast", slider=True)
-		
-		self.draw_nav_fragment(p, f"HYD_{target.name}_Color", "Color")
-		self.draw_nav_fragment(p, f"HYD_{target.name}_Depth", "Depth")
-		self.draw_nav_fragment(p, f"HYD_{target.name}_Sediment", "Sediment")
+			p.prop(hyd, "out_sediment")
+			if (hyd.out_sediment):
+				p.prop(hyd, "sed_contrast", slider=True)
+			
+			self.draw_nav_fragment(p, f"HYD_{target.name}_Color", "Color")
+			self.draw_nav_fragment(p, f"HYD_{target.name}_Depth", "Depth")
+			self.draw_nav_fragment(p, f"HYD_{target.name}_Sediment", "Sediment")
+		else:
+			p.prop(hyd, "mei_out_color")
+			if (hyd.mei_out_color):
+				p.prop_search(hyd, "color_src", bpy.data, "images")
+
+			self.draw_nav_fragment(p, f"HYD_{target.name}_Color", "Color")
 
 class ErosionAdvancedPanel():
 	"""Subpanel for water erosion advanced settings."""

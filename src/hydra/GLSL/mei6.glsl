@@ -2,13 +2,18 @@
 
 layout(local_size_x = 32, local_size_y = 32, local_size_z = 1) in;
 
-layout (r32f) uniform image2D s_alt_map;
+uniform sampler2D s_sampler;
+uniform sampler2D color_sampler;
 layout (rg32f) uniform image2D v_map;
-layout (r32f) uniform image2D s_map;
+layout (r32f) uniform image2D out_s_map;
+layout (rgba32f) uniform image2D out_color_map;
 
 uniform float dt = 0.25;
 
 uniform bool diagonal = true;
+
+uniform bool use_color = false;
+uniform float color_mixing = 0.25;
 
 void main(void) {
 	ivec2 pos = ivec2(gl_GlobalInvocationID.xy);
@@ -22,16 +27,15 @@ void main(void) {
 	if (diagonal) {
 		vpos *= rotation;
 	}
-    vpos = vec2(pos) - vpos;
 
-	ivec2 corner = ivec2(vpos);
-	vec2 factor = vpos - vec2(corner);
+    vpos = (vec2(pos) - vpos + vec2(0.5)) / imageSize(out_s_map);
 
-    float s = 0;
-	s += (1 - factor.x) * (1 - factor.y) * imageLoad(s_map, corner).r;
-	s += (factor.x) * (1 - factor.y) * imageLoad(s_map, corner + ivec2(1,0)).r;
-	s += (1 - factor.x) * (factor.y) * imageLoad(s_map, corner + ivec2(0,1)).r;
-	s += (factor.x) * (factor.y) * imageLoad(s_map, corner + ivec2(1,1)).r;
+	float s = texture(s_sampler, vpos).r;
+    imageStore(out_s_map, pos, vec4(max(s, 0)));
 
-    imageStore(s_alt_map, pos, vec4(max(s, 0)));
+	if (use_color) {
+		vec4 new_color = texture(color_sampler, vpos);
+		vec4 current_color = texture(color_sampler, (vec2(pos) + vec2(0.5)) / imageSize(out_color_map));
+		imageStore(out_color_map, pos, new_color * color_mixing + current_color * (1 - color_mixing));
+	}
 }//main

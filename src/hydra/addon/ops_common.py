@@ -67,7 +67,9 @@ class ErosionOperator(HydraOperator):
 			elif "depth" in results:
 				nav.goto_image(results["depth"])
 		else:
-			erosion_mei.erode(target)
+			results = erosion_mei.erode(target)
+			if "color" in results:
+				nav.goto_image(results["color"])
 
 		apply.add_preview(target)
 

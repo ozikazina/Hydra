@@ -12,10 +12,10 @@ uniform float ly = 1;
 
 uniform bool diagonal = true;
 
-#define LEFT   diagonal ? pos + ivec2(-1, -1) : pos + ivec2(-1, 0)
-#define RIGHT  diagonal ? pos + ivec2(+1, +1) : pos + ivec2(+1, 0)
-#define UP     diagonal ? pos + ivec2(+1, -1) : pos + ivec2(0, -1)
-#define DOWN   diagonal ? pos + ivec2(-1, +1) : pos + ivec2(0, +1)
+#define LEFT   (diagonal ? pos + ivec2(-1, -1) : pos + ivec2(-1, 0))
+#define RIGHT  (diagonal ? pos + ivec2(+1, +1) : pos + ivec2(+1, 0))
+#define UP     (diagonal ? pos + ivec2(+1, -1) : pos + ivec2(0, -1))
+#define DOWN   (diagonal ? pos + ivec2(-1, +1) : pos + ivec2(0, +1))
 
 //  1y -1
 //0x  2z
@@ -25,9 +25,11 @@ void main(void) {
 	ivec2 pos = ivec2(gl_GlobalInvocationID.xy);
 
     vec4 pipe = imageLoad(pipe_map, pos);
-    float dv =  imageLoad(pipe_map, LEFT).z + imageLoad(pipe_map, RIGHT).x +
-                imageLoad(pipe_map, UP).w + imageLoad(pipe_map, DOWN).y -
-                (pipe.x + pipe.y + pipe.z + pipe.w);
+    float inflow =
+        imageLoad(pipe_map, LEFT).z + imageLoad(pipe_map, RIGHT).x +
+        imageLoad(pipe_map, UP).w + imageLoad(pipe_map, DOWN).y;
+    float outflow = pipe.x + pipe.y + pipe.z + pipe.w;
+    float dv = inflow - outflow;
 
     dv *= dt / (lx * ly);
 

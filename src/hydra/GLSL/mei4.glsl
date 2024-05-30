@@ -17,10 +17,10 @@ uniform float scale = 1;
 
 uniform bool diagonal = true;
 
-#define LEFT   diagonal ? pos + ivec2(-1, -1) : pos + ivec2(-1, 0)
-#define RIGHT  diagonal ? pos + ivec2(+1, +1) : pos + ivec2(+1, 0)
-#define UP     diagonal ? pos + ivec2(+1, -1) : pos + ivec2(0, -1)
-#define DOWN   diagonal ? pos + ivec2(-1, +1) : pos + ivec2(0, +1)
+#define LEFT   (diagonal ? pos + ivec2(-1, -1) : pos + ivec2(-1, 0))
+#define RIGHT  (diagonal ? pos + ivec2(+1, +1) : pos + ivec2(+1, 0))
+#define UP     (diagonal ? pos + ivec2(+1, -1) : pos + ivec2(0, -1))
+#define DOWN   (diagonal ? pos + ivec2(-1, +1) : pos + ivec2(0, +1))
 
 //  1y -1
 //0x  2z

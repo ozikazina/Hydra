@@ -299,6 +299,12 @@ class ErosionGroup(bpy.types.PropertyGroup):
 		name="Direction",
 		description="Solver neighborhood type"
 	)
+
+	mei_out_color: BoolProperty(
+		default=False,
+		name="Transport color",
+		description="Transport color during motion"
+	)
 	
 	#------------------------- Flow
 	
