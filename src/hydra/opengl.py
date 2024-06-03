@@ -41,47 +41,13 @@ def init_context():
 		frag = f.read()
 	make_prog("resize", vert, frag)
 
-	with open(Path(base, "erosion.glsl"), "r") as f:
-		comp = f.read()
-	data.shaders["erosion"] = ctx.compute_shader(comp)
 
 	with open(Path(base, "erosion.frag"), "r") as f:
 		frag = f.read()
 	make_prog("erosion", vert, frag)
-	
-	with open(Path(base, "flow.glsl"), "r") as f:
-		comp = f.read()
-	data.shaders["flow"] = ctx.compute_shader(comp)
 
-	with open(Path(base, "scaled_add.glsl"), "r") as f:
-		comp = f.read()
-	data.shaders["scaled_add"] = ctx.compute_shader(comp)
 
-	with open(Path(base, "thermalA.glsl"), "r") as f:
-		comp = f.read()
-	data.shaders["thermalA"] = ctx.compute_shader(comp)
-	with open(Path(base, "thermalB.glsl"), "r") as f:
-		comp = f.read()
-	data.shaders["thermalB"] = ctx.compute_shader(comp)
-
-	with open(Path(base, "snow.glsl"), "r") as f:
-		comp = f.read()
-	data.shaders["snow"] = ctx.compute_shader(comp)
-
-	with open(Path(base, "linear.glsl"), "r") as f:
-		comp = f.read()
-	data.shaders["linear"] = ctx.compute_shader(comp)
-
-	with open(Path(base, "plug.glsl"), "r") as f:
-		comp = f.read()
-	data.shaders["plug"] = ctx.compute_shader(comp)
-
-	with open(Path(base, "scaling.glsl"), "r") as f:
-		comp = f.read()
-	data.shaders["scaling"] = ctx.compute_shader(comp)
-	
-	for i in range(1,6+1):
-		with open(Path(base, f"mei{i}.glsl"), "r") as f:
-			comp = f.read()
-		data.shaders[f"mei{i}"] = ctx.compute_shader(comp)
-
+	for path in base.iterdir():
+		if path.suffix == ".glsl":
+			comp = path.read_text("utf-8")
+			data.shaders[path.stem] = ctx.compute_shader(comp)

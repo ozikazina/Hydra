@@ -151,8 +151,9 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 		prog["color_sampler"] = LOC_COLOR
 		prog.run(group_x=group_x, group_y=group_y)
 
-		colorA, colorB = swap(colorA, colorB)
-		colorSamplerA, colorSamplerB = swap(colorSamplerA, colorSamplerB)
+		if hyd.mei_out_color:
+			colorA, colorB = swap(colorA, colorB)
+			colorSamplerA, colorSamplerB = swap(colorSamplerA, colorSamplerB)
 
 		if switch:
 			diagonal = not diagonal
