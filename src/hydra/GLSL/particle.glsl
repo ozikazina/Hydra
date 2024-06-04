@@ -4,12 +4,7 @@ layout(local_size_x = 32, local_size_y = 32, local_size_z = 1) in;
 
 uniform sampler2D height_sampler;
 
-layout (r32f) uniform image2D change_map;
-
-layout (rgba32f) uniform image2D color_map;
-uniform sampler2D color_sampler;
-
-uniform bool use_color = false;
+layout (r32f) uniform image2D height_map;
 
 uniform ivec2 tile_size = ivec2(32,32);
 uniform vec2 tile_mult = vec2(1.0/512.0,1.0/512.0);
@@ -27,10 +22,6 @@ uniform float erosion_strength = 0.25;
 uniform float deposition_strength = 0.5;
 
 uniform float max_change = 0.01;
-
-uniform float contrast_erode = 20.0;
-uniform float contrast_deposit = 40.0;
-uniform float color_strength = 0.2;
 
 // pcg3d hashing algorithm from:
 // Author: Mark Jarzynski and Marc Olano
@@ -54,11 +45,10 @@ void erode(uvec2 base, int seed) {
 		height - texture(height_sampler, tile_mult * (pos + vec2(1, 0))).x,
 		height - texture(height_sampler, tile_mult * (pos + vec2(0, 1))).x
 	);
+
 	vec2 dir = normalize(vel);
 
 	float saturation = 0.0;
-
-	vec4 color = texture(color_sampler, tile_mult * pos);
 	
 	for (int i = 0; i < lifetime; ++i) {
 		float height = texture(height_sampler, tile_mult * pos).x;
@@ -70,7 +60,7 @@ void erode(uvec2 base, int seed) {
 			(height - height_dir) * vec2(-dir.y, dir.x)
 		);
 		
-		float len = clamp(length(vel), 0, max_velocity);
+		float len = min(length(vel), max_velocity);
 		dir = normalize(vel);
 		vel = dir * len;
 
@@ -83,16 +73,7 @@ void erode(uvec2 base, int seed) {
 		saturation += dif;
 		
 		ivec2 ipos = ivec2(pos);
-		float sed = imageLoad(change_map, ipos).x;
-		sed -= dif;
-		imageStore(change_map, ipos, vec4(sed));
-		
-		if (use_color) {
-			vec4 surface_color = texture(color_sampler, tile_mult * pos);
-			vec4 new_color = mix(color, surface_color, float(dif <= 0) * (1 - color_strength));
-			color = mix(color, surface_color, float(dif > 0) * color_strength);
-			imageStore(color_map, ipos, new_color);
-		}
+		imageStore(height_map, ipos, imageLoad(height_map, ipos) - vec4(dif));
 
 		pos += dir;
 		
@@ -103,6 +84,6 @@ void erode(uvec2 base, int seed) {
 void main(void) {
 	ivec2 base = ivec2(gl_GlobalInvocationID.xy);
 	for (int j = 0; j < iterations; ++j) {
-		erode(base, j + seed * iterations);
+		erode(base, seed + j);
 	}
 }//main

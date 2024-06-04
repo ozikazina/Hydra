@@ -39,7 +39,7 @@ class ErosionGroup(bpy.types.PropertyGroup):
 	img_size: IntVectorProperty(
 		default=(1024,1024),
 		name="Image size",
-		min=16,
+		min=32,
 		max=4096,
 		description="Image size",
 		size=2
@@ -48,10 +48,10 @@ class ErosionGroup(bpy.types.PropertyGroup):
 	#------------------------- Erosion
 	
 	erosion_solver: EnumProperty(
-		default="pipe",
+		default="particle",
 		items=(
-			("particle", "Particle", "Slower model, but stable for any terrain. Creates larger terrain features", 0),
-			("pipe", "Pipe", "Faster, but unstable. Creates finer details", 1),
+			("particle", "Particle", "Creates long meandering paths. Stable for most terrains", 0),
+			("pipe", "Pipe", "Smoother large scale erosion. Partially unstable", 1),
 		),
 		name="Erosion solver",
 		description="Solver type for erosion"
@@ -70,18 +70,6 @@ class ErosionGroup(bpy.types.PropertyGroup):
 		default=False,
 		name="Transport color",
 		description="Transport color during motion (slow)"
-	)
-
-	interpolate_color: BoolProperty(
-		default=True,
-		name="Interpolate color",
-		description="Deposited color is smoothly applied between cells. May cause visual artifacts on borders"
-	)
-
-	interpolate_erosion: BoolProperty(
-		default=True,
-		name="Interpolate erosion",
-		description="Particle erodes all nearest cells. Produces smoother curves"
 	)
 
 	interpolate_flow: BoolProperty(
@@ -107,42 +95,6 @@ class ErosionGroup(bpy.types.PropertyGroup):
 		description="Output sediment height at each point"
 	)
 
-	part_deposition: FloatProperty(
-		default=0.5,
-		min=0.0, max=1.0,
-		name="Deposition strength",
-		description="Defines how fast sediment can deposit. A value of 0 means only erosion occurs"
-	)
-	
-	part_fineness: FloatProperty(
-		default=0.25,
-		min=0.1, max=2.0,
-		soft_min=0.1, soft_max=1.0,
-		name="Erosion smoothness",
-		description="Higher values smooth erosion, but may create unwanted patterns"
-	)
-	
-	part_capacity: FloatProperty(
-		default=1.0,
-		min=0.5, max=3.0,
-		soft_max=2.0,
-		name="Capacity",
-		description="Sediment capacity of the particle. High capacity, high acceleration and low iterations lead to smoother results"
-	)
-
-	part_subdiv: EnumProperty(
-		default="4",
-		items=(
-			("16", "16", "Chunks of side 16", 0),
-			("8", "8", "Chunks of side 8", 1),
-			("4", "4", "Chunks of side 4", 2),
-			("2", "2", "Chunks of side 2", 3),
-			("1", "1", "No chunking", 4),
-		),
-		name="Chunk size",
-		description="Size of solver chunks. Higher values prevent interference between particles"
-	)
-
 	flow_subdiv: EnumProperty(
 		default="8",
 		items=(
@@ -155,13 +107,6 @@ class ErosionGroup(bpy.types.PropertyGroup):
 		name="Chunk size",
 		description="Size of solver chunks. Higher values prevent interference between particles"
 	)
-
-	part_maxjump: FloatProperty(
-		default=0.1,
-		min=0.01, soft_max=0.2, max=1,
-		name="Maximum drop",
-		description="Maximum height difference considered for erosion. Prevents deformations near borders"
-	)
 	
 	#------------------------- Particle
 
@@ -169,50 +114,78 @@ class ErosionGroup(bpy.types.PropertyGroup):
 		default=100,
 		min=1, max=1000,
 		name="Iterations",
-		description="Number of iterations, each over the entire image"
+		description="Number of simulation iterations"
+	)
+
+	part_iter_multiplier: IntProperty(
+		default=10,
+		min=1, max=100,
+		name="Particle multiplier",
+		description="Increases the number of particles simulated per iteration"
 	)
 	
 	part_lifetime: IntProperty(
-		default=50,
-		min=1, max=500,
+		default=25,
+		min=1, max=300,
+		soft_max=100,
 		name="Lifetime",
-		description="Number of steps a particle can take"
+		description="Number of steps a particle will take per iteration"
 	)
 	
 	part_acceleration: FloatProperty(
-		default=0.5,
-		min=0.01, max=4.0,
-		soft_max=3.0,
+		default=50.0,
+		min=1.0, soft_max=100.0, max=500.0,
+		subtype="PERCENTAGE",
 		name="Acceleration",
 		description="Influence of the surface on motion"
 	)
 	
 	part_drag: FloatProperty(
-		default=0.2,
-		min=0.0, max=0.99,
+		default=25.0,
+		min=0.0, max=99.0,
+		subtype="PERCENTAGE",
 		name="Drag",
-		description="Drag applied to the particle. Lower values lead to smoother streaks"
+		description="Drag applied to the particle. Lower values lead to larger streaks"
 	)
 
-	sed_contrast: FloatProperty(
-		default=0.5,
-		min=0.0, max=1.0,
-		name="Sediment brightness",
-		description="Brightens the sedimentation map"
+	part_deposition: FloatProperty(
+		default=75.0,
+		min=0.0, max=100.0,
+		subtype="PERCENTAGE",
+		name="Deposition",
+		description="Defines how fast sediment can deposit. A value of 0 means only erosion occurs"
 	)
-
-	depth_contrast: FloatProperty(
-		default=0.5,
-		min=0.0, max=1.0,
-		name="Depth brightness",
-		description="Brightens the depth map"
+	
+	part_fineness: FloatProperty(
+		default=10.0,
+		min=1.0, soft_max=100.0, max=200.0,
+		subtype="PERCENTAGE",
+		name="Smoothness",
+		description="Higher values smooth erosion, but may create unwanted patterns"
+	)
+	
+	part_capacity: FloatProperty(
+		default=25.0,
+		min=1.0, soft_max=100.0, max=200.0,
+		subtype="PERCENTAGE",
+		name="Capacity",
+		description="Sediment capacity of the particle. High capacity, high acceleration and low iterations lead to smoother results"
 	)
 
 	color_mixing: FloatProperty(
-		default=0.2,
-		min=0.0, max=1.0,
+		default=20.0,
+		min=1.0, max=100.0,
+		subtype="PERCENTAGE",
 		name="Color mixing",
 		description="Defines how strongly a particle colors the path it takes. Value of 1 means directly painting the color"
+	)
+	
+	part_max_change: FloatProperty(
+		default=100.0,
+		min=0.1, max=100.0,
+		subtype="PERCENTAGE",
+		name="Maximum change",
+		description="Maximum amount of material that can be added or removed at once. Lower values prevent large spikes and help with high capacity simulations"
 	)
 
 	#------------------------- Mei
@@ -334,7 +307,7 @@ class ErosionGroup(bpy.types.PropertyGroup):
 	)
 
 	thermal_angle: FloatProperty(
-		default=45,
+		default=60,
 		min=10, max=85,
 		name="Angle",
 		description="Maximum angle the surface can have in degrees"
@@ -427,7 +400,7 @@ class ErosionGroup(bpy.types.PropertyGroup):
 	"""Heightmap generation type."""
 
 	heightmap_gen_size: IntVectorProperty(
-		default=(512,512),
+		default=(1024,1024),
 		name="Heightmap size",
 		min=16,
 		max=4096,

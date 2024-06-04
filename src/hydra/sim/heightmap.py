@@ -169,9 +169,14 @@ def get_displacement(obj: bpy.types.Object, name:str)->bpy.types.Image:
 	data = common.data
 	hyd = obj.hydra_erosion
 
+	if obj.hydra_erosion.height_scale != 0:
+		scale = obj.hydra_erosion.org_scale / obj.hydra_erosion.height_scale
+	else:
+		scale = 1.0
+
 	target = subtract(data.get_map(hyd.map_result).texture,
 		data.get_map(hyd.map_base).texture,
-		scale=obj.hydra_erosion.org_scale/obj.hydra_erosion.height_scale)
+		scale=scale)
 
 	ret, _ = texture.write_image(name, target)
 	target.release()
@@ -215,8 +220,6 @@ def resize_texture(texture: mgl.Texture, target_size: tuple[int, int])->mgl.Text
 	sampler = ctx.sampler()
 	fbo = ctx.framebuffer(color_attachments=(ret))
 
-	print(ret.size)
-
 	vao = model.create_vao(ctx, prog)
 
 	with ctx.scope(fbo):
@@ -232,17 +235,3 @@ def resize_texture(texture: mgl.Texture, target_size: tuple[int, int])->mgl.Text
 	fbo.release()
 
 	return ret
-
-
-def nuke_gui():
-	"""Gives an authentic developer experience."""
-	ctx = common.data.context
-
-	# using a frame buffer without scope sets the number of channels permanently
-	fbo = ctx.simple_framebuffer((512,512), 1, dtype="f4")
-	fbo.use()
-	fbo.clear()
-	fbo.release()
-	# only the red channel will change from now on
-
-	# ctx.enable(mgl.CULL_FACE) # makes buttons disappear

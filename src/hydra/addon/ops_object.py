@@ -33,23 +33,9 @@ class HeightmapOperator(ops_common.ObjectOperator):
 		self.report({'INFO'}, f"Successfuly created heightmap: {img.name}")
 		return {'FINISHED'}
 
-#-------------------------------------------- Debug
-
-class NukeGUIOperator(bpy.types.Operator):
-	"""Destroys Blender's GUI."""
-	bl_idname = "hydra.nuke_gui"
-	bl_label = "Nuke GUI"
-	bl_description = "Enjoy the authentic developer experience (restart Blender to restore)"
-
-	def execute(self, ctx):
-		heightmap.nuke_gui()
-		self.report({'INFO'}, "Successfuly destroyed GUI.")
-		return {'FINISHED'}
-
 #-------------------------------------------- Exports
 
 def get_exports()->list:
 	return [
-		HeightmapOperator,
-		NukeGUIOperator
+		HeightmapOperator
 	]

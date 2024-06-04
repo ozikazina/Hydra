@@ -81,9 +81,11 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 	diagonal:bool = hyd.mei_direction == "diagonal"
 	alternate:bool = hyd.mei_direction == "both"
 
+	switch_after = max(min(32, math.ceil(hyd.mei_iter_num / 2)), 2)
+
 	time = datetime.now()
 	for i in range(hyd.mei_iter_num):
-		switch = alternate and i % 64 == 63
+		switch = alternate and i % switch_after == switch_after - 1
 
 		prog = data.shaders["mei1"]
 		prog["d_map"].value = BIND_WATER

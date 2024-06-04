@@ -144,7 +144,6 @@ class DebugPanel(bpy.types.Panel):
 	def draw(self, ctx):
 		col = self.layout.column()
 		col.operator('hydra.reload_shaders', text="Reload shaders", icon="FILE_REFRESH")
-		col.operator('hydra.nuke_gui', text="Nuke GUI", icon="MOD_EXPLODE")
 
 	@classmethod
 	def poll(cls, ctx):

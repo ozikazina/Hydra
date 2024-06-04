@@ -19,7 +19,6 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 
 	print("Preparing for water erosion")
 	data = common.data
-	use_vao: bool = common.get_preferences().particle_use_vao
 
 	hyd = obj.hydra_erosion
 	if not data.has_map(hyd.map_base):
@@ -27,9 +26,8 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 
 	ctx = data.context
 	size = hyd.get_size()
-	subdiv = int(hyd.part_subdiv)
 	
-	if hyd.erosion_subres != 1:
+	if hyd.erosion_subres != 100.0:
 		size = (math.ceil(size[0] * hyd.erosion_subres / 100.0), math.ceil(size[1] * hyd.erosion_subres / 100.0))
 		height = heightmap.resize_texture(data.get_map(hyd.map_source).texture, size)
 		height_base = texture.clone(height)
@@ -37,83 +35,44 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 		height = texture.clone(data.get_map(hyd.map_source).texture)
 		height_base = None
 	
-	sediment = texture.create_texture(size) if hyd.out_sediment else None
-	depth = texture.create_texture(size) if hyd.out_depth else None
-	color = texture.create_texture(size, image=bpy.data.images[hyd.color_src], channels=4) if hyd.out_color else None
+	groups = (math.ceil(size[0] / 32), math.ceil(size[1] / 32))
 
-	if use_vao:
-		prog = data.programs["erosion"]
-	else:
-		prog = data.shaders["erosion"]
+	prog = data.shaders["particle"]
+	
+	height_sampler = ctx.sampler(texture=height, repeat_x=False, repeat_y=False)
 
 	height.bind_to_image(1, read=True, write=True)
-	prog["img"].value = 1	#don't use 0 -> default value -> cross-contamination
+	height.use(1)
+	height_sampler.use(1)
+	prog["height_sampler"] = 1
+	prog["height_map"].value = 1
 
-	if depth:
-		depth.bind_to_image(2, read=True, write=True)
-		prog["depth"].value = 2
-	if sediment:
-		sediment.bind_to_image(3, read=True, write=True)
-		prog["sediment"].value = 3
-	if color:
-		color.bind_to_image(4, read=True, write=True)
-		prog["color"].value = 4
+	prog["tile_size"] = groups
+	prog["tile_mult"] = (1 / size[0], 1 / size[1])
 
-	prog["square_size"] = subdiv
-	prog["use_color"] = hyd.out_color
-	prog["use_side_data"] = hyd.out_depth or hyd.out_sediment
+	prog["erosion_strength"] = hyd.part_fineness / 100
+	prog["deposition_strength"] = hyd.part_deposition / 100
+	prog["capacity_factor"] = hyd.part_capacity / 100
 
-	prog["interpolate"] = hyd.interpolate_erosion
-	prog["interpolate_color"] = hyd.interpolate_color
-	prog["erosion_strength"] = hyd.part_fineness
-	prog["deposition_strength"] = hyd.part_deposition * 0.5
-	prog["color_strength"] = hyd.color_mixing
-	prog["capacity_factor"] = hyd.part_capacity * 1e-2
-	prog["contrast_erode"] = hyd.depth_contrast * 40
-	prog["contrast_deposit"] = hyd.sed_contrast * 30
-	prog["max_jump"] = hyd.part_maxjump
-
-	prog["acceleration"] = hyd.part_acceleration
-	prog["iterations"] = hyd.part_lifetime
-	prog["drag"] = 1-hyd.part_drag	#multiplicative factor
+	prog["max_velocity"] = 2
+	prog["acceleration"] = hyd.part_acceleration / 100
+	prog["lifetime"] = hyd.part_lifetime
+	prog["iterations"] = hyd.part_iter_num * hyd.part_iter_multiplier
+	prog["max_change"] = hyd.part_max_change / (100 * 100) # from percent to 0-0.01
+	prog["drag"] = 1 - (hyd.part_drag / 100)
 
 	time = datetime.now()
-	if use_vao:
-		resX = math.ceil(size[0] / subdiv)
-		resY = math.ceil(size[1] / subdiv)
-
-		vao = model.create_vao(ctx, prog)
-		fbo = ctx.framebuffer(ctx.texture((resX, resY), 1, dtype="f1"))
-		with ctx.scope(fbo):
-			for _ in range(hyd.part_iter_num):
-				for y in range(subdiv):
-					for x in range(subdiv):
-						prog["off"] = (x, y)
-						vao.render()
-
-		fbo.release()
-		vao.release()
-	else:
-		group_x = math.ceil(size[0] / (subdiv * 32))
-		group_y = math.ceil(size[1] / (subdiv * 32))
-
-		for _ in range(hyd.part_iter_num):
-			for y in range(subdiv):
-				for x in range(subdiv):
-					prog["off"] = (x, y)
-					prog.run(group_x=group_x, group_y=group_y)
-			
+	prog.run(group_x=1, group_y=1)
 	ctx.finish()
+
 	print((datetime.now() - time).total_seconds())
 
 	if height_base is not None: # resize back to original size
 		dif = heightmap.subtract(height, height_base) # get difference
-		texture.write_image("tst_diff", dif)
 		height_base.release()
 		height.release()
 
 		height = heightmap.resize_texture(dif, hyd.get_size()) # resize difference
-		texture.write_image("tst_resized", height)
 		dif.release()
 
 		nh = heightmap.add(height, data.get_map(hyd.map_source).texture) # add difference to original
@@ -128,16 +87,6 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 	hyd.map_result = hmid
 
 	ret = {}
-
-	if depth:
-		ret["depth"], _ = texture.write_image(f"HYD_{obj.name}_Depth", depth)
-		depth.release()
-	if sediment:
-		ret["sediment"], _ = texture.write_image(f"HYD_{obj.name}_Sediment", sediment)
-		sediment.release()
-	if color:
-		ret["color"], _ = texture.write_image(f"HYD_{obj.name}_Color", color)
-		color.release()
 
 	print("Erosion finished")
 	return ret

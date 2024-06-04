@@ -327,13 +327,17 @@ class ErosionSettingsPanel(bpy.types.Panel):
 		hyd = self.get_settings(ctx)
 		if hyd.erosion_solver == "particle":
 			p.prop(hyd, "part_iter_num")
+			p.prop(hyd, "part_iter_multiplier")
 			p.prop(hyd, "part_lifetime")
-			p.prop(hyd, "part_acceleration", slider=True)
-			p.prop(hyd, "part_drag", slider=True)
-			
+			p = self.layout.box()
+
 			p.prop(hyd, "part_fineness", slider=True)
 			p.prop(hyd, "part_deposition", slider=True)
 			p.prop(hyd, "part_capacity", slider=True)
+			p = self.layout.box()
+
+			p.prop(hyd, "part_acceleration", slider=True)
+			p.prop(hyd, "part_drag", slider=True)
 		else:
 			split = p.split(factor=0.4)
 			split.label(text="Direction: ")
@@ -362,20 +366,9 @@ class ErosionExtrasPanel():
 			p.prop(hyd, "out_color")
 			if (hyd.out_color):
 				p.prop_search(hyd, "color_src", bpy.data, "images")
-				p.prop(hyd, "interpolate_color")
 				p.prop(hyd, "color_mixing", slider=True)
-
-			p.prop(hyd, "out_depth")
-			if (hyd.out_depth):
-				p.prop(hyd, "depth_contrast", slider=True)
-
-			p.prop(hyd, "out_sediment")
-			if (hyd.out_sediment):
-				p.prop(hyd, "sed_contrast", slider=True)
 			
 			self.draw_nav_fragment(p, f"HYD_{target.name}_Color", "Color")
-			self.draw_nav_fragment(p, f"HYD_{target.name}_Depth", "Depth")
-			self.draw_nav_fragment(p, f"HYD_{target.name}_Sediment", "Sediment")
 		else:
 			p.prop(hyd, "mei_out_color")
 			if (hyd.mei_out_color):
@@ -394,12 +387,8 @@ class ErosionAdvancedPanel():
 	
 	def draw(self, ctx):
 		p = self.layout.box()
-		hyd = ctx.object.hydra_erosion
-		p.prop(hyd, "interpolate_erosion")
-		split = p.split()
-		split.label(text="Chunk size")
-		split.prop(hyd, "part_subdiv", text="")
-		p.prop(hyd, "part_maxjump")
+		hyd = self.get_settings(ctx)
+		p.prop(hyd, "part_max_change")
 
 #-------------------------------------------- Info
 		
