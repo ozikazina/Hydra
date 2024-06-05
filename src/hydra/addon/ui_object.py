@@ -59,17 +59,9 @@ class ErosionHeightmapPanel(ui_common.HeightmapSystemPanel, ui_common.ObjectPane
 	bl_parent_id = "HYDRA_PT_ErosionPanel"
 	bl_idname = "HYDRA_PT_ErosionHeightmapPanel"
 
-class ErosionExtrasPanel(ui_common.ErosionExtrasPanel, ui_common.ObjectPanel):
-	bl_parent_id = "HYDRA_PT_ErosionPanel"
-	bl_idname = "HYDRA_PT_ErosionExtrasPanel"
-
 class ErosionSettingsPanel(ui_common.ErosionSettingsPanel, ui_common.ObjectPanel):
 	bl_parent_id = "HYDRA_PT_ErosionPanel"
 	bl_idname = "HYDRA_PT_ErosionSettingsPanel"	
-
-class ErosionAdvancedPanel(ui_common.ErosionAdvancedPanel, ui_common.ObjectPanel):
-	bl_parent_id = "HYDRA_PT_ErosionPanel"
-	bl_idname = "HYDRA_PT_ErosionAdvancedPanel"
 
 #-------------------------------------------- Flow
 
@@ -91,11 +83,6 @@ class ThermalSettingsPanel(ui_common.ThermalSettingsPanel, ui_common.ObjectPanel
 	"""Subpanel for thermal erosion settings. Uses :class:`DefaultSettingsPanel`."""
 	bl_parent_id = "HYDRA_PT_ThermalPanel"
 	bl_idname = "HYDRA_PT_ThermalSettingsPanel"
-
-class ThermalAdvancedPanel(ui_common.ThermalAdvancedPanel, ui_common.ObjectPanel):
-	"""Subpanel for thermal erosion advanced settings. Uses :class:`DefaultAdvancedPanel`."""
-	bl_parent_id = "HYDRA_PT_ThermalPanel"
-	bl_idname = "HYDRA_PT_ThermalAdvancedPanel"
 
 #-------------------------------------------- Snow
 
@@ -127,7 +114,7 @@ class CleanupPanel(ui_common.ObjectPanel):
 
 	def draw(self, ctx):
 		col = self.layout.column()
-		col.operator('hydra.release_cache', text="Clear cache", icon="SHADING_BBOX")
+		col.operator('hydra.release_cache', text="Clear data", icon="SHADING_BBOX")
 		col.operator('hydra.hm_remove_preview', text="Remove previews", icon="HIDE_ON")
 	
 #-------------------------------------------- Debug
@@ -157,12 +144,9 @@ def get_exports()->list:
 		ErosionPanel,
 		ErosionSettingsPanel,
 		ErosionHeightmapPanel,
-		ErosionExtrasPanel,
-		ErosionAdvancedPanel,
 		ThermalPanel,
 		ThermalSettingsPanel,
 		ThermalHeightPanel,
-		ThermalAdvancedPanel,
 		SnowPanel,
 		SnowHeightPanel,
 		FlowPanel,

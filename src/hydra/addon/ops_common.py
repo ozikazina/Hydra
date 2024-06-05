@@ -170,16 +170,19 @@ class DecoupleOperator(HydraOperator):
 class CleanupOperator(bpy.types.Operator):
 	"""Resource release operator."""
 	bl_idname = "hydra.release_cache"
-	bl_label = "Clean"
-	bl_description = "Release cached textures"
-	bl_options = {'REGISTER', 'UNDO'}
+	bl_label = "Clear all cached data and previews?"
+	bl_description = "Release cached heightmaps and remove previews"
+	bl_options = {'REGISTER'}
 	
-	def invoke(self, ctx, event):
+	def execute(self, ctx):
 		apply.remove_preview()
 		common.data.free_all()
 		self.report({'INFO'}, "Successfuly freed cached textures.")
 		common.show_message("Successfuly freed cached textures.")
 		return {'FINISHED'}
+
+	def invoke(self, ctx, event):
+		return ctx.window_manager.invoke_confirm(self, event)
 
 #-------------------------------------------- Debug
 	

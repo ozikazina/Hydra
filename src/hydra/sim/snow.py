@@ -47,7 +47,7 @@ def simulate(obj: bpy.types.Image | bpy.types.Object):
 
 	progA["requests"].value = 2
 	progA["Ks"] = 0.5
-	progA["alpha"] = math.tan(math.tau * hyd.snow_angle / 360) * 2 / size[0] # images are scaled to 2 z/x -> angle depends only on image width
+	progA["alpha"] = math.tan(hyd.snow_angle) * 2 / size[0] # images are scaled to 2 z/x -> angle depends only on image width
 	progA["by"] = hyd.scale_ratio
 	progA["offset"].value = 4
 	progA["useOffset"] = True
@@ -56,7 +56,7 @@ def simulate(obj: bpy.types.Image | bpy.types.Object):
 	progB["requests"].value = 2
 	progB["ds"] = 1
 
-	snowProg["snow_add"] = hyd.snow_add / hyd.mei_scale
+	snowProg["snow_add"] = (hyd.snow_add / 100) / hyd.mei_scale
 
 	group_x = math.ceil(size[0] / 32)
 	group_y = math.ceil(size[1] / 32)
@@ -92,7 +92,7 @@ def simulate(obj: bpy.types.Image | bpy.types.Object):
 		snow_img.bind_to_image(5, read=True, write=True)
 		prog = data.shaders["scaling"]
 		prog["A"].value = 5	# snow
-		prog["scale"] = hyd.mei_scale / hyd.snow_add
+		prog["scale"] = hyd.mei_scale / (hyd.snow_add / 100)
 		prog.run(group_x = size[0], group_y = size[1])
 
 		img_name = f"HYD_{obj.name}_Snow"
@@ -100,7 +100,6 @@ def simulate(obj: bpy.types.Image | bpy.types.Object):
 		snow_img.release()
 
 	if hyd.snow_output != "texture":
-		# heightmap.add()
 		prog = data.shaders["scaled_add"]
 		prog["A"].value = mapI
 		prog["B"].value = 4	# offset - source map

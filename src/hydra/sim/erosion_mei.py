@@ -76,8 +76,6 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 	group_x = math.ceil(size[0] / 32)
 	group_y = math.ceil(size[1] / 32)
 
-	capacity = hyd.mei_capacity
-
 	diagonal:bool = hyd.mei_direction == "diagonal"
 	alternate:bool = hyd.mei_direction == "both"
 
@@ -90,8 +88,8 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 		prog = data.shaders["mei1"]
 		prog["d_map"].value = BIND_WATER
 		prog["dt"] = hyd.mei_dt
-		prog["Ke"] = hyd.mei_evaporation
-		prog["Kr"] = hyd.mei_rain
+		prog["Ke"] = hyd.mei_evaporation / 100
+		prog["Kr"] = hyd.mei_rain / 100
 		prog.run(group_x=group_x, group_y=group_y)
 
 		prog = data.shaders["mei2"]
@@ -120,7 +118,7 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 		prog["v_map"].value = BIND_VELOCITY
 		prog["d_map"].value = BIND_WATER
 		prog["dmean_map"].value = BIND_TEMP
-		prog["Kc"] = capacity
+		prog["Kc"] = hyd.mei_capacity / 100
 		prog["lx"] = hyd.mei_length[0]
 		prog["ly"] = hyd.mei_length[1]
 		prog["minalpha"] = hyd.mei_min_alpha
@@ -132,8 +130,8 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 		prog["b_map"].value = BIND_HEIGHT
 		prog["s_map"].value = BIND_SEDIMENT
 		prog["c_map"].value = BIND_TEMP
-		prog["Ks"] = hyd.mei_erosion
-		prog["Kd"] = hyd.mei_deposition
+		prog["Ks"] = hyd.mei_erosion / (100 * 4)
+		prog["Kd"] = hyd.mei_deposition / (100 * 2)
 		prog.run(group_x=group_x, group_y=group_y)
 
 		if hyd.mei_out_color:

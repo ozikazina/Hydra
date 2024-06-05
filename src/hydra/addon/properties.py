@@ -38,10 +38,10 @@ class ErosionGroup(bpy.types.PropertyGroup):
 
 	img_size: IntVectorProperty(
 		default=(1024,1024),
-		name="Image size",
+		name="Heightmap size",
 		min=32,
 		max=4096,
-		description="Image size",
+		description="To erode objects, they are first converted into heightmaps. This defines the heightmap resolution. Once erosion occurs this resolution is set and can only be reset by clearing cached heightmaps",
 		size=2
 	)
 	
@@ -51,10 +51,16 @@ class ErosionGroup(bpy.types.PropertyGroup):
 		default="particle",
 		items=(
 			("particle", "Particle", "Creates long meandering paths. Stable for most terrains", 0),
-			("pipe", "Pipe", "Smoother large scale erosion. Partially unstable", 1),
+			("pipe", "Pipe", "Smoother large-scale erosion. Partially unstable", 1),
 		),
 		name="Erosion solver",
 		description="Solver type for erosion"
+	)
+
+	erosion_advanced: BoolProperty(
+		default=False,
+		name="Advanced",
+		description="Show advanced settings"
 	)
 
 	erosion_subres: FloatProperty(
@@ -63,7 +69,7 @@ class ErosionGroup(bpy.types.PropertyGroup):
 		soft_max=100.0,
 		subtype="PERCENTAGE",
 		name="Simulation resolution",
-		description="Percentage of heightmap resolution to simulate at"
+		description="Percentage of heightmap resolution to simulate at. Lower resolution creates larger features"
 	)
 
 	out_color: BoolProperty(
@@ -169,7 +175,7 @@ class ErosionGroup(bpy.types.PropertyGroup):
 		min=1.0, soft_max=100.0, max=200.0,
 		subtype="PERCENTAGE",
 		name="Capacity",
-		description="Sediment capacity of the particle. High capacity, high acceleration and low iterations lead to smoother results"
+		description="Sediment capacity of the particle. High capacity leads to deeper grooves"
 	)
 
 	color_mixing: FloatProperty(
@@ -184,7 +190,7 @@ class ErosionGroup(bpy.types.PropertyGroup):
 		default=100.0,
 		min=0.1, max=100.0,
 		subtype="PERCENTAGE",
-		name="Maximum change",
+		name="Max change",
 		description="Maximum amount of material that can be added or removed at once. Lower values prevent large spikes and help with high capacity simulations"
 	)
 
@@ -205,46 +211,50 @@ class ErosionGroup(bpy.types.PropertyGroup):
 	)
 
 	mei_rain: FloatProperty(
-		default=0.1,
-		min=0.01, soft_max=1.0,
-		max=10,
+		default=10,
+		min=1, soft_max=100.0, max=500,
+		subtype="PERCENTAGE",
 		name="Rain",
 		description="Amount of rain per iteration"
 	)
 
 	mei_evaporation: FloatProperty(
-		default=0.3,
-		min=0.01, max=1.0,
+		default=30,
+		min=1, max=99.0,
+		subtype="PERCENTAGE",
 		name="Evaporation",
 		description="Amount of water evaporated per iteration"
 	)
 
 	mei_capacity: FloatProperty(
-		default=0.5,
-		min=0.01, max=10.0,
+		default=50,
+		min=1, soft_max=100.0, max=200.0,
+		subtype="PERCENTAGE",
 		name="Capacity",
 		description="Erosion capacity of water per cell"
 	)
 
 	mei_deposition: FloatProperty(
-		default=0.15,
-		min=0.01, max=0.5,
+		default=30,
+		min=1, max=100,
+		subtype="PERCENTAGE",
 		name="Deposition",
 		description="Amount of sediment that can be deposited per iteration"
 	)
 
 	mei_erosion: FloatProperty(
-		default=0.15,
-		min=0.01, max=0.25,
+		default=60,
+		min=1, max=100,
+		subtype="PERCENTAGE",
 		name="Erosion strength",
 		description="Amount of sediment that can be eroded per iteration"
 	)
 
-	mei_scale: FloatProperty(
+	mei_scale: IntProperty(
 		default=200,
-		min=1, max=2000,
+		min=10, max=2000,
 		name="Model scale",
-		description="Scale of the simulation roughly in meters. A hill is 100, a mountain is 500+ and so on"
+		description="Scale of the simulation in meters (roughly). A hill is 100, a mountain is 500+ and so on"
 	)
 
 	mei_length: FloatVectorProperty(
@@ -266,7 +276,7 @@ class ErosionGroup(bpy.types.PropertyGroup):
 	mei_direction: EnumProperty(
 		default="both",
 		items=(
-			("both", "All", "Alternate directions", 0),
+			("both", "All", "Move material both in XY and diagonal directions", 0),
 			("cardinal", "Cardinal", "Only move material in XY directions", 1),
 			("diagonal", "Diagonal", "Only move material on diagonals", 2),
 		),
@@ -307,15 +317,17 @@ class ErosionGroup(bpy.types.PropertyGroup):
 	)
 
 	thermal_angle: FloatProperty(
-		default=60,
-		min=10, max=85,
+		default=1.047198,
+		min=0.174533, max=1.48353,
+		subtype="ANGLE",
 		name="Angle",
 		description="Maximum angle the surface can have in degrees"
 	)
 
 	thermal_strength: FloatProperty(
-		default=1,
-		min=0, max=2, soft_max=1,
+		default=100,
+		min=0, max=200, soft_max=100,
+		subtype="PERCENTAGE",
 		name="Strength",
 		description="Strength of each iteration"
 	)
@@ -323,12 +335,18 @@ class ErosionGroup(bpy.types.PropertyGroup):
 	thermal_solver: EnumProperty(
 		default="both",
 		items=(
-			("both", "All", "Alternate directions each iteration", 0),
+			("both", "All", "Move material both in XY and diagonal directions", 0),
 			("cardinal", "Cardinal", "Only move material in XY directions", 1),
 			("diagonal", "Diagonal", "Only move material on diagonals", 2),
 		),
 		name="Direction",
 		description="Solver neighborhood type"
+	)
+
+	thermal_advanced: BoolProperty(
+		default=False,
+		name="Advanced",
+		description="Show advanced settings"
 	)
 
 	thermal_stride: IntProperty(
@@ -347,10 +365,11 @@ class ErosionGroup(bpy.types.PropertyGroup):
 	#------------------------- Snow
 
 	snow_add: FloatProperty(
-		default=0.5,
-		min=0.1, max=1.0,
+		default=50,
+		min=1, max=100.0,
+		subtype="PERCENTAGE",
 		name="Snow amount",
-		description="Amount of snow added to the object, scaled by model scale"
+		description="Amount of snow added to the object, scaled by model scale. Useful for fine-tuning snow amount for a given model scale"
 	)
 
 	snow_iter_num: IntProperty(
@@ -361,10 +380,11 @@ class ErosionGroup(bpy.types.PropertyGroup):
 	)
 
 	snow_angle: FloatProperty(
-		default=38,
-		min=10, max=85,
+		default=0.663225,
+		min=0.174533, max=1.48353,
+		subtype="ANGLE",
 		name="Angle",
-		description="Maximum angle the surface can have in degrees"
+		description="Maximum angle the snow can hold in degrees"
 	)
 
 	snow_output: EnumProperty(

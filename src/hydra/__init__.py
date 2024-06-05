@@ -84,7 +84,7 @@ def unregister():
 		del bpy.types.Object.hydra_erosion
 		del bpy.types.Image.hydra_erosion
 
-		common.data.freeAll()
+		common.data.free_all()
 		common.data = None
 
 # ------------------------------------------------------------

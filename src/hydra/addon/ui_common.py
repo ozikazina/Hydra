@@ -38,7 +38,7 @@ class ImagePanel(HydraPanel):
 
 	def draw_size_fragment(self, container, ctx, settings):
 		split = container.split(factor=0.5)
-		split.label(text=f"Size:")
+		split.label(text=f"Resolution:")
 		split.label(text=f"{tuple(ctx.area.spaces.active.image.size)}")
 
 	@classmethod
@@ -66,7 +66,7 @@ class ObjectPanel(HydraPanel):
 	def draw_size_fragment(self, container, ctx, settings):
 		if common.data.has_map(settings.map_base):
 			split = container.split(factor=0.5)
-			split.label(text=f"Size:")
+			split.label(text=f"Resolution:")
 			split.label(text=f"{tuple(settings.img_size)}")
 		else:
 			container.prop(settings, "img_size")
@@ -108,11 +108,7 @@ class ErosionPanel():
 		self.draw_size_fragment(col.box(), ctx, hyd)
 
 		col.prop(hyd, "erosion_solver", text="Solver")
-
-		if hyd.erosion_solver == "particle":
-			col.separator()
-			col.label(text="Simulation resolution:")
-			col.prop(hyd, "erosion_subres", text="", slider=True)
+		col.prop(hyd, "erosion_advanced")
 
 #-------------------------------------------- Thermal
 
@@ -123,7 +119,7 @@ class ThermalPanel():
 	def draw(self, ctx):
 		hyd = self.get_settings(ctx)
 		
-		col = self.layout.column()
+		col = self.layout
 
 		grid = col.grid_flow(columns=1, align=True)
 		grid.operator("hydra.thermal", text="Erode", icon="RNDCURVE").apply = False
@@ -131,6 +127,8 @@ class ThermalPanel():
 			grid.operator("hydra.thermal", text="Set & Continue", icon="ANIM").apply = True
 
 		self.draw_size_fragment(col.box(), ctx, hyd)
+
+		col.prop(hyd, "thermal_advanced")
 
 #-------------------------------------------- Snow
 
@@ -141,7 +139,7 @@ class SnowPanel():
 	def draw(self, ctx):
 		hyd = self.get_settings(ctx)
 		
-		col = self.layout.column()
+		col = self.layout
 
 		grid = col.grid_flow(columns=1, align=True)
 		
@@ -159,13 +157,10 @@ class SnowPanel():
 		col.separator()
 		col.label(text="Erosion settings")
 
-		box = col.box()
-		box.prop(hyd, "snow_add", slider=True)
-		box.prop(hyd, "mei_scale")
-
-		box = col.box()
-		box.prop(hyd, "snow_iter_num")
-		box.prop(hyd, "snow_angle", slider=True)
+		col.prop(hyd, "snow_add", slider=True)
+		col.prop(hyd, "mei_scale")
+		col.prop(hyd, "snow_iter_num")
+		col.prop(hyd, "snow_angle", slider=True)
 
 
 #-------------------------------------------- Flow
@@ -213,7 +208,7 @@ class HeightmapSystemPanel():
 
 		if common.data.has_map(hyd.map_base):
 			has_any = True
-			col.operator('hydra.hm_clear', icon="CANCEL")
+			col.operator('hydra.hm_clear', icon="CANCEL", text="Clear")
 			col.separator()
 
 		if common.data.has_map(hyd.map_result):
@@ -288,77 +283,66 @@ class HeightmapSystemPanel():
 
 #-------------------------------------------- Subpanels
 
-class ThermalSettingsPanel():
-	bl_label = "Erosion settings"
-	bl_options = set()
-
-	def draw(self, ctx):
-		hyd = self.get_settings(ctx)
-		col = self.layout.column()
-
-		box = col.box()
-		box.prop(hyd, "thermal_iter_num")
-		box.prop(hyd, "thermal_strength", slider=True)
-		box.prop(hyd, "thermal_angle", slider=True)
-		
-		split = box.split(factor=0.4)
-		split.label(text="Direction: ")
-		split.prop(hyd, "thermal_solver", text="")
-
-class ThermalAdvancedPanel():
-	bl_label = "Advanced"
-
-	def draw(self, ctx):
-		hyd = self.get_settings(ctx)
-		col = self.layout.column()
-
-		box = col.box()
-		box.prop(hyd, "part_maxjump")
-		box.prop(hyd, "thermal_stride")
-		box.prop(hyd, "thermal_stride_grad")
-
 class ErosionSettingsPanel(bpy.types.Panel):
 	"""Subpanel for water erosion particle settings."""
-	bl_label = "Erosion settings"
-	bl_options = set()
+	bl_label = "Settings"
 
 	def draw(self, ctx):
-		p = self.layout.box()
+		p = self.layout
 		hyd = self.get_settings(ctx)
 		if hyd.erosion_solver == "particle":
-			p.prop(hyd, "part_iter_num")
-			p.prop(hyd, "part_iter_multiplier")
-			p.prop(hyd, "part_lifetime")
-			p = self.layout.box()
+			if hyd.erosion_advanced:
+				p.label(text="Simulation resolution:")
+				p.prop(hyd, "erosion_subres", text="", slider=True)
+				p.separator()
 
-			p.prop(hyd, "part_fineness", slider=True)
-			p.prop(hyd, "part_deposition", slider=True)
-			p.prop(hyd, "part_capacity", slider=True)
-			p = self.layout.box()
+			g = p.grid_flow(columns=1, align=True)
+			g.prop(hyd, "part_iter_num")
+			g.prop(hyd, "part_iter_multiplier")
+			g.prop(hyd, "part_lifetime")
 
-			p.prop(hyd, "part_acceleration", slider=True)
-			p.prop(hyd, "part_drag", slider=True)
+			g = p.grid_flow(columns=1, align=True)
+			g.prop(hyd, "part_fineness", slider=True)
+			g.prop(hyd, "part_deposition", slider=True)
+			g.prop(hyd, "part_capacity", slider=True)
+
+			g = p.grid_flow(columns=1, align=True)
+			g.prop(hyd, "part_acceleration", slider=True)
+			g.prop(hyd, "part_drag", slider=True)
+
+			if hyd.erosion_advanced:
+				p.prop(hyd, "part_max_change")
 		else:
-			split = p.split(factor=0.4)
-			split.label(text="Direction: ")
-			split.prop(hyd, "mei_direction", text="")
+			if hyd.erosion_advanced:
+				split = p.split(factor=0.4)
+				split.label(text="Direction: ")
+				split.prop(hyd, "mei_direction", text="")
+				p.separator()
 
-			p.prop(hyd, "mei_iter_num")
-			p.prop(hyd, "mei_scale")
-			p.prop(hyd, "mei_dt")
-			p.prop(hyd, "mei_rain", slider=True)
-			p.prop(hyd, "mei_evaporation", slider=True)
-			p.prop(hyd, "mei_capacity", slider=True)
-			p.prop(hyd, "mei_deposition", slider=True)
-			p.prop(hyd, "mei_erosion", slider=True)
-			p.prop(hyd, "mei_min_alpha")
+			g = p.grid_flow(columns=1, align=True)
+			g.prop(hyd, "mei_iter_num")
+			g.prop(hyd, "mei_scale")
+			g.prop(hyd, "mei_dt")
+
+			g = p.grid_flow(columns=1, align=True)
+			g.prop(hyd, "mei_erosion", slider=True)
+			g.prop(hyd, "mei_deposition", slider=True)
+			g.prop(hyd, "mei_capacity", slider=True)
+
+			g = p.grid_flow(columns=1, align=True)
+			g.prop(hyd, "mei_rain", slider=True)
+			g.prop(hyd, "mei_evaporation", slider=True)
+
+			if hyd.erosion_advanced:
+				p.prop(hyd, "mei_min_alpha")
+			
 
 class ErosionExtrasPanel():
 	"""Subpanel for water erosion extra settings."""
 	bl_label = "Extras"
 
 	def draw(self, ctx):
-		p = self.layout.box()
+		p = self.layout
 		target = self.get_target(ctx)
 		hyd = self.get_settings(ctx)
 
@@ -377,18 +361,28 @@ class ErosionExtrasPanel():
 
 			self.draw_nav_fragment(p, f"HYD_{target.name}_Color", "Color")
 
-class ErosionAdvancedPanel():
-	"""Subpanel for water erosion advanced settings."""
-	bl_label = "Advanced"
 
-	@classmethod
-	def poll(cls, ctx):
-		return cls.get_settings(ctx).erosion_solver == "particle"
-	
+class ThermalSettingsPanel():
+	bl_label = "Settings"
+
 	def draw(self, ctx):
-		p = self.layout.box()
 		hyd = self.get_settings(ctx)
-		p.prop(hyd, "part_max_change")
+		p = self.layout
+		
+		if hyd.thermal_advanced:
+			split = p.split(factor=0.4)
+			split.label(text="Direction: ")
+			split.prop(hyd, "thermal_solver", text="")
+			p.separator()
+
+		p.prop(hyd, "thermal_iter_num")
+		p.prop(hyd, "thermal_strength", slider=True)
+		p.prop(hyd, "thermal_angle", slider=True)
+
+		if hyd.thermal_advanced:
+			p.prop(hyd, "thermal_stride")
+			p.prop(hyd, "thermal_stride_grad")
+
 
 #-------------------------------------------- Info
 		

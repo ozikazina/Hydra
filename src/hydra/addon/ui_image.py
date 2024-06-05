@@ -35,11 +35,6 @@ class ErosionSettingsPanel(ui_common.ErosionSettingsPanel, ui_common.ImagePanel)
 	bl_parent_id = "HYDRA_PT_ErosionPanelImage"
 	bl_idname = "HYDRA_PT_ErosionSettingsPanelImage"
 
-class ErosionAdvancedPanel(ui_common.ErosionAdvancedPanel, ui_common.ImagePanel):
-	"""Subpanel for water erosion advanced settings."""
-	bl_parent_id = "HYDRA_PT_ErosionPanelImage"
-	bl_idname = "HYDRA_PT_ErosionAdvancedPanelImage"
-
 #-------------------------------------------- Flow
 
 class FlowPanel(ui_common.FlowPanel, ui_common.ImagePanel):
@@ -61,11 +56,6 @@ class ThermalSettingsPanel(ui_common.ThermalSettingsPanel, ui_common.ImagePanel)
 	bl_parent_id = "HYDRA_PT_ThermalPanelImage"
 	bl_idname = "HYDRA_PT_ThermalSettingsPanelImage"
 
-class ThermalAdvancedPanel(ui_common.ThermalAdvancedPanel, ui_common.ImagePanel):
-	"""Subpanel for thermal erosion advanced settings."""
-	bl_parent_id = "HYDRA_PT_ThermalPanelImage"
-	bl_idname = "HYDRA_PT_ThermalAdvancedPanelImage"
-
 #-------------------------------------------- Info
 
 class InfoPanel(ui_common.InfoPanel, ui_common.ImagePanel):
@@ -81,7 +71,7 @@ class CleanupPanel(ui_common.ImagePanel):
 
 	def draw(self, ctx):
 		col = self.layout.column()
-		col.operator('hydra.release_cache', text="Clear cache", icon="SHADING_BBOX")
+		col.operator('hydra.release_cache', text="Clear data", icon="SHADING_BBOX")
 
 #-------------------------------------------- Exports
 
@@ -92,11 +82,9 @@ def get_exports()->list:
 		ErosionSettingsPanel,
 		ErosionHeightmapPanel,
 		ErosionExtrasPanel,
-		ErosionAdvancedPanel,
 		ThermalPanel,
 		ThermalSettingsPanel,
 		ThermalHeightPanel,
-		ThermalAdvancedPanel,
 		FlowPanel,
 		LandscapePanel,
 		CleanupPanel

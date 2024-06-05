@@ -152,10 +152,10 @@ class DeleteOp(ops_common.HydraOperator):
 class ClearOp(ops_common.HydraOperator):
 	"""Clear object textures operator."""
 	bl_idname = "hydra.hm_clear"
-	bl_label = "Clear"
-	bl_description = "Clear textures"
+	bl_label = "Delete all cached heightmaps?"
+	bl_description = "Delete all cached heightmaps for this object"
 
-	def invoke(self, ctx, event):
+	def execute(self, ctx):
 		target = self.get_target(ctx)
 		hyd = target.hydra_erosion
 
@@ -171,13 +171,16 @@ class ClearOp(ops_common.HydraOperator):
 		self.report({'INFO'}, f"Successfuly cleared textures from: {target.name}")
 		return {'FINISHED'}
 
+	def invoke(self, ctx, event):
+		return ctx.window_manager.invoke_confirm(self, event)
+
 #-------------------------------------------- Apply
 
 class ModifierOp(ops_common.HydraOperator):
 	"""Apply as modifier operator."""
 	bl_idname = "hydra.hm_apply_mod"
-	bl_label = "As Modifier"
-	bl_description = "Apply texture as a modifier"
+	bl_label = "As Displacement Modifier"
+	bl_description = "Apply texture as a displacement modifier"
 
 	def invoke(self, ctx, event):
 		target = self.get_target(ctx)
@@ -187,7 +190,7 @@ class ModifierOp(ops_common.HydraOperator):
 		apply.add_modifier(ctx.object, displacement)
 
 		nav.goto_modifier()
-		self.report({'INFO'}, f"Successfuly applied map as a modifier")
+		self.report({'INFO'}, f"Successfuly applied map as a displacement modifier")
 		return {'FINISHED'}
 	
 class GeometryOp(ops_common.HydraOperator):
@@ -266,7 +269,7 @@ class ReloadOp(ops_common.HydraOperator):
 	"""Reload base map as source operator."""
 	bl_idname = "hydra.hm_reload"
 	bl_label = "Reload"
-	bl_description = "Load base mesh heightmap as a source"
+	bl_description = "Load original mesh heightmap as a source"
 
 	def invoke(self, ctx, event):
 		target = self.get_target(ctx)
@@ -286,10 +289,10 @@ class ReloadOp(ops_common.HydraOperator):
 class ForceReloadOp(ops_common.HydraOperator):
 	"""Recalculate base and source maps operator."""
 	bl_idname = "hydra.hm_force_reload"
-	bl_label = "Recalculate"
+	bl_label = "Recalculate source heightmap from object?"
 	bl_description = "Create a base heightmap from the current object"
 
-	def invoke(self, ctx, event):
+	def execute(self, ctx):
 		target = self.get_target(ctx)
 		hyd = target.hydra_erosion
 
@@ -300,6 +303,9 @@ class ForceReloadOp(ops_common.HydraOperator):
 
 		self.report({'INFO'}, f"Recalculated base map.")
 		return {'FINISHED'}
+	
+	def invoke(self, ctx, event):
+		return ctx.window_manager.invoke_confirm(self, event)
 
 #-------------------------------------------- Goto
 
