@@ -43,14 +43,14 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 	sediment = texture.create_texture(size)
 	temp = texture.create_texture(size)	# capacity, water and sediment at different stages
 
-	if hyd.mei_out_color:
-		colorA = texture.create_texture(size, channels=4, image=bpy.data.images[hyd.color_src])
-		colorB = texture.create_texture(size, channels=4)
-		colorSamplerA = ctx.sampler(texture=colorA)
-		colorSamplerB = ctx.sampler(texture=colorB)
-	else:
-		colorA = None
-		colorB = None
+	# if hyd.mei_out_color:
+	# 	colorA = texture.create_texture(size, channels=4, image=bpy.data.images[hyd.color_src])
+	# 	colorB = texture.create_texture(size, channels=4)
+	# 	colorSamplerA = ctx.sampler(texture=colorA)
+	# 	colorSamplerB = ctx.sampler(texture=colorB)
+	# else:
+	# 	colorA = None
+	# 	colorB = None
 
 	height.bind_to_image(BIND_HEIGHT, read=True, write=True) # don't use 0 -> default value -> cross-contamination
 	pipe.bind_to_image(BIND_PIPE, read=True, write=True)
@@ -134,10 +134,10 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 		prog["Kd"] = hyd.mei_deposition / (100 * 2)
 		prog.run(group_x=group_x, group_y=group_y)
 
-		if hyd.mei_out_color:
-			colorA.use(LOC_COLOR)
-			colorSamplerA.use(LOC_COLOR)
-			colorB.bind_to_image(BIND_COLOR, write=True)
+		# if hyd.mei_out_color:
+		# 	colorA.use(LOC_COLOR)
+		# 	colorSamplerA.use(LOC_COLOR)
+		# 	colorB.bind_to_image(BIND_COLOR, write=True)
 
 		prog = data.shaders["mei6"]
 		prog["out_s_map"].value = BIND_SEDIMENT
@@ -145,15 +145,15 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 		prog["s_sampler"] = LOC_SEDIMENT
 		prog["dt"] = hyd.mei_dt
 		prog["diagonal"] = diagonal
-		prog["use_color"] = hyd.mei_out_color
-		prog["color_scaling"] =  1 / (100 - 99 * (hyd.mei_color_mixing / 100))
-		prog["out_color_map"].value = BIND_COLOR
-		prog["color_sampler"] = LOC_COLOR
+		# prog["use_color"] = hyd.mei_out_color
+		# prog["color_scaling"] =  1 / (100 - 99 * (hyd.mei_color_mixing / 100))
+		# prog["out_color_map"].value = BIND_COLOR
+		# prog["color_sampler"] = LOC_COLOR
 		prog.run(group_x=group_x, group_y=group_y)
 
-		if hyd.mei_out_color:
-			colorA, colorB = swap(colorA, colorB)
-			colorSamplerA, colorSamplerB = swap(colorSamplerA, colorSamplerB)
+		# if hyd.mei_out_color:
+		# 	colorA, colorB = swap(colorA, colorB)
+		# 	colorSamplerA, colorSamplerB = swap(colorSamplerA, colorSamplerB)
 
 		if switch:
 			diagonal = not diagonal
@@ -169,12 +169,12 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 
 	ret = {}
 
-	if colorA:
-		ret["color"], _ = texture.write_image(f"HYD_{obj.name}_Color", colorA)
-		colorA.release()
-		colorB.release()
-		colorSamplerA.release()
-		colorSamplerB.release()
+	# if colorA:
+	# 	ret["color"], _ = texture.write_image(f"HYD_{obj.name}_Color", colorA)
+	# 	colorA.release()
+	# 	colorB.release()
+	# 	colorSamplerA.release()
+	# 	colorSamplerB.release()
 
 	prog = data.shaders["scaling"]
 	prog["A"].value = 1

@@ -1,7 +1,5 @@
 """Module responsible for water erosion."""
 
-from moderngl import TRIANGLES
-
 from Hydra.utils import texture, model
 from Hydra.sim import heightmap
 from Hydra import common
@@ -12,7 +10,7 @@ from datetime import datetime
 import bpy, bpy.types
 
 def erode(obj: bpy.types.Object | bpy.types.Image):
-	"""Erodes the specified entity. Can be run multiple times.
+	"""Erodes the specified entity.
 	
 	:param obj: Object or image to erode.
 	:type obj: :class:`bpy.types.Object` or :class:`bpy.types.Image`"""

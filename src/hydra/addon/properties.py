@@ -71,48 +71,6 @@ class ErosionGroup(bpy.types.PropertyGroup):
 		name="Simulation resolution",
 		description="Percentage of heightmap resolution to simulate at. Lower resolution creates larger features"
 	)
-
-	out_color: BoolProperty(
-		default=False,
-		name="Transport color",
-		description="Transport color during motion (slow)"
-	)
-
-	interpolate_flow: BoolProperty(
-		default=True,
-		name="Interpolate flow",
-		description="Creates smoother but blurrier streaks"
-	)
-	
-	color_src: StringProperty(
-		name="Color",
-		description="Color image texture"
-	)
-	
-	out_depth: BoolProperty(
-		default=False,
-		name="Create depth map",
-		description="Output depth of erosion at each point"
-	)
-	
-	out_sediment: BoolProperty(
-		default=False,
-		name="Create sediment map",
-		description="Output sediment height at each point"
-	)
-
-	flow_subdiv: EnumProperty(
-		default="8",
-		items=(
-			("16", "16", "Chunks of side 16", 0),
-			("8", "8", "Chunks of side 8", 1),
-			("4", "4", "Chunks of side 4", 2),
-			("2", "2", "Chunks of side 2", 3),
-			("1", "1", "No chunking", 4),
-		),
-		name="Chunk size",
-		description="Size of solver chunks. Higher values prevent interference between particles"
-	)
 	
 	#------------------------- Particle
 
@@ -176,14 +134,6 @@ class ErosionGroup(bpy.types.PropertyGroup):
 		subtype="PERCENTAGE",
 		name="Capacity",
 		description="Sediment capacity of the particle. High capacity leads to deeper grooves"
-	)
-
-	color_mixing: FloatProperty(
-		default=20.0,
-		min=1.0, max=100.0,
-		subtype="PERCENTAGE",
-		name="Color mixing",
-		description="Defines how strongly a particle colors the path it takes. Value of 1 means directly painting the color"
 	)
 	
 	part_max_change: FloatProperty(
@@ -284,29 +234,6 @@ class ErosionGroup(bpy.types.PropertyGroup):
 		description="Solver neighborhood type"
 	)
 
-	mei_out_color: BoolProperty(
-		default=False,
-		name="Transport color",
-		description="Transport color during motion"
-	)
-
-	mei_color_mixing: FloatProperty(
-		default=50,
-		min=1, max=100.0,
-		subtype="PERCENTAGE",
-		name="Color mixing",
-		description="Defines how strongly a sediment colors the surface"
-	)
-	
-	#------------------------- Flow
-	
-	flow_contrast: FloatProperty(
-		default=0.5,
-		min=0.0, max=1.0,
-		name="Flow contrast",
-		description="Higher values lead to thinner streaks"
-	)
-
 	#------------------------- Thermal
 	
 	thermal_iter_num: IntProperty(
@@ -396,6 +323,57 @@ class ErosionGroup(bpy.types.PropertyGroup):
 		),
 		name="Output type",
 		description="Snow output type"
+	)
+
+	#------------------------- Extras
+	
+	extras_type: EnumProperty(
+		default="color",
+		items=(
+			("flow", "Flow", "Creates a map of flow concentration", 0),
+			("color", "Color", "Transports color in the direction of water flow", 1),
+		),
+		name="Type",
+		description="Type of texture to generate"
+	)
+
+	flow_contrast: FloatProperty(
+		default=0.5,
+		min=0.0, max=1.0,
+		name="Flow contrast",
+		description="Higher values lead to thinner streaks"
+	)
+
+	interpolate_flow: BoolProperty(
+		default=True,
+		name="Interpolate flow",
+		description="Creates smoother but blurrier streaks"
+	)
+
+	flow_subdiv: EnumProperty(
+		default="8",
+		items=(
+			("16", "16", "Chunks of side 16", 0),
+			("8", "8", "Chunks of side 8", 1),
+			("4", "4", "Chunks of side 4", 2),
+			("2", "2", "Chunks of side 2", 3),
+			("1", "1", "No chunking", 4),
+		),
+		name="Chunk size",
+		description="Size of solver chunks. Higher values prevent interference between particles"
+	)
+
+	color_mixing: FloatProperty(
+		default=50,
+		min=1, max=100.0,
+		subtype="PERCENTAGE",
+		name="Color mixing",
+		description="Defines how strongly sediment colors the surface"
+	)
+
+	color_src: StringProperty(
+		name="Color",
+		description="Color image texture"
 	)
 
 	#------------------------- Utils

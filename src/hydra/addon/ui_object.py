@@ -65,19 +65,19 @@ class ErosionSettingsPanel(ui_common.ErosionSettingsPanel, ui_common.ObjectPanel
 
 #-------------------------------------------- Flow
 
-class FlowPanel(ui_common.FlowPanel, ui_common.ObjectPanel):
+class ExtrasPanel(ui_common.ExtrasPanel, ui_common.ObjectPanel):
 	"""Panel for flowmap generation."""
-	bl_idname = "HYDRA_PT_FlowPanel"
+	bl_idname = "HYDRA_PT_ExtrasPanel"
 
 #-------------------------------------------- Thermal
 
 class ThermalPanel(ui_common.ThermalPanel, ui_common.ObjectPanel):
 	bl_idname = "HYDRA_PT_ThermalPanel"
 
-class ThermalHeightPanel(ui_common.HeightmapSystemPanel, ui_common.ObjectPanel):
+class ThermalHeightmapPanel(ui_common.HeightmapSystemPanel, ui_common.ObjectPanel):
 	"""Subpanel for thermal erosion heightmap stack. Uses :class:`DefaultHeightmapPanel`."""
 	bl_parent_id = "HYDRA_PT_ThermalPanel"
-	bl_idname = "HYDRA_PT_ThermalHeightPanel"
+	bl_idname = "HYDRA_PT_ThermalHeightmapPanel"
 
 class ThermalSettingsPanel(ui_common.ThermalSettingsPanel, ui_common.ObjectPanel):
 	"""Subpanel for thermal erosion settings. Uses :class:`DefaultSettingsPanel`."""
@@ -90,10 +90,10 @@ class SnowPanel(ui_common.SnowPanel, ui_common.ObjectPanel):
 	"""Panel for snow simulation."""
 	bl_idname = "HYDRA_PT_SnowPanel"
 
-class SnowHeightPanel(ui_common.HeightmapSystemPanel, ui_common.ObjectPanel):
+class SnowHeightmapPanel(ui_common.HeightmapSystemPanel, ui_common.ObjectPanel):
 	"""Subpanel for snow heightmap stack. Uses :class:`DefaultHeightmapPanel`."""
 	bl_parent_id = "HYDRA_PT_SnowPanel"
-	bl_idname = "HYDRA_PT_SnowHeightPanel"
+	bl_idname = "HYDRA_PT_SnowHeightmapPanel"
 
 	@classmethod
 	def poll(cls, ctx):
@@ -142,14 +142,14 @@ def get_exports()->list:
 	return [
 		InfoPanel,
 		ErosionPanel,
-		ErosionSettingsPanel,
 		ErosionHeightmapPanel,
+		ErosionSettingsPanel,
 		ThermalPanel,
+		ThermalHeightmapPanel,
 		ThermalSettingsPanel,
-		ThermalHeightPanel,
 		SnowPanel,
-		SnowHeightPanel,
-		FlowPanel,
+		SnowHeightmapPanel,
+		ExtrasPanel,
 		HeightmapPanel,
 		CleanupPanel,
 		DebugPanel

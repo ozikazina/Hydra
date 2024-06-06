@@ -24,28 +24,16 @@ def init_context():
 			fragment_shader=f
 		)
 
-	with open(Path(base, "height.vert"), "r") as f:
-		vert = f.read()
-	with open(Path(base, "height.frag"), "r") as f:
-		frag = f.read()
+	vert = Path(base, "height.vert").read_text()
+	frag = Path(base, "height.frag").read_text()
 	make_prog("heightmap", vert, frag)
 
-	with open(Path(base, "identity.vert"), "r") as f:
-		vert = f.read()
-	with open(Path(base, "redraw.frag"), "r") as f:
-		frag = f.read()
+	vert = Path(base, "identity.vert").read_text()
+	frag = Path(base, "redraw.frag").read_text()
 	make_prog("redraw", vert, frag)
-
 	
-	with open(Path(base, "resize.frag"), "r") as f:
-		frag = f.read()
+	frag = Path(base, "resize.frag").read_text()
 	make_prog("resize", vert, frag)
-
-
-	with open(Path(base, "erosion.frag"), "r") as f:
-		frag = f.read()
-	make_prog("erosion", vert, frag)
-
 
 	for path in base.iterdir():
 		if path.suffix == ".glsl":

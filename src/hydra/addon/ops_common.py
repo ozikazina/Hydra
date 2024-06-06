@@ -2,7 +2,7 @@ import bpy
 from bpy.props import BoolProperty
 
 from Hydra import common, opengl
-from Hydra.sim import flow, thermal, heightmap, erosion_particle, erosion_mei, snow
+from Hydra.sim import flow, thermal, heightmap, erosion_particle, erosion_mei, snow, color
 from Hydra.utils import nav, apply
 
 class HydraOperator(bpy.types.Operator):
@@ -132,7 +132,7 @@ class SnowOperator(HydraOperator):
 		common.data.report(self, callerName="Erosion")
 		return {'FINISHED'}
 
-#-------------------------------------------- Flow
+#-------------------------------------------- Extras
 	
 class FlowOperator(HydraOperator):
 	bl_label = "Generate Flow"
@@ -145,7 +145,19 @@ class FlowOperator(HydraOperator):
 		nav.goto_image(img)
 		self.report({"INFO"}, f"Successfuly created image: {img.name}")
 		return {'FINISHED'}
-	
+
+class ColorOperator(HydraOperator):
+	bl_label = "Generate Color"
+	bl_idname = "hydra.color"
+	bl_description = "Generates a map of color using particle erosion. Uses eroded heightmaps, if they exist"
+
+	def invoke(self, ctx, event):
+		target = self.get_target(ctx)
+		img = color.simulate(target)
+		nav.goto_image(img)
+		self.report({"INFO"}, f"Successfuly created image: {img.name}")
+		return {'FINISHED'}
+
 #-------------------------------------------- Decoupling
 
 class DecoupleOperator(HydraOperator):
@@ -205,6 +217,7 @@ def get_exports()->list:
 		FlowOperator,
 		ThermalOperator,
 		SnowOperator,
+		ColorOperator,
 		DecoupleOperator,
 		CleanupOperator,
 		ReloadShadersOperator

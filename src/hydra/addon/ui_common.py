@@ -93,17 +93,12 @@ class ErosionPanel():
 	def draw(self, ctx):
 		hyd = self.get_settings(ctx)
 		
-		col = self.layout.column()
+		col = self.layout
 
-		if (hyd.out_color or hyd.mei_out_color) and hyd.color_src not in bpy.data.images:
-			box = col.box()
-			box.operator("hydra.erode", text="No color source", icon="RNDCURVE")
-			box.enabled = False
-		else:
-			grid = col.grid_flow(columns=1, align=True)
-			grid.operator("hydra.erode", text="Erode", icon="RNDCURVE").apply = False
-			if common.data.has_map(hyd.map_result):
-				grid.operator("hydra.erode", text="Set & Continue", icon="ANIM").apply = True
+		grid = col.grid_flow(columns=1, align=True)
+		grid.operator("hydra.erode", text="Erode", icon="RNDCURVE").apply = False
+		if common.data.has_map(hyd.map_result):
+			grid.operator("hydra.erode", text="Set & Continue", icon="ANIM").apply = True
 
 		self.draw_size_fragment(col.box(), ctx, hyd)
 
@@ -165,33 +160,54 @@ class SnowPanel():
 
 #-------------------------------------------- Flow
 
-class FlowPanel():
-	bl_label = "Hydra - Flow"
+class ExtrasPanel():
+	bl_label = "Hydra - Extras"
 	bl_description = "Generate flow data into an image"
 
 	def draw(self, ctx):
 		hyd = self.get_settings(ctx)
-		col = self.layout.column()
+		target = self.get_target(ctx)
+		p = self.layout
 
-		col.operator("hydra.flow", text="Generate Flowmap", icon="MATFLUID")
+		p.prop(hyd, "extras_type")
+		p.separator()
 
-		col.separator()
-		self.draw_size_fragment(col, ctx, hyd)
-
-		col.separator()
-		box = col.box()
-		box.prop(hyd, "flow_contrast", slider=True)
-		box.prop(hyd, "interpolate_flow")
-		split = box.split()
-		split.label(text="Chunk size")
-		split.prop(hyd, "flow_subdiv", text="")
+		if hyd.extras_type == "flow":
+			p.operator("hydra.flow", text="Generate Flowmap", icon="MATFLUID")
+		elif hyd.extras_type == "color":
+			if hyd.color_src in bpy.data.images:
+				p.operator("hydra.color", text="Simulate Color", icon="COLOR")
+			else:
+				box = p.box()
+				box.operator("hydra.color", text="No color source", icon="COLOR")
+				box.enabled = False
 		
-		col.separator()
-		col.label(text="Particle settings")
-		box = col.box()
-		box.prop(hyd, "part_lifetime")
-		box.prop(hyd, "part_acceleration", slider=True)
-		box.prop(hyd, "part_drag", slider=True)
+		self.draw_size_fragment(p.box(), ctx, hyd)
+
+		if hyd.extras_type == "flow":
+			box = p.box()
+			box.prop(hyd, "flow_contrast", slider=True)
+			box.prop(hyd, "interpolate_flow")
+			split = box.split()
+			split.label(text="Chunk size")
+			split.prop(hyd, "flow_subdiv", text="")
+			
+			p.separator()
+			p.label(text="Particle settings")
+			box = p.box()
+			box.prop(hyd, "part_lifetime")
+			box.prop(hyd, "part_acceleration", slider=True)
+			box.prop(hyd, "part_drag", slider=True)
+		elif hyd.extras_type == "color":
+			p.prop_search(hyd, "color_src", bpy.data, "images")
+			p.separator()
+
+			p.prop(hyd, "color_mixing", slider=True)
+			p.prop(hyd, "part_lifetime")
+			p.prop(hyd, "part_iter_num")
+			p.prop(hyd, "part_acceleration", slider=True)
+			p.prop(hyd, "part_drag", slider=True)
+			# self.draw_nav_fragment(p, f"HYD_{target.name}_Color", "Color")
 
 #-------------------------------------------- Heightmap System
 
@@ -335,32 +351,6 @@ class ErosionSettingsPanel(bpy.types.Panel):
 
 			if hyd.erosion_advanced:
 				p.prop(hyd, "mei_min_alpha")
-			
-
-class ErosionExtrasPanel():
-	"""Subpanel for water erosion extra settings."""
-	bl_label = "Extras"
-
-	def draw(self, ctx):
-		p = self.layout
-		target = self.get_target(ctx)
-		hyd = self.get_settings(ctx)
-
-		if hyd.erosion_solver == "particle":
-			p.prop(hyd, "out_color")
-			if (hyd.out_color):
-				p.prop_search(hyd, "color_src", bpy.data, "images")
-				p.prop(hyd, "color_mixing", slider=True)
-			
-			self.draw_nav_fragment(p, f"HYD_{target.name}_Color", "Color")
-		else:
-			p.prop(hyd, "mei_out_color")
-			if (hyd.mei_out_color):
-				p.prop_search(hyd, "color_src", bpy.data, "images")
-				p.prop(hyd, "mei_color_mixing", slider=True)
-
-			self.draw_nav_fragment(p, f"HYD_{target.name}_Color", "Color")
-
 
 class ThermalSettingsPanel():
 	bl_label = "Settings"
