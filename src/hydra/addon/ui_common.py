@@ -208,20 +208,29 @@ class ExtrasPanel():
 
 			p.prop(hyd, "color_mixing", slider=True)
 
-			g = p.grid_flow(columns=1, align=True)
-			g.prop(hyd, "part_iter_num")
-			g.prop(hyd, "part_lifetime")
+			if hyd.color_solver == "particle":
+				g = p.grid_flow(columns=1, align=True)
+				g.prop(hyd, "part_iter_num")
+				g.prop(hyd, "part_lifetime")
 
-			g = p.grid_flow(columns=1, align=True)
-			g.prop(hyd, "part_fineness", slider=True)
-			g.prop(hyd, "part_deposition", slider=True)
-			g.prop(hyd, "part_capacity", slider=True)
+				g = p.grid_flow(columns=1, align=True)
+				g.prop(hyd, "part_fineness", slider=True)
+				g.prop(hyd, "part_deposition", slider=True)
+				g.prop(hyd, "part_capacity", slider=True)
 
-			g = p.grid_flow(columns=1, align=True)
-			g.prop(hyd, "part_acceleration", slider=True)
-			if hyd.erosion_advanced:
-				g.prop(hyd, "part_lateral_acceleration")
-			g.prop(hyd, "part_drag", slider=True)
+				g = p.grid_flow(columns=1, align=True)
+				g.prop(hyd, "part_acceleration", slider=True)
+				if hyd.erosion_advanced:
+					g.prop(hyd, "part_lateral_acceleration")
+				g.prop(hyd, "part_drag", slider=True)
+			elif hyd.color_solver == "pipe":
+				g = p.grid_flow(columns=1, align=True)
+				g.prop(hyd, "mei_iter_num")
+				g.prop(hyd, "mei_scale")
+
+				g = p.grid_flow(columns=1, align=True)
+				g.prop(hyd, "mei_rain", slider=True)
+				g.prop(hyd, "mei_evaporation", slider=True)
 			# self.draw_nav_fragment(p, f"HYD_{target.name}_Color", "Color")
 
 #-------------------------------------------- Heightmap System
@@ -354,7 +363,6 @@ class ErosionSettingsPanel(bpy.types.Panel):
 			g = p.grid_flow(columns=1, align=True)
 			g.prop(hyd, "mei_iter_num")
 			g.prop(hyd, "mei_scale")
-			g.prop(hyd, "mei_dt")
 
 			g = p.grid_flow(columns=1, align=True)
 			g.prop(hyd, "mei_erosion", slider=True)

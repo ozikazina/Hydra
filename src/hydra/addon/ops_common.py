@@ -148,8 +148,8 @@ class ColorOperator(HydraOperator):
 		hyd = target.hydra_erosion
 		if hyd.color_solver == "particle":
 			img = erosion_particle.color(target)
-		# elif hyd.color_solver == "pipe":
-		# 	img = erosion_mei.color(target)
+		elif hyd.color_solver == "pipe":
+			img = erosion_mei.color(target)
 
 		nav.goto_image(img)
 		self.report({"INFO"}, f"Successfuly created image: {img.name}")

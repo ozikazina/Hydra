@@ -66,66 +66,74 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 
 	switch_after = max(min(32, math.ceil(hyd.mei_iter_num / 2)), 2)
 
+	progs = [
+		data.shaders["mei1"],
+		data.shaders["mei2"],
+		data.shaders["mei3"],
+		data.shaders["mei4"],
+		data.shaders["mei5"],
+		data.shaders["mei6"]
+	]
+
+	progs[0]["d_map"].value = BIND_WATER
+	progs[0]["dt"] = hyd.mei_dt
+	progs[0]["Ke"] = hyd.mei_evaporation / 100
+	progs[0]["Kr"] = hyd.mei_rain / 100
+
+	prog[1]["b_map"].value = BIND_HEIGHT
+	prog[1]["pipe_map"].value = BIND_PIPE
+	prog[1]["d_map"].value = BIND_WATER
+	prog[1]["lx"] = hyd.mei_length[0]
+	prog[1]["ly"] = hyd.mei_length[1]
+
+	progs[2]["pipe_map"].value = BIND_PIPE
+	progs[2]["d_map"].value = BIND_WATER
+	progs[2]["c_map"].value = BIND_TEMP
+	progs[2]["dt"] = hyd.mei_dt
+	progs[2]["lx"] = hyd.mei_length[0]
+	progs[2]["ly"] = hyd.mei_length[1]
+
+	progs[3]["b_map"].value = BIND_HEIGHT
+	progs[3]["pipe_map"].value = BIND_PIPE
+	progs[3]["v_map"].value = BIND_VELOCITY
+	progs[3]["d_map"].value = BIND_WATER
+	progs[3]["dmean_map"].value = BIND_TEMP
+	progs[3]["Kc"] = hyd.mei_capacity / 100
+	progs[3]["lx"] = hyd.mei_length[0]
+	progs[3]["ly"] = hyd.mei_length[1]
+	progs[3]["minalpha"] = hyd.mei_min_alpha
+	progs[3]["scale"] = 512 / hyd.mei_scale
+
+	progs[4]["b_map"].value = BIND_HEIGHT
+	progs[4]["s_map"].value = BIND_SEDIMENT
+	progs[4]["c_map"].value = BIND_TEMP
+	progs[4]["Ks"] = hyd.mei_erosion / (100 * 4)
+	progs[4]["Kd"] = hyd.mei_deposition / (100 * 2)
+
+	progs[5]["out_s_map"].value = BIND_SEDIMENT
+	progs[5]["v_map"].value = BIND_VELOCITY
+	progs[5]["s_sampler"] = LOC_SEDIMENT
+	progs[5]["dt"] = hyd.mei_dt
+
 	time = datetime.now()
 	for i in range(hyd.mei_iter_num):
 		switch = alternate and i % switch_after == switch_after - 1
 
-		prog = data.shaders["mei1"]
-		prog["d_map"].value = BIND_WATER
-		prog["dt"] = hyd.mei_dt
-		prog["Ke"] = hyd.mei_evaporation / 100
-		prog["Kr"] = hyd.mei_rain / 100
-		prog.run(group_x=group_x, group_y=group_y)
+		progs[0].run(group_x=group_x, group_y=group_y)
+		
+		prog[1]["diagonal"] = diagonal
+		prog[1]["erase"] = switch
+		progs[1].run(group_x=group_x, group_y=group_y)
 
-		prog = data.shaders["mei2"]
-		prog["b_map"].value = BIND_HEIGHT
-		prog["pipe_map"].value = BIND_PIPE
-		prog["d_map"].value = BIND_WATER
-		prog["lx"] = hyd.mei_length[0]
-		prog["ly"] = hyd.mei_length[1]
-		prog["diagonal"] = diagonal
-		prog["erase"] = switch
-		prog.run(group_x=group_x, group_y=group_y)
-	
-		prog = data.shaders["mei3"]
-		prog["pipe_map"].value = BIND_PIPE
-		prog["d_map"].value = BIND_WATER
-		prog["c_map"].value = BIND_TEMP
-		prog["dt"] = hyd.mei_dt
-		prog["lx"] = hyd.mei_length[0]
-		prog["ly"] = hyd.mei_length[1]
-		prog["diagonal"] = diagonal
-		prog.run(group_x=group_x, group_y=group_y)
+		progs[2]["diagonal"] = diagonal
+		progs[2].run(group_x=group_x, group_y=group_y)
 
-		prog = data.shaders["mei4"]
-		prog["b_map"].value = BIND_HEIGHT
-		prog["pipe_map"].value = BIND_PIPE
-		prog["v_map"].value = BIND_VELOCITY
-		prog["d_map"].value = BIND_WATER
-		prog["dmean_map"].value = BIND_TEMP
-		prog["Kc"] = hyd.mei_capacity / 100
-		prog["lx"] = hyd.mei_length[0]
-		prog["ly"] = hyd.mei_length[1]
-		prog["minalpha"] = hyd.mei_min_alpha
-		prog["scale"] = 512 / hyd.mei_scale
-		prog["diagonal"] = diagonal
-		prog.run(group_x=group_x, group_y=group_y)
+		progs[3]["diagonal"] = diagonal
+		progs[3].run(group_x=group_x, group_y=group_y)
+		progs[4].run(group_x=group_x, group_y=group_y)
 
-		prog = data.shaders["mei5"]
-		prog["b_map"].value = BIND_HEIGHT
-		prog["s_map"].value = BIND_SEDIMENT
-		prog["c_map"].value = BIND_TEMP
-		prog["Ks"] = hyd.mei_erosion / (100 * 4)
-		prog["Kd"] = hyd.mei_deposition / (100 * 2)
-		prog.run(group_x=group_x, group_y=group_y)
-
-		prog = data.shaders["mei6"]
-		prog["out_s_map"].value = BIND_SEDIMENT
-		prog["v_map"].value = BIND_VELOCITY
-		prog["s_sampler"] = LOC_SEDIMENT
-		prog["dt"] = hyd.mei_dt
-		prog["diagonal"] = diagonal
-		prog.run(group_x=group_x, group_y=group_y)
+		progs[5]["diagonal"] = diagonal
+		progs[5].run(group_x=group_x, group_y=group_y)
 
 		if switch:
 			diagonal = not diagonal
@@ -170,20 +178,13 @@ def color(obj: bpy.types.Object | bpy.types.Image)->Texture:
 		height = data.get_map(hyd.map_source).texture
 	
 	height = texture.clone(height)
-	height.bind_to_image(1, read=True, write=True)
-	height.use(1)
-	height_sampler = ctx.sampler(texture=height, repeat_x=False, repeat_y=False)
-	height_sampler.use(1)
-
-	color = texture.create_texture(size, channels=4, image=bpy.data.images[hyd.color_src])
-	color.bind_to_image(2, read=True, write=True)
 
 	BIND_HEIGHT = 1
 	BIND_PIPE = 2
 	BIND_VELOCITY = 3
 	BIND_WATER = 4
-	BIND_TEMP = 5
-	BIND_COLOR = 6
+	BIND_TEMP = 6
+	BIND_COLOR = 7
 
 	LOC_COLOR = 1
 
@@ -199,7 +200,7 @@ def color(obj: bpy.types.Object | bpy.types.Image)->Texture:
 	colorSamplerA = ctx.sampler(texture=colorA)
 	colorSamplerB = ctx.sampler(texture=colorB)
 
-	height.bind_to_image(BIND_HEIGHT, read=True, write=True) # don't use 0 -> default value -> cross-contamination
+	height.bind_to_image(BIND_HEIGHT, read=True, write=False) # don't use 0 -> default value -> cross-contamination
 	pipe.bind_to_image(BIND_PIPE, read=True, write=True)
 	velocity.bind_to_image(BIND_VELOCITY, read=True, write=True)
 	water.bind_to_image(BIND_WATER, read=True, write=True)
@@ -281,11 +282,18 @@ def color(obj: bpy.types.Object | bpy.types.Image)->Texture:
 	ctx.finish()
 	print((datetime.now() - time).total_seconds())
 
-	ret, _ = texture.write_image(f"HYD_{obj.name}_Color", color)
+	ret, _ = texture.write_image(f"HYD_{obj.name}_Color", colorA)
 
-	color.release()
 	height.release()
-	height_sampler.release()
+	pipe.release()
+	velocity.release()
+	water.release()
+	temp.release()
+
+	colorA.release()
+	colorB.release()
+	colorSamplerA.release()
+	colorSamplerB.release()
 
 	print("Simulation finished")
 	return ret

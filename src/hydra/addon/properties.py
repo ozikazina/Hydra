@@ -368,7 +368,7 @@ class ErosionGroup(bpy.types.PropertyGroup):
 		default="particle",
 		items=(
 			("particle", "Particle", "", 0),
-			("mei", "Pipe", "", 1)
+			("pipe", "Pipe", "", 1)
 		),
 		name="Solver",
 		description="Solver type for color transport"
