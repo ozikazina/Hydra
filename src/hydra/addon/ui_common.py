@@ -187,25 +187,19 @@ class ExtrasPanel():
 		self.draw_size_fragment(p.box(), ctx, hyd)
 
 		if hyd.extras_type == "flow":
-			box = p.box()
-			box.prop(hyd, "flow_contrast", slider=True)
-			box.prop(hyd, "interpolate_flow")
-			split = box.split()
-			split.label(text="Chunk size")
-			split.prop(hyd, "flow_subdiv", text="")
+			p.label(text="Settings:")
+			p.prop(hyd, "flow_contrast", slider=True)
 			
-			p.separator()
-			p.label(text="Particle settings")
-			box = p.box()
-			box.prop(hyd, "part_lifetime")
-			box.prop(hyd, "part_acceleration", slider=True)
-			box.prop(hyd, "part_drag", slider=True)
+			g = p.grid_flow(columns=1, align=True)
+			g.prop(hyd, "part_lifetime")
+			g.prop(hyd, "part_acceleration", slider=True)
+			g.prop(hyd, "part_drag", slider=True)
 		elif hyd.extras_type == "color":
 			p.prop(hyd, "color_solver")
 
 			p.prop_search(hyd, "color_src", bpy.data, "images")
-			p.separator()
 
+			p.label(text="Settings:")
 			p.prop(hyd, "color_mixing", slider=True)
 
 			if hyd.color_solver == "particle":

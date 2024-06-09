@@ -29,23 +29,24 @@ def generate_flow(obj: bpy.types.Image | bpy.types.Object)->bpy.types.Image:
 		height = data.get_map(hyd.map_result).texture
 	else:
 		height = data.get_map(hyd.map_source).texture
+	
 	amount = texture.create_texture(size)
 
-	subdiv = int(hyd.flow_subdiv)
+	subdiv = 8
 
 	prog = data.shaders["flow"]
 	height.bind_to_image(1, read=True, write=False)
-	prog["img"].value = 1
+	prog["height_sampler"].value = 1
 	amount.bind_to_image(2, read=True, write=True)
 	prog["flow"].value = 2
 	prog["squareSize"] = subdiv
-	prog["interpolate"] = hyd.interpolate_flow
 
-	prog["strength"] = 0.2*math.exp(-6.61*hyd.flow_contrast)	#map to aesthetic range 0.0003-0.2
+	# map to aesthetic range 0.0003-0.2
+	prog["strength"] = 0.2*math.exp(-6.61*(hyd.flow_contrast / 100))
 
-	prog["acceleration"] = hyd.part_acceleration
-	prog["iterations"] = hyd.part_lifetime
-	prog["drag"] = 1-hyd.part_drag	#multiplicative factor
+	prog["acceleration"] = hyd.part_acceleration / 100
+	prog["lifetime"] = hyd.part_lifetime
+	prog["drag"] = 1-(hyd.part_drag / 100)	# multiplicative factor
 
 	groups_x = math.ceil(size[0]/(subdiv * 32))
 	groups_y = math.ceil(size[1]/(subdiv * 32))
@@ -74,4 +75,5 @@ def generate_flow(obj: bpy.types.Image | bpy.types.Object)->bpy.types.Image:
 	ret, _ = texture.write_image(img_name, final_amount)
 	amount.release()
 	final_amount.release()
+	
 	return ret

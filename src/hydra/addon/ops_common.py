@@ -163,16 +163,33 @@ class DecoupleOperator(HydraOperator):
 	bl_idname = "hydra.decouple"
 	bl_description = "Decouples this entity from it's owner, preventing overwriting. Allows erosion of this entity"
 
-	def invoke(self, ctx, event):
+	target_name: bpy.props.StringProperty(name="New name", default="",
+		description="New name for the decoupled entity. Names beginning with 'HYD_' are reserved for Hydra generated data")
+
+	def execute(self, ctx):
 		target = self.get_target(ctx)
 
-		if target.name.startswith("HYD_"):
-			target.name = target.name[4:]
 
-		target.hydra_erosion.is_generated = False
+		if self.target_name:
+			target.name = self.target_name
+			target.hydra_erosion.is_generated = False
+			self.report({"INFO"}, "Target decoupled.")
+		else:
+			self.report({"ERROR"}, "No name was provided.")
 
-		self.report({"INFO"}, "Target decoupled.")
 		return {'FINISHED'}
+	
+
+	def invoke(self, ctx, event):
+		target = self.get_target(ctx)
+		if target.name.startswith("HYD_"):
+			self.target_name = target.name[4:]
+
+		return ctx.window_manager.invoke_props_dialog(self)
+	
+	def draw(self, ctx):
+		layout = self.layout
+		layout.prop(self, "target_name")
 	
 #-------------------------------------------- Cleanup
 

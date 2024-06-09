@@ -339,36 +339,18 @@ class ErosionGroup(bpy.types.PropertyGroup):
 	)
 
 	flow_contrast: FloatProperty(
-		default=0.5,
-		min=0.0, max=1.0,
+		default=50,
+		min=1.0, max=100,
+		subtype="PERCENTAGE",
 		name="Flow contrast",
 		description="Higher values lead to thinner streaks"
-	)
-
-	interpolate_flow: BoolProperty(
-		default=True,
-		name="Interpolate flow",
-		description="Creates smoother but blurrier streaks"
-	)
-
-	flow_subdiv: EnumProperty(
-		default="8",
-		items=(
-			("16", "16", "Chunks of side 16", 0),
-			("8", "8", "Chunks of side 8", 1),
-			("4", "4", "Chunks of side 4", 2),
-			("2", "2", "Chunks of side 2", 3),
-			("1", "1", "No chunking", 4),
-		),
-		name="Chunk size",
-		description="Size of solver chunks. Higher values prevent interference between particles"
 	)
 
 	color_solver: EnumProperty(
 		default="particle",
 		items=(
-			("particle", "Particle", "", 0),
-			("pipe", "Pipe", "", 1)
+			("particle", "Particle", "Creates sharper paths of color", 0),
+			("pipe", "Pipe", "Creates even blotches of color", 1)
 		),
 		name="Solver",
 		description="Solver type for color transport"
