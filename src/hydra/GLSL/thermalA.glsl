@@ -15,10 +15,11 @@ uniform float by = 1.0;
 uniform float Ks = 0.5;
 
 uniform float alpha = 0.005;
-uniform float max_drop = 0.1;
 
 uniform bool diagonal = false;
 uniform int ds = 1;
+
+uniform ivec2 size = ivec2(512,512);
 
 float getH(ivec2 pos) {
 	if (useOffset) {
@@ -36,32 +37,39 @@ float getH(ivec2 pos) {
 void main(void) {
 	ivec2 base = ivec2(gl_GlobalInvocationID.xy);
 	
-	float len = 1.0;
-	
-	float lx = (diagonal ? bx : bx * sqrt(2)) * ds;
-	float ly = (diagonal ? by : by * sqrt(2)) * ds;
+	float lx = (diagonal ? bx * sqrt(2) : bx) * ds;
+	float ly = (diagonal ? by * sqrt(2) : by) * ds;
 	
 	float h = getH(base);
 
 	vec4 p = vec4(0.0);
 
 	float dh;
+	ivec2 npos;
 
-	dh = getH(base + ivec2(-ds, diagonal ? -ds : 0)) - h;
+	npos = base + ivec2(-ds, diagonal ? -ds : 0);
+	dh = getH(npos) - h;
 	p.x = dh + (dh > 0 ? -1 : 1) * alpha * lx;
-	p.x *= int(abs(dh) > alpha * lx && abs(dh) < max_drop);
+	p.x *= float(abs(dh) > alpha * lx);
+	p.x *= float(npos.x >= 0 && npos.y >= 0);
 
-	dh = getH(base + ivec2(diagonal ? -ds : 0, ds)) - h;
+	npos = base + ivec2(diagonal ? -ds : 0, ds);
+	dh = getH(npos) - h;
 	p.y = dh + (dh > 0 ? -1 : 1) * alpha * ly;
-	p.y *= int(abs(dh) > alpha * ly && abs(dh) < max_drop);
+	p.y *= float(abs(dh) > alpha * ly);
+	p.y *= float(npos.x >= 0 && npos.y < size.y);
 	
-	dh = getH(base + ivec2(ds, diagonal ? ds : 0)) - h;
+	npos = base + ivec2(ds, diagonal ? ds : 0);
+	dh = getH(npos) - h;
 	p.z = dh + (dh > 0 ? -1 : 1) * alpha * lx;
-	p.z *= int(abs(dh) > alpha * lx && abs(dh) < max_drop);
+	p.z *= float(abs(dh) > alpha * lx);
+	p.z *= float(npos.x < size.x && npos.y < size.y);
 	
-	dh = getH(base + ivec2(diagonal ? ds : 0, -ds)) - h;
+	npos = base + ivec2(diagonal ? ds : 0, -ds);
+	dh = getH(npos) - h;
 	p.w = dh + (dh > 0 ? -1 : 1) * alpha * ly;
-	p.w *= int(abs(dh) > alpha * ly && abs(dh) < max_drop);
+	p.w *= float(abs(dh) > alpha * ly);
+	p.w *= float(npos.x < size.x && npos.y >= 0);
 	
 	vec4 d = 0.5 * (p + abs(p));	//positive part
 	vec4 s = p - d;	//negative part
