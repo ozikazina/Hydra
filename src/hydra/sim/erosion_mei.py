@@ -80,11 +80,11 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 	progs[0]["Ke"] = hyd.mei_evaporation / 100
 	progs[0]["Kr"] = hyd.mei_rain / 100
 
-	prog[1]["b_map"].value = BIND_HEIGHT
-	prog[1]["pipe_map"].value = BIND_PIPE
-	prog[1]["d_map"].value = BIND_WATER
-	prog[1]["lx"] = hyd.mei_length[0]
-	prog[1]["ly"] = hyd.mei_length[1]
+	progs[1]["b_map"].value = BIND_HEIGHT
+	progs[1]["pipe_map"].value = BIND_PIPE
+	progs[1]["d_map"].value = BIND_WATER
+	progs[1]["lx"] = hyd.mei_length[0]
+	progs[1]["ly"] = hyd.mei_length[1]
 
 	progs[2]["pipe_map"].value = BIND_PIPE
 	progs[2]["d_map"].value = BIND_WATER
@@ -121,8 +121,8 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 
 		progs[0].run(group_x=group_x, group_y=group_y)
 		
-		prog[1]["diagonal"] = diagonal
-		prog[1]["erase"] = switch
+		progs[1]["diagonal"] = diagonal
+		progs[1]["erase"] = switch
 		progs[1].run(group_x=group_x, group_y=group_y)
 
 		progs[2]["diagonal"] = diagonal
