@@ -32,30 +32,28 @@ def generate_flow(obj: bpy.types.Image | bpy.types.Object)->bpy.types.Image:
 	
 	amount = texture.create_texture(size)
 
-	subdiv = 8
+	height_sampler = ctx.sampler(texture=height, repeat_x=False, repeat_y=False)
+	height.use(1)
+	height_sampler.use(1)
 
 	prog = data.shaders["flow"]
-	height.bind_to_image(1, read=True, write=False)
-	prog["height_sampler"].value = 1
+	prog["height_sampler"] = 1
 	amount.bind_to_image(2, read=True, write=True)
 	prog["flow"].value = 2
-	prog["squareSize"] = subdiv
+
+	prog["tile_mult"] = (1 / size[0], 1 / size[1])
+	prog["tile_size"] = (math.ceil(size[0] / 32), math.ceil(size[1] / 32))
 
 	# map to aesthetic range 0.0003-0.2
-	prog["strength"] = 0.2*math.exp(-6.61*(hyd.flow_contrast / 100))
+	prog["strength"] = 0.2*math.exp(-6.61*(1 - hyd.flow_brightness / 100))
 
+	prog["iterations"] = hyd.flow_iter_num
 	prog["acceleration"] = hyd.part_acceleration / 100
 	prog["lifetime"] = hyd.part_lifetime
 	prog["drag"] = 1-(hyd.part_drag / 100)	# multiplicative factor
 
-	groups_x = math.ceil(size[0]/(subdiv * 32))
-	groups_y = math.ceil(size[1]/(subdiv * 32))
-
 	time = datetime.now()
-	for y in range(subdiv):
-		for x in range(subdiv):
-			prog["off"] = (x,y)
-			prog.run(group_x=groups_x, group_y=groups_y)
+	prog.run(group_x=1, group_y=1)
 	ctx.finish()
 
 	final_amount = texture.create_texture(amount.size)
@@ -63,9 +61,6 @@ def generate_flow(obj: bpy.types.Image | bpy.types.Object)->bpy.types.Image:
 	prog = data.shaders["plug"]
 	prog["inMap"].value = 2
 	prog["outMap"].value = 3
-
-	groups_x = math.ceil(size[0]/32)
-	groups_y = math.ceil(size[1]/32)
 
 	prog.run(group_x=size[0], group_y=size[1])
 

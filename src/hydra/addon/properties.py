@@ -338,12 +338,19 @@ class ErosionGroup(bpy.types.PropertyGroup):
 		description="Type of texture to generate"
 	)
 
-	flow_contrast: FloatProperty(
+	flow_iter_num: IntProperty(
+		default=200,
+		min=1, max=1000, soft_max=500,
+		name="Iterations",
+		description="Number of iterations of flow simulation"
+	)
+
+	flow_brightness: FloatProperty(
 		default=50,
 		min=1.0, max=100,
 		subtype="PERCENTAGE",
 		name="Flow contrast",
-		description="Higher values lead to thinner streaks"
+		description="Higher values lead to brighter flow maps and thicker streaks"
 	)
 
 	color_solver: EnumProperty(

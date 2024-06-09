@@ -188,11 +188,11 @@ class ExtrasPanel():
 
 		if hyd.extras_type == "flow":
 			p.label(text="Settings:")
-			p.prop(hyd, "flow_contrast", slider=True)
+			p.prop(hyd, "flow_brightness", slider=True)
 			
 			g = p.grid_flow(columns=1, align=True)
+			g.prop(hyd, "flow_iter_num")
 			g.prop(hyd, "part_lifetime")
-			g.prop(hyd, "part_acceleration", slider=True)
 			g.prop(hyd, "part_drag", slider=True)
 		elif hyd.extras_type == "color":
 			p.prop(hyd, "color_solver")
