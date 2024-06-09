@@ -41,7 +41,7 @@ class ErosionGroup(bpy.types.PropertyGroup):
 		name="Heightmap size",
 		min=32,
 		max=4096,
-		description="To erode objects, they are first converted into heightmaps. This defines the heightmap resolution. Once erosion occurs this resolution is set and can only be reset by clearing cached heightmaps",
+		description="To erode objects, they are first converted into heightmaps. This property defines the heightmap resolution. Once erosion occurs this resolution is set and can only be reset by clearing cached heightmaps",
 		size=2
 	)
 	
@@ -75,17 +75,10 @@ class ErosionGroup(bpy.types.PropertyGroup):
 	#------------------------- Particle
 
 	part_iter_num: IntProperty(
-		default=100,
+		default=50,
 		min=1, max=1000,
 		name="Iterations",
 		description="Number of simulation iterations"
-	)
-
-	part_iter_multiplier: IntProperty(
-		default=10,
-		min=1, max=100,
-		name="Particle multiplier",
-		description="Increases the number of particles simulated per iteration"
 	)
 	
 	part_lifetime: IntProperty(
@@ -102,6 +95,14 @@ class ErosionGroup(bpy.types.PropertyGroup):
 		subtype="PERCENTAGE",
 		name="Acceleration",
 		description="Influence of the surface on motion"
+	)
+
+	part_lateral_acceleration: FloatProperty(
+		default=100.0,
+		min=1.0, soft_max=200.0, max=300.0,
+		subtype="PERCENTAGE",
+		name="Lateral Acceleration",
+		description="Influence of the surface on side to side acceleration"
 	)
 	
 	part_drag: FloatProperty(
@@ -361,6 +362,16 @@ class ErosionGroup(bpy.types.PropertyGroup):
 		),
 		name="Chunk size",
 		description="Size of solver chunks. Higher values prevent interference between particles"
+	)
+
+	color_solver: EnumProperty(
+		default="particle",
+		items=(
+			("particle", "Particle", "", 0),
+			("mei", "Pipe", "", 1)
+		),
+		name="Solver",
+		description="Solver type for color transport"
 	)
 
 	color_mixing: FloatProperty(

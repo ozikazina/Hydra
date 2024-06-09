@@ -14,6 +14,7 @@ uniform int iterations = 100;
 uniform int seed = 1;
 
 uniform float acceleration = 0.5;
+uniform float lateral_acceleration = 1.0;
 uniform float max_velocity = 3.0;
 uniform float drag = 0.9;
 
@@ -41,7 +42,7 @@ void erode(uvec2 base, int seed) {
 
 	float height = texture(height_sampler, tile_mult * pos).x;
 
-	vec2 vel = vec2(
+	vec2 vel = acceleration * vec2(
 		height - texture(height_sampler, tile_mult * (pos + vec2(1, 0))).x,
 		height - texture(height_sampler, tile_mult * (pos + vec2(0, 1))).x
 	);
@@ -51,13 +52,14 @@ void erode(uvec2 base, int seed) {
 	float saturation = 0.0;
 	
 	for (int i = 0; i < lifetime; ++i) {
+		float dir_mult = (i & 1) == 0 ? 1.0 : -1.0; // swapping lateral checks prevents biased rotation
 		float height = texture(height_sampler, tile_mult * pos).x;
 		float height_vel = texture(height_sampler, tile_mult * (pos + dir)).x;
-		float height_dir = texture(height_sampler, tile_mult * (pos + vec2(-dir.y, dir.x))).x;
+		float height_dir = texture(height_sampler, tile_mult * (pos + dir_mult * vec2(-dir.y, dir.x))).x;
 
 		vel += acceleration * (
 			(height - height_vel) * dir +
-			(height - height_dir) * vec2(-dir.y, dir.x)
+			lateral_acceleration * (height - height_dir) * dir_mult * vec2(-dir.y, dir.x)
 		);
 		
 		float len = min(length(vel), max_velocity);
@@ -72,7 +74,7 @@ void erode(uvec2 base, int seed) {
 		dif = clamp(dif, -max_change, max_change);
 		saturation += dif;
 		
-		ivec2 ipos = ivec2(pos);
+		ivec2 ipos = ivec2(floor(pos));
 		imageStore(height_map, ipos, imageLoad(height_map, ipos) - vec4(dif));
 
 		pos += dir;

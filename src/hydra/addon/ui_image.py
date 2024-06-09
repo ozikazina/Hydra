@@ -20,15 +20,15 @@ class ErosionPanel(ui_common.ErosionPanel, ui_common.ImagePanel):
 	"""Panel for water erosion."""
 	bl_idname = "HYDRA_PT_ErosionPanelImage"
 
-class ErosionHeightmapPanel(ui_common.HeightmapSystemPanel, ui_common.ImagePanel):
-	"""Subpanel for water erosion heightmap stack."""
-	bl_parent_id = "HYDRA_PT_ErosionPanelImage"
-	bl_idname = "HYDRA_PT_ErosionHeightmapPanelImage"
-
 class ErosionSettingsPanel(ui_common.ErosionSettingsPanel, ui_common.ImagePanel):
 	"""Subpanel for water erosion particle settings."""
 	bl_parent_id = "HYDRA_PT_ErosionPanelImage"
 	bl_idname = "HYDRA_PT_ErosionSettingsPanelImage"
+
+class ErosionHeightmapPanel(ui_common.HeightmapSystemPanel, ui_common.ImagePanel):
+	"""Subpanel for water erosion heightmap stack."""
+	bl_parent_id = "HYDRA_PT_ErosionPanelImage"
+	bl_idname = "HYDRA_PT_ErosionHeightmapPanelImage"
 
 #-------------------------------------------- Flow
 
@@ -41,15 +41,15 @@ class ThermalPanel(ui_common.ThermalPanel, ui_common.ImagePanel):
 	"""Panel for thermal erosion."""
 	bl_idname = "HYDRA_PT_ThermalPanelImage"
 
-class ThermalHeightmapPanel(ui_common.HeightmapSystemPanel, ui_common.ImagePanel):
-	"""Subpanel for thermal erosion heightmap stack."""
-	bl_parent_id = "HYDRA_PT_ThermalPanelImage"
-	bl_idname = "HYDRA_PT_ThermalHeightmapPanelImage"
-
 class ThermalSettingsPanel(ui_common.ThermalSettingsPanel, ui_common.ImagePanel):
 	"""Subpanel for thermal erosion settings."""
 	bl_parent_id = "HYDRA_PT_ThermalPanelImage"
 	bl_idname = "HYDRA_PT_ThermalSettingsPanelImage"
+
+class ThermalHeightmapPanel(ui_common.HeightmapSystemPanel, ui_common.ImagePanel):
+	"""Subpanel for thermal erosion heightmap stack."""
+	bl_parent_id = "HYDRA_PT_ThermalPanelImage"
+	bl_idname = "HYDRA_PT_ThermalHeightmapPanelImage"
 
 #-------------------------------------------- Snow
 class SnowPanel(ui_common.SnowPanel, ui_common.ImagePanel):

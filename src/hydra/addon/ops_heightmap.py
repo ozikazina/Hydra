@@ -152,8 +152,8 @@ class DeleteOp(ops_common.HydraOperator):
 class ClearOp(ops_common.HydraOperator):
 	"""Clear object textures operator."""
 	bl_idname = "hydra.hm_clear"
-	bl_label = "Delete all cached heightmaps?"
-	bl_description = "Delete all cached heightmaps for this object"
+	bl_label = "Delete cached heightmaps for this object?"
+	bl_description = "Deletes all cached heightmaps for this object"
 
 	def execute(self, ctx):
 		target = self.get_target(ctx)

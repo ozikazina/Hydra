@@ -2,7 +2,7 @@ import bpy
 from bpy.props import BoolProperty
 
 from Hydra import common, opengl
-from Hydra.sim import flow, thermal, heightmap, erosion_particle, erosion_mei, snow, color
+from Hydra.sim import flow, thermal, heightmap, erosion_particle, erosion_mei, snow
 from Hydra.utils import nav, apply
 
 class HydraOperator(bpy.types.Operator):
@@ -59,17 +59,9 @@ class ErosionOperator(HydraOperator):
 			heightmap.set_result_as_source(target)
 
 		if hyd.erosion_solver == "particle":
-			results = erosion_particle.erode(target)
-			if "color" in results:
-				nav.goto_image(results["color"])
-			elif "sediment" in results:
-				nav.goto_image(results["sediment"])
-			elif "depth" in results:
-				nav.goto_image(results["depth"])
+			erosion_particle.erode(target)
 		else:
-			results = erosion_mei.erode(target)
-			if "color" in results:
-				nav.goto_image(results["color"])
+			erosion_mei.erode(target)
 
 		apply.add_preview(target)
 
@@ -147,13 +139,18 @@ class FlowOperator(HydraOperator):
 		return {'FINISHED'}
 
 class ColorOperator(HydraOperator):
-	bl_label = "Generate Color"
+	bl_label = "Transport Color"
 	bl_idname = "hydra.color"
-	bl_description = "Generates a map of color using particle erosion. Uses eroded heightmaps, if they exist"
+	bl_description = "Transports color using particle erosion. Uses eroded heightmaps, if they exist"
 
 	def invoke(self, ctx, event):
 		target = self.get_target(ctx)
-		img = color.simulate(target)
+		hyd = target.hydra_erosion
+		if hyd.color_solver == "particle":
+			img = erosion_particle.color(target)
+		# elif hyd.color_solver == "pipe":
+		# 	img = erosion_mei.color(target)
+
 		nav.goto_image(img)
 		self.report({"INFO"}, f"Successfuly created image: {img.name}")
 		return {'FINISHED'}

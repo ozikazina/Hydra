@@ -54,14 +54,14 @@ class HeightmapPanel(ui_common.ObjectPanel):
 class ErosionPanel(ui_common.ErosionPanel, ui_common.ObjectPanel):
 	bl_idname = "HYDRA_PT_ErosionPanel"
 
+class ErosionSettingsPanel(ui_common.ErosionSettingsPanel, ui_common.ObjectPanel):
+	bl_parent_id = "HYDRA_PT_ErosionPanel"
+	bl_idname = "HYDRA_PT_ErosionSettingsPanel"	
+
 class ErosionHeightmapPanel(ui_common.HeightmapSystemPanel, ui_common.ObjectPanel):
 	"""Subpanel for water erosion heightmap stack. Uses :class:`DefaultHeightmapPanel`"""
 	bl_parent_id = "HYDRA_PT_ErosionPanel"
 	bl_idname = "HYDRA_PT_ErosionHeightmapPanel"
-
-class ErosionSettingsPanel(ui_common.ErosionSettingsPanel, ui_common.ObjectPanel):
-	bl_parent_id = "HYDRA_PT_ErosionPanel"
-	bl_idname = "HYDRA_PT_ErosionSettingsPanel"	
 
 #-------------------------------------------- Flow
 
@@ -74,15 +74,15 @@ class ExtrasPanel(ui_common.ExtrasPanel, ui_common.ObjectPanel):
 class ThermalPanel(ui_common.ThermalPanel, ui_common.ObjectPanel):
 	bl_idname = "HYDRA_PT_ThermalPanel"
 
-class ThermalHeightmapPanel(ui_common.HeightmapSystemPanel, ui_common.ObjectPanel):
-	"""Subpanel for thermal erosion heightmap stack. Uses :class:`DefaultHeightmapPanel`."""
-	bl_parent_id = "HYDRA_PT_ThermalPanel"
-	bl_idname = "HYDRA_PT_ThermalHeightmapPanel"
-
 class ThermalSettingsPanel(ui_common.ThermalSettingsPanel, ui_common.ObjectPanel):
 	"""Subpanel for thermal erosion settings. Uses :class:`DefaultSettingsPanel`."""
 	bl_parent_id = "HYDRA_PT_ThermalPanel"
 	bl_idname = "HYDRA_PT_ThermalSettingsPanel"
+
+class ThermalHeightmapPanel(ui_common.HeightmapSystemPanel, ui_common.ObjectPanel):
+	"""Subpanel for thermal erosion heightmap stack. Uses :class:`DefaultHeightmapPanel`."""
+	bl_parent_id = "HYDRA_PT_ThermalPanel"
+	bl_idname = "HYDRA_PT_ThermalHeightmapPanel"
 
 #-------------------------------------------- Snow
 
@@ -142,11 +142,11 @@ def get_exports()->list:
 	return [
 		InfoPanel,
 		ErosionPanel,
-		ErosionHeightmapPanel,
 		ErosionSettingsPanel,
+		ErosionHeightmapPanel,
 		ThermalPanel,
-		ThermalHeightmapPanel,
 		ThermalSettingsPanel,
+		ThermalHeightmapPanel,
 		SnowPanel,
 		SnowHeightmapPanel,
 		ExtrasPanel,

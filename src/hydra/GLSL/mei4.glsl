@@ -48,12 +48,15 @@ void main(void) {
 
     imageStore(v_map, pos, vec4(u,v,0,0));
 
-    float sx = 0.5 * abs(heightAt(RIGHT) - heightAt(LEFT)) * scale * 512;
-    float sy = 0.5 * abs(heightAt(DOWN) - heightAt(UP)) * scale * 512;
+    float sx = 0.5 * abs(heightAt(RIGHT) - heightAt(LEFT)) * scale;
+    float sy = 0.5 * abs(heightAt(DOWN) - heightAt(UP)) * scale;
 
     float slope = 1 - 1 / sqrt(1 + sx * sx + sy * sy);
     slope = max(min(1, slope), minalpha);
     
     float C = slope * length(vec2(u,v)) * Kc;
+    ivec2 size = imageSize(pipe_map);
+    C *= float(pos.x > 0 && pos.x < size.x - 1 && pos.y > 0 && pos.y < size.y - 1);
+
     imageStore(dmean_map, pos, vec4(C));
 }//main

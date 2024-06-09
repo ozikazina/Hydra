@@ -40,6 +40,7 @@ class ImagePanel(HydraPanel):
 		split = container.split(factor=0.5)
 		split.label(text=f"Resolution:")
 		split.label(text=f"{tuple(ctx.area.spaces.active.image.size)}")
+		container.enabled = False
 
 	@classmethod
 	def poll(cls, ctx):
@@ -68,6 +69,7 @@ class ObjectPanel(HydraPanel):
 			split = container.split(factor=0.5)
 			split.label(text=f"Resolution:")
 			split.label(text=f"{tuple(settings.img_size)}")
+			container.enabled = False
 		else:
 			container.prop(settings, "img_size")
 
@@ -176,7 +178,7 @@ class ExtrasPanel():
 			p.operator("hydra.flow", text="Generate Flowmap", icon="MATFLUID")
 		elif hyd.extras_type == "color":
 			if hyd.color_src in bpy.data.images:
-				p.operator("hydra.color", text="Simulate Color", icon="COLOR")
+				p.operator("hydra.color", text="Transport Color", icon="COLOR")
 			else:
 				box = p.box()
 				box.operator("hydra.color", text="No color source", icon="COLOR")
@@ -199,14 +201,27 @@ class ExtrasPanel():
 			box.prop(hyd, "part_acceleration", slider=True)
 			box.prop(hyd, "part_drag", slider=True)
 		elif hyd.extras_type == "color":
+			p.prop(hyd, "color_solver")
+
 			p.prop_search(hyd, "color_src", bpy.data, "images")
 			p.separator()
 
 			p.prop(hyd, "color_mixing", slider=True)
-			p.prop(hyd, "part_lifetime")
-			p.prop(hyd, "part_iter_num")
-			p.prop(hyd, "part_acceleration", slider=True)
-			p.prop(hyd, "part_drag", slider=True)
+
+			g = p.grid_flow(columns=1, align=True)
+			g.prop(hyd, "part_iter_num")
+			g.prop(hyd, "part_lifetime")
+
+			g = p.grid_flow(columns=1, align=True)
+			g.prop(hyd, "part_fineness", slider=True)
+			g.prop(hyd, "part_deposition", slider=True)
+			g.prop(hyd, "part_capacity", slider=True)
+
+			g = p.grid_flow(columns=1, align=True)
+			g.prop(hyd, "part_acceleration", slider=True)
+			if hyd.erosion_advanced:
+				g.prop(hyd, "part_lateral_acceleration")
+			g.prop(hyd, "part_drag", slider=True)
 			# self.draw_nav_fragment(p, f"HYD_{target.name}_Color", "Color")
 
 #-------------------------------------------- Heightmap System
@@ -302,19 +317,18 @@ class HeightmapSystemPanel():
 class ErosionSettingsPanel(bpy.types.Panel):
 	"""Subpanel for water erosion particle settings."""
 	bl_label = "Settings"
+	bl_options = set()
 
 	def draw(self, ctx):
 		p = self.layout
 		hyd = self.get_settings(ctx)
 		if hyd.erosion_solver == "particle":
-			if hyd.erosion_advanced:
-				p.label(text="Simulation resolution:")
-				p.prop(hyd, "erosion_subres", text="", slider=True)
-				p.separator()
+			p.label(text="Simulation resolution:")
+			p.prop(hyd, "erosion_subres", text="", slider=True)
+			p.separator()
 
 			g = p.grid_flow(columns=1, align=True)
 			g.prop(hyd, "part_iter_num")
-			g.prop(hyd, "part_iter_multiplier")
 			g.prop(hyd, "part_lifetime")
 
 			g = p.grid_flow(columns=1, align=True)
@@ -324,6 +338,8 @@ class ErosionSettingsPanel(bpy.types.Panel):
 
 			g = p.grid_flow(columns=1, align=True)
 			g.prop(hyd, "part_acceleration", slider=True)
+			if hyd.erosion_advanced:
+				g.prop(hyd, "part_lateral_acceleration")
 			g.prop(hyd, "part_drag", slider=True)
 
 			if hyd.erosion_advanced:
@@ -354,6 +370,7 @@ class ErosionSettingsPanel(bpy.types.Panel):
 
 class ThermalSettingsPanel():
 	bl_label = "Settings"
+	bl_options = set()
 
 	def draw(self, ctx):
 		hyd = self.get_settings(ctx)
