@@ -36,6 +36,15 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 		height = texture.clone(data.get_map(hyd.map_source).texture)
 		height_base = None
 
+	if hyd.erosion_hardness_src in bpy.data.images:
+		img = bpy.data.images[hyd.erosion_hardness_src]
+		hardness = texture.create_texture(tuple(img.size), channels=1, image=img)
+		hardness_sampler = ctx.sampler(texture=hardness, repeat_x=False, repeat_y=False)
+		hardness.use(2)
+		hardness_sampler.use(2)
+	else:
+		hardness = None
+
 	prog = data.shaders["particle"]
 	
 	height_sampler = ctx.sampler(texture=height, repeat_x=False, repeat_y=False)
@@ -45,6 +54,10 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 	height_sampler.use(1)
 	prog["height_sampler"] = 1
 	prog["height_map"].value = 1
+
+	prog["hardness_sampler"] = 2
+	prog["use_hardness"] = hardness is not None
+	prog["invert_hardness"] = hyd.erosion_invert_hardness
 
 	prog["tile_size"] = (math.ceil(size[0] / 32), math.ceil(size[1] / 32))
 	prog["tile_mult"] = (1 / size[0], 1 / size[1])
@@ -66,6 +79,10 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 	ctx.finish()
 
 	print((datetime.now() - time).total_seconds())
+
+	if hardness is not None:
+		hardness.release()
+		hardness_sampler.release()
 
 	if height_base is not None: # resize back to original size
 		dif = heightmap.subtract(height, height_base) # get difference

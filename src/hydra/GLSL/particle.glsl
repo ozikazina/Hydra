@@ -3,6 +3,7 @@
 layout(local_size_x = 32, local_size_y = 32, local_size_z = 1) in;
 
 uniform sampler2D height_sampler;
+uniform sampler2D hardness_sampler;
 
 layout (r32f) uniform image2D height_map;
 
@@ -23,6 +24,9 @@ uniform float erosion_strength = 0.25;
 uniform float deposition_strength = 0.5;
 
 uniform float max_change = 0.01;
+
+uniform bool use_hardness = false;
+uniform bool invert_hardness = false;
 
 // pcg3d hashing algorithm from:
 // Author: Mark Jarzynski and Marc Olano
@@ -70,7 +74,16 @@ void erode(uvec2 base, int seed) {
 
 		float dif = capacity-saturation;
 
-		dif *= dif > 0 ? erosion_strength : deposition_strength;
+		float erosion_str = erosion_strength;
+		
+		if (use_hardness) {
+			float hardness = texture(hardness_sampler, tile_mult * pos).x;
+			if (!invert_hardness) hardness = 1 - hardness;
+			erosion_str *= clamp(hardness, 0, 1);
+		}
+
+		dif *= dif >= 0 ? erosion_str : deposition_strength;
+
 		dif = clamp(dif, -max_change, max_change);
 		saturation += dif;
 		

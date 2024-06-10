@@ -31,6 +31,7 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 	BIND_WATER = 4
 	BIND_SEDIMENT = 5
 	BIND_TEMP = 6
+	BIND_EXTRA = 7
 
 	LOC_SEDIMENT = 1
 
@@ -40,6 +41,16 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 	water = texture.create_texture(size)
 	sediment = texture.create_texture(size)
 	temp = texture.create_texture(size)	# capacity, water and sediment at different stages
+
+	if hyd.erosion_hardness_src in bpy.data.images:
+		hardness = texture.create_texture(size, channels=1, image=bpy.data.images[hyd.erosion_hardness_src])
+	else:
+		hardness = None
+
+	if hyd.mei_water_src in bpy.data.images:
+		water_src = texture.create_texture(size, channels=1, image=bpy.data.images[hyd.mei_water_src])
+	else:
+		water_src = None
 
 	height.bind_to_image(BIND_HEIGHT, read=True, write=True) # don't use 0 -> default value -> cross-contamination
 	pipe.bind_to_image(BIND_PIPE, read=True, write=True)
@@ -79,6 +90,8 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 	progs[0]["dt"] = hyd.mei_dt
 	progs[0]["Ke"] = hyd.mei_evaporation / 100
 	progs[0]["Kr"] = hyd.mei_rain / 100
+	progs[0]["water_src"].value = BIND_EXTRA
+	progs[0]["use_water_src"] = water_src is not None
 
 	progs[1]["b_map"].value = BIND_HEIGHT
 	progs[1]["pipe_map"].value = BIND_PIPE
@@ -109,6 +122,9 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 	progs[4]["c_map"].value = BIND_TEMP
 	progs[4]["Ks"] = hyd.mei_erosion / (100 * 4)
 	progs[4]["Kd"] = hyd.mei_deposition / (100 * 2)
+	progs[4]["hardness_map"].value = BIND_EXTRA
+	progs[4]["use_hardness"] = hardness is not None
+	progs[4]["invert_hardness"] = hyd.erosion_invert_hardness
 
 	progs[5]["out_s_map"].value = BIND_SEDIMENT
 	progs[5]["v_map"].value = BIND_VELOCITY
@@ -119,6 +135,8 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 	for i in range(hyd.mei_iter_num):
 		switch = alternate and i % switch_after == switch_after - 1
 
+		if water_src is not None:
+			water_src.bind_to_image(BIND_EXTRA, read=True, write=False)
 		progs[0].run(group_x=group_x, group_y=group_y)
 		
 		progs[1]["diagonal"] = diagonal
@@ -130,6 +148,9 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 
 		progs[3]["diagonal"] = diagonal
 		progs[3].run(group_x=group_x, group_y=group_y)
+
+		if hardness is not None:
+			hardness.bind_to_image(BIND_EXTRA, read=True, write=False)
 		progs[4].run(group_x=group_x, group_y=group_y)
 
 		progs[5]["diagonal"] = diagonal
@@ -146,6 +167,12 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 	water.release()
 	sediment.release()
 	temp.release()
+
+	if hardness is not None:
+		hardness.release()
+	
+	if water_src is not None:
+		water_src.release()
 
 	prog = data.shaders["scaling"]
 	prog["A"].value = 1

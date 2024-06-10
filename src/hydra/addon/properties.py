@@ -71,6 +71,17 @@ class ErosionGroup(bpy.types.PropertyGroup):
 		name="Simulation resolution",
 		description="Percentage of heightmap resolution to simulate at. Lower resolution creates larger features"
 	)
+
+	erosion_hardness_src: StringProperty(
+		name="Hardness",
+		description="Terrain hardness texture. Pure white won't be eroded at all, pure black will erode the most"
+	)
+
+	erosion_invert_hardness: BoolProperty(
+		default=False,
+		name="Invert hardness",
+		description="Inverts the hardness map. Black will be eroded the least, white the most"
+	)
 	
 	#------------------------- Particle
 
@@ -233,6 +244,11 @@ class ErosionGroup(bpy.types.PropertyGroup):
 		),
 		name="Direction",
 		description="Solver neighborhood type"
+	)
+
+	mei_water_src: StringProperty(
+		name="Water",
+		description="Water source image texture"
 	)
 
 	#------------------------- Thermal

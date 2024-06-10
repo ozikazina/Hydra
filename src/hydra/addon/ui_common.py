@@ -347,6 +347,10 @@ class ErosionSettingsPanel(bpy.types.Panel):
 
 			if hyd.erosion_advanced:
 				p.prop(hyd, "part_max_change")
+
+				box = p.box()
+				box.prop_search(hyd, "erosion_hardness_src", bpy.data, "images")
+				box.prop(hyd, "erosion_invert_hardness")
 		else:
 			if hyd.erosion_advanced:
 				split = p.split(factor=0.4)
@@ -369,6 +373,11 @@ class ErosionSettingsPanel(bpy.types.Panel):
 
 			if hyd.erosion_advanced:
 				p.prop(hyd, "mei_min_alpha")
+
+				box = p.box()
+				box.prop_search(hyd, "erosion_hardness_src", bpy.data, "images")
+				box.prop(hyd, "erosion_invert_hardness")
+
 
 class ThermalSettingsPanel():
 	bl_label = "Settings"

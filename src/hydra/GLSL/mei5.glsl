@@ -6,6 +6,10 @@ layout (r32f) uniform image2D b_map;
 layout (r32f) uniform image2D s_map;
 layout (r32f) uniform image2D c_map;    //capacity -> new sediment
 
+layout (r32f) uniform image2D hardness_map;
+uniform bool use_hardness = false;
+uniform bool invert_hardness = false;
+
 uniform float Ks = 0.25;
 uniform float Kd = 0.25;
 
@@ -16,7 +20,17 @@ void main(void) {
     float b = imageLoad(b_map, pos).x;
     float s = imageLoad(s_map, pos).x;
 
-    float dE = Ks * (c - s);
+    float ks = Ks;
+
+    if (use_hardness) {
+        float hardness = imageLoad(hardness_map, pos).x;
+        if (!invert_hardness) {
+            hardness = 1 - hardness;
+        }
+        ks *= hardness;
+    }
+
+    float dE = ks * (c - s);
     float dD = Kd * (c - s);
 
     float dif = c > s ? dE : dD;
