@@ -140,7 +140,7 @@ class SnowPanel():
 
 		grid = col.grid_flow(columns=1, align=True)
 		
-		grid.operator("hydra.snow", text="Simulate", icon="RNDCURVE")
+		grid.operator("hydra.snow", text="Simulate", icon="RNDCURVE").apply = False
 		if hyd.snow_output != "texture" and common.data.has_map(hyd.map_result):
 			grid.operator("hydra.snow", text="Set & Continue", icon="ANIM").apply = True
 
