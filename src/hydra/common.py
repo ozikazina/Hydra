@@ -2,6 +2,7 @@
 
 import moderngl as mgl
 import bpy, bpy.types
+from pathlib import Path
 
 import uuid, re
 
@@ -38,6 +39,21 @@ class Heightmap:
 	size = property(get_size)
 	"""Texture size :class:`tuple` property."""
 
+class ShaderBank:
+	def __init__(self):
+		self.source_path = Path(__file__).resolve().parent.joinpath("GLSL")
+
+	def __getitem__(self, key: str)->mgl.ComputeShader:
+		if key not in data._shaders_:
+			path = self.source_path.joinpath(key + ".glsl")
+			if path.exists():
+				comp = path.read_text("utf-8")
+				data._shaders_[key] = data.context.compute_shader(comp)
+			else:
+				raise KeyError(f"Shader '{key}' not found.")
+		
+		return data._shaders_[key]
+
 class HydraData(object):
 	"""Global data object. Stores all ModernGL resources, including the context."""
 
@@ -53,7 +69,9 @@ class HydraData(object):
 		self.programs: dict[str, mgl.Program] = {}
 		"""Compiled ModernGL program list."""
 
-		self.shaders: dict[str, mgl.ComputeShader] = {}
+		self.shaders: ShaderBank = ShaderBank()
+
+		self._shaders_: dict[str, mgl.ComputeShader] = {}
 		"""Compiled ModernGL compute shader list."""
 		
 		self.lastPreview: str | None = None
@@ -130,6 +148,12 @@ class HydraData(object):
 			self._error_.append(message)
 		else:
 			self._info_.append(message)
+
+	def release_shaders(self):
+		"""Releases all stored shaders."""
+		for i in self._shaders_.values():
+			i.release()
+		self._shaders_ = {}
 
 #-------------------------------------------- Extra
 

@@ -217,7 +217,7 @@ def resize_texture(texture: mgl.Texture, target_size: tuple[int, int])->mgl.Text
 	ctx: mgl.Context = common.data.context
 
 	ret = ctx.texture(target_size, 1, dtype='f4')
-	sampler = ctx.sampler()
+	sampler = ctx.sampler(texture=texture, repeat_x=False, repeat_y=False)
 	fbo = ctx.framebuffer(color_attachments=(ret))
 
 	vao = model.create_vao(ctx, prog)

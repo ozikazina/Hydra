@@ -15,8 +15,7 @@ def init_context():
 	for prog in data.programs.values():
 		prog.release()
 	
-	for shader in data.shaders.values():
-		shader.release()
+	data.release_shaders()
 
 	def make_prog(name, v, f):
 		data.programs[name] = ctx.program(
@@ -34,8 +33,3 @@ def init_context():
 	
 	frag = Path(base, "resize.frag").read_text()
 	make_prog("resize", vert, frag)
-
-	for path in base.iterdir():
-		if path.suffix == ".glsl":
-			comp = path.read_text("utf-8")
-			data.shaders[path.stem] = ctx.compute_shader(comp)
