@@ -3,6 +3,7 @@
 layout(local_size_x = 32, local_size_y = 32, local_size_z = 1) in;
 
 layout (r32f) uniform image2D b_map;
+layout (r32f) uniform image2D d_map;
 layout (r32f) uniform image2D s_map;
 layout (r32f) uniform image2D c_map;    //capacity -> new sediment
 
@@ -19,6 +20,7 @@ void main(void) {
 	float c = imageLoad(c_map, pos).x;
     float b = imageLoad(b_map, pos).x;
     float s = imageLoad(s_map, pos).x;
+    float d = imageLoad(d_map, pos).x;
 
     float ks = Ks;
 
@@ -34,12 +36,15 @@ void main(void) {
     float dD = Kd * (c - s);
 
     float dif = c > s ? dE : dD;
+    dif = clamp(dif, -d, d);
 
     b -= dif;
     s += dif;
+    d += dif;
     
     s = max(s, 0.0);
 
 	imageStore(b_map, pos, vec4(b));
+	imageStore(d_map, pos, vec4(d));
 	imageStore(c_map, pos, vec4(s));
 }//main

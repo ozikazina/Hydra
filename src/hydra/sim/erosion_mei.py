@@ -34,6 +34,7 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 	BIND_EXTRA = 7
 
 	LOC_SEDIMENT = 1
+	LOC_VELOCITY = 2
 
 	height = texture.clone(data.get_map(hyd.map_source).texture)
 	pipe = texture.create_texture(size, channels=4)
@@ -62,6 +63,10 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 	sedimentSampler = ctx.sampler(texture=temp, repeat_x=False, repeat_y=False) # sediment will be in temp at stage 6
 	temp.use(LOC_SEDIMENT)
 	sedimentSampler.use(LOC_SEDIMENT)
+
+	velocity_sampler = ctx.sampler(texture=velocity, repeat_x=False, repeat_y=False)
+	velocity_sampler.use(LOC_VELOCITY)
+	velocity.use(LOC_VELOCITY)
 
 	prog = data.shaders["scaling"]
 	prog["A"].value = 1
@@ -119,11 +124,11 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 	progs[3]["lx"] = hyd.mei_length[0]
 	progs[3]["ly"] = hyd.mei_length[1]
 	progs[3]["minalpha"] = hyd.mei_min_alpha
-	# progs[3]["scale"] = 512 / hyd.mei_scale
 
 	progs[4]["b_map"].value = BIND_HEIGHT
 	progs[4]["s_map"].value = BIND_SEDIMENT
 	progs[4]["c_map"].value = BIND_TEMP
+	progs[4]["d_map"].value = BIND_WATER
 	progs[4]["Ks"] = hyd.mei_erosion / (100 * 4)
 	progs[4]["Kd"] = hyd.mei_deposition / (100 * 2)
 	progs[4]["hardness_map"].value = BIND_EXTRA
@@ -133,7 +138,9 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 	progs[5]["out_s_map"].value = BIND_SEDIMENT
 	progs[5]["v_map"].value = BIND_VELOCITY
 	progs[5]["s_sampler"] = LOC_SEDIMENT
+	progs[5]["v_sampler"] = LOC_VELOCITY
 	progs[5]["dt"] = dt
+	progs[5]["tile_mult"] = (1 / size[0], 1 / size[1])
 
 	time = datetime.now()
 	for i in range(hyd.mei_iter_num * 100):
@@ -141,6 +148,8 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 
 		if water_src is not None:
 			water_src.bind_to_image(BIND_EXTRA, read=True, write=False)
+		
+		progs[0]["seed"] = i
 		progs[0].run(group_x=group_x, group_y=group_y)
 		
 		progs[1]["diagonal"] = diagonal
@@ -157,7 +166,6 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 			hardness.bind_to_image(BIND_EXTRA, read=True, write=False)
 		progs[4].run(group_x=group_x, group_y=group_y)
 
-		progs[5]["diagonal"] = diagonal
 		progs[5].run(group_x=group_x, group_y=group_y)
 
 		if switch:
@@ -168,8 +176,10 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 
 	pipe.release()
 	velocity.release()
+	velocity_sampler.release()
 	water.release()
 	sediment.release()
+	sedimentSampler.release()
 	temp.release()
 
 	if hardness is not None:
@@ -220,6 +230,7 @@ def color(obj: bpy.types.Object | bpy.types.Image)->Texture:
 	BIND_COLOR = 7
 
 	LOC_COLOR = 1
+	LOC_VELOCITY = 2
 
 	def swap(a, b):
 		return (b, a)
@@ -239,6 +250,10 @@ def color(obj: bpy.types.Object | bpy.types.Image)->Texture:
 	water.bind_to_image(BIND_WATER, read=True, write=True)
 	temp.bind_to_image(BIND_TEMP, read=True, write=True)
 
+	velocity_sampler = ctx.sampler(texture=velocity, repeat_x=False, repeat_y=False)
+	velocity_sampler.use(LOC_VELOCITY)
+	velocity.use(LOC_VELOCITY)
+
 	prog = data.shaders["scaling"]
 	prog["A"].value = 1
 	prog["scale"] = hyd.mei_scale
@@ -257,7 +272,7 @@ def color(obj: bpy.types.Object | bpy.types.Image)->Texture:
 	]
 
 	progs[0]["d_map"].value = BIND_WATER
-	progs[0]["dt"] = hyd.mei_dt
+	progs[0]["dt"] = 0.25
 	progs[0]["Ke"] = hyd.mei_evaporation / 100
 	progs[0]["Kr"] = hyd.mei_rain / 100
 
@@ -266,16 +281,16 @@ def color(obj: bpy.types.Object | bpy.types.Image)->Texture:
 	progs[1]["d_map"].value = BIND_WATER
 	progs[1]["lx"] = hyd.mei_length[0]
 	progs[1]["ly"] = hyd.mei_length[1]
-	progs[1]["diagonal"] = True
+	progs[1]["diagonal"] = False
 	progs[1]["erase"] = False
 
 	progs[2]["pipe_map"].value = BIND_PIPE
 	progs[2]["d_map"].value = BIND_WATER
 	progs[2]["c_map"].value = BIND_TEMP
-	progs[2]["dt"] = hyd.mei_dt
+	progs[2]["dt"] = 0.25
 	progs[2]["lx"] = hyd.mei_length[0]
 	progs[2]["ly"] = hyd.mei_length[1]
-	progs[2]["diagonal"] = True
+	progs[2]["diagonal"] = False
 
 	progs[3]["b_map"].value = BIND_HEIGHT
 	progs[3]["pipe_map"].value = BIND_PIPE
@@ -286,14 +301,13 @@ def color(obj: bpy.types.Object | bpy.types.Image)->Texture:
 	progs[3]["lx"] = hyd.mei_length[0]
 	progs[3]["ly"] = hyd.mei_length[1]
 	progs[3]["minalpha"] = hyd.mei_min_alpha
-	progs[3]["scale"] = 512 / hyd.mei_scale
-	progs[3]["diagonal"] = True
+	progs[3]["diagonal"] = False
 
 	progs[4]["v_map"].value = BIND_VELOCITY
 	progs[4]["out_color_map"].value = BIND_COLOR
 	progs[4]["color_sampler"] = LOC_COLOR
-	progs[4]["dt"] = hyd.mei_dt
-	progs[4]["diagonal"] = True
+	progs[4]["dt"] = 0.25
+	progs[4]["diagonal"] = False
 	progs[4]["color_scaling"] =  1 / (100 - 99 * (hyd.color_mixing / 100))
 
 	time = datetime.now()
@@ -327,6 +341,8 @@ def color(obj: bpy.types.Object | bpy.types.Image)->Texture:
 	colorB.release()
 	colorSamplerA.release()
 	colorSamplerB.release()
+
+	velocity_sampler.release()
 
 	print("Simulation finished")
 	return ret
