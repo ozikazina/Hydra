@@ -69,7 +69,7 @@ class ErosionGroup(bpy.types.PropertyGroup):
 		soft_max=100.0,
 		subtype="PERCENTAGE",
 		name="Simulation resolution",
-		description="Percentage of heightmap resolution to simulate at. Lower resolution creates larger features"
+		description="Percentage of heightmap resolution to simulate at. Lower resolution creates larger features and speeds up simulation time. Simulating at 512x512 offers the best balance between feature size and detail"
 	)
 
 	erosion_hardness_src: StringProperty(
@@ -166,14 +166,14 @@ class ErosionGroup(bpy.types.PropertyGroup):
 	)
 
 	mei_dt: FloatProperty(
-		default=0.25,
-		min=0.01, max=0.25,
-		name="Time step",
-		description="Time step for the simulation"
+		default=3.25,
+		min=1, max=7,
+		name="Time subdivision",
+		description="Time step subdivision for the simulation"
 	)
 
 	mei_rain: FloatProperty(
-		default=10,
+		default=50,
 		min=1, soft_max=100.0, max=500,
 		subtype="PERCENTAGE",
 		name="Rain",
@@ -189,7 +189,7 @@ class ErosionGroup(bpy.types.PropertyGroup):
 	)
 
 	mei_capacity: FloatProperty(
-		default=50,
+		default=10,
 		min=1, soft_max=100.0, max=200.0,
 		subtype="PERCENTAGE",
 		name="Capacity",
@@ -197,7 +197,7 @@ class ErosionGroup(bpy.types.PropertyGroup):
 	)
 
 	mei_deposition: FloatProperty(
-		default=30,
+		default=25,
 		min=1, max=100,
 		subtype="PERCENTAGE",
 		name="Deposition",
@@ -205,7 +205,7 @@ class ErosionGroup(bpy.types.PropertyGroup):
 	)
 
 	mei_erosion: FloatProperty(
-		default=60,
+		default=25,
 		min=1, max=100,
 		subtype="PERCENTAGE",
 		name="Erosion strength",
@@ -229,14 +229,14 @@ class ErosionGroup(bpy.types.PropertyGroup):
 	)
 
 	mei_min_alpha: FloatProperty(
-		default=0.01,
+		default=0.001,
 		min=0.0, max=0.1,
 		name="Minimum angle",
 		description="Minimum angle value"
 	)
 
 	mei_direction: EnumProperty(
-		default="both",
+		default="cardinal",
 		items=(
 			("both", "All", "Move material both in XY and diagonal directions", 0),
 			("cardinal", "Cardinal", "Only move material in XY directions", 1),
@@ -249,6 +249,13 @@ class ErosionGroup(bpy.types.PropertyGroup):
 	mei_water_src: StringProperty(
 		name="Water",
 		description="Water source image texture"
+	)
+
+	mei_gravity: FloatProperty(
+		default=9.81,
+		min=1, max=20,
+		name="Gravity",
+		description="Gravity force in m/s^2"
 	)
 
 	#------------------------- Thermal

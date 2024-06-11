@@ -10,7 +10,9 @@ uniform float dt = 0.25;
 uniform float lx = 1;
 uniform float ly = 1;
 
-const float A = 0.25;
+uniform ivec2 size = ivec2(512, 512);
+
+uniform float A = 9.81;
 
 uniform bool diagonal = true;
 uniform bool erase = false;
@@ -36,22 +38,27 @@ void main(void) {
 	float hN;
 
 	hN = h - heightAt(LEFT);
-	pipe.x = max(0, pipe.x + dt * A * hN / lx);
+	pipe.x = max(0, pipe.x + dt * A * hN * lx);
+	pipe.x *= float(pos.x > 0);
 
 	hN = h - heightAt(RIGHT);
-	pipe.z = max(0, pipe.z + dt * A * hN / lx);
+	pipe.z = max(0, pipe.z + dt * A * hN * lx);
+	pipe.z *= float(pos.x < size.x - 1);
 
 	hN = h - heightAt(UP);
-	pipe.y = max(0, pipe.y + dt * A * hN / ly);
+	pipe.y = max(0, pipe.y + dt * A * hN * ly);
+	pipe.y *= float(pos.y > 0);
 
 	hN = h - heightAt(DOWN);
-	pipe.w = max(0, pipe.w + dt * A * hN / ly);
+	pipe.w = max(0, pipe.w + dt * A * hN * ly);
+	pipe.w *= float(pos.y < size.y - 1);
 
+	float sum = pipe.x + pipe.y + pipe.z + pipe.w;
+	float water = lx * ly * imageLoad(d_map, pos).r;
 	//clamp instead of min due to NaNs
-	float K = clamp(imageLoad(d_map, pos).r * lx * ly / (dt * (pipe.x + pipe.y + pipe.z + pipe.w)),
-					0, 1);
+	float K = clamp(water / (dt * sum), 0, 1);
 
-	pipe *= K;
+	pipe *= sum > water ? K : 1;
 	if (erase) {
 		pipe = vec4(0);
 	}

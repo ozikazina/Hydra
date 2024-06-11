@@ -85,17 +85,7 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 		hardness_sampler.release()
 
 	if height_base is not None: # resize back to original size
-		dif = heightmap.subtract(height, height_base) # get difference
-		height_base.release()
-		height.release()
-
-		height = heightmap.resize_texture(dif, hyd.get_size()) # resize difference
-		dif.release()
-
-		nh = heightmap.add(height, data.get_map(hyd.map_source).texture) # add difference to original
-		height.release()
-
-		height = nh
+		height = heightmap.add_subres(height, height_base, data.get_map(hyd.map_source).texture)
 
 	data.try_release_map(hyd.map_result)
 	

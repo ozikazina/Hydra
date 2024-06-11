@@ -325,6 +325,7 @@ class ErosionSettingsPanel(bpy.types.Panel):
 	def draw(self, ctx):
 		p = self.layout
 		hyd = self.get_settings(ctx)
+		
 		if hyd.erosion_solver == "particle":
 			p.label(text="Simulation resolution:")
 			p.prop(hyd, "erosion_subres", text="", slider=True)
@@ -361,6 +362,10 @@ class ErosionSettingsPanel(bpy.types.Panel):
 			g = p.grid_flow(columns=1, align=True)
 			g.prop(hyd, "mei_iter_num")
 			g.prop(hyd, "mei_scale")
+			g.prop(hyd, "mei_dt")
+			g.prop(hyd, "mei_gravity")
+			
+			p.prop(hyd, "mei_length")
 
 			g = p.grid_flow(columns=1, align=True)
 			g.prop(hyd, "mei_erosion", slider=True)

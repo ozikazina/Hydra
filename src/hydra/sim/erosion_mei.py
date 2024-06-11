@@ -75,7 +75,7 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 	diagonal:bool = hyd.mei_direction == "diagonal"
 	alternate:bool = hyd.mei_direction == "both"
 
-	switch_after = max(min(32, math.ceil(hyd.mei_iter_num / 2)), 2)
+	switch_after = 500
 
 	progs = [
 		data.shaders["mei1"],
@@ -86,8 +86,10 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 		data.shaders["mei6"]
 	]
 
+	dt = math.pow(10, -hyd.mei_dt)
+
 	progs[0]["d_map"].value = BIND_WATER
-	progs[0]["dt"] = hyd.mei_dt
+	progs[0]["dt"] = dt
 	progs[0]["Ke"] = hyd.mei_evaporation / 100
 	progs[0]["Kr"] = hyd.mei_rain / 100
 	progs[0]["water_src"].value = BIND_EXTRA
@@ -96,13 +98,15 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 	progs[1]["b_map"].value = BIND_HEIGHT
 	progs[1]["pipe_map"].value = BIND_PIPE
 	progs[1]["d_map"].value = BIND_WATER
+	progs[1]["size"] = size
 	progs[1]["lx"] = hyd.mei_length[0]
 	progs[1]["ly"] = hyd.mei_length[1]
+	progs[1]["A"] = hyd.mei_gravity
 
 	progs[2]["pipe_map"].value = BIND_PIPE
 	progs[2]["d_map"].value = BIND_WATER
 	progs[2]["c_map"].value = BIND_TEMP
-	progs[2]["dt"] = hyd.mei_dt
+	progs[2]["dt"] = dt
 	progs[2]["lx"] = hyd.mei_length[0]
 	progs[2]["ly"] = hyd.mei_length[1]
 
@@ -115,7 +119,7 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 	progs[3]["lx"] = hyd.mei_length[0]
 	progs[3]["ly"] = hyd.mei_length[1]
 	progs[3]["minalpha"] = hyd.mei_min_alpha
-	progs[3]["scale"] = 512 / hyd.mei_scale
+	# progs[3]["scale"] = 512 / hyd.mei_scale
 
 	progs[4]["b_map"].value = BIND_HEIGHT
 	progs[4]["s_map"].value = BIND_SEDIMENT
@@ -129,10 +133,10 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 	progs[5]["out_s_map"].value = BIND_SEDIMENT
 	progs[5]["v_map"].value = BIND_VELOCITY
 	progs[5]["s_sampler"] = LOC_SEDIMENT
-	progs[5]["dt"] = hyd.mei_dt
+	progs[5]["dt"] = dt
 
 	time = datetime.now()
-	for i in range(hyd.mei_iter_num):
+	for i in range(hyd.mei_iter_num * 100):
 		switch = alternate and i % switch_after == switch_after - 1
 
 		if water_src is not None:
@@ -173,6 +177,8 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 	
 	if water_src is not None:
 		water_src.release()
+		
+	size = hyd.get_size()
 
 	prog = data.shaders["scaling"]
 	prog["A"].value = 1

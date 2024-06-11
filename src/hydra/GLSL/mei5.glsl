@@ -37,7 +37,7 @@ void main(void) {
 
     b -= dif;
     s += dif;
-    b = max(b, 0.0);
+    
     s = max(s, 0.0);
 
 	imageStore(b_map, pos, vec4(b));

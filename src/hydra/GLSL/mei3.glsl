@@ -35,7 +35,7 @@ void main(void) {
 
     float d1 = imageLoad(d_map, pos).x;
 
-    float d = max((d1 + d1 + dv) / 2, 0);
+    float d = max(d1 + dv / 2, 0);
     imageStore(c_map, pos, vec4(d));  //d_mean
     d = max(d1 + dv, 0);
     imageStore(d_map, pos, vec4(d));  //d2

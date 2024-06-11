@@ -235,3 +235,20 @@ def resize_texture(texture: mgl.Texture, target_size: tuple[int, int])->mgl.Text
 	fbo.release()
 
 	return ret
+
+def add_subres(height: mgl.Texture, height_prior: mgl.Texture, height_prior_fullres: mgl.Texture)->mgl.Texture:
+	"""Adds a resized difference to the original heightmap.
+
+	Releases height_prior and height.
+	"""
+	dif = subtract(height, height_prior) # get difference
+	height_prior.release()
+	height.release()
+
+	height = resize_texture(dif, height_prior_fullres.size) # resize difference
+	dif.release()
+
+	nh = add(height, height_prior_fullres) # add difference to original
+	height.release()
+
+	return nh
