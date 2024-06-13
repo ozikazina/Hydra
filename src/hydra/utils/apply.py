@@ -292,6 +292,13 @@ def add_modifier(obj: bpy.types.Object, img: bpy.types.Image):
 def add_landscape(img: bpy.types.Image):
 	hyd = img.hydra_erosion
 
+	if common.data.has_map(hyd.map_result):
+		displacement, _ = texture.write_image("HYD_Temp", common.data.get_map(hyd.map_result).texture)
+		free_img = True
+	else:
+		displacement = img
+		free_img = False
+
 	resX = math.ceil(img.size[0] / hyd.gen_subscale)
 	resY = math.ceil(img.size[1] / hyd.gen_subscale)
 
@@ -304,6 +311,8 @@ def add_landscape(img: bpy.types.Image):
 		name = img.name
 
 	act.name = f"HYD_Gen_{name}"
+	for k in hyd.keys():
+		act.hydra_erosion[k] = hyd[k]
 	act.hydra_erosion.is_generated = True
 	act.scale[1] = img.size[1] / img.size[0]
 
@@ -312,7 +321,7 @@ def add_landscape(img: bpy.types.Image):
 
 	mod = act.modifiers.new(PREVIEW_MOD_NAME, "NODES")
 	
-	mod.node_group = nodes.get_or_make_displace_group(PREVIEW_MOD_NAME, image=img)
+	mod.node_group = nodes.get_or_make_displace_group(PREVIEW_MOD_NAME, image=displacement)
 
 	bpy.ops.object.mode_set(mode="OBJECT")	# modifiers can't be applied in EDIT mode
 
@@ -320,6 +329,8 @@ def add_landscape(img: bpy.types.Image):
 	bpy.ops.object.modifier_apply(modifier=PREVIEW_MOD_NAME)
 	
 	bpy.data.node_groups.remove(bpy.data.node_groups[PREVIEW_MOD_NAME])
+	if free_img:
+		bpy.data.images.remove(displacement)
 
 	nav.goto_object(act)
 

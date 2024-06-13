@@ -22,7 +22,7 @@ def generate_heightmap(obj: bpy.types.Object, normalized: bool=False, world_scal
 	ctx = data.context
 	mesh = model.evaluate_mesh(obj)
 
-	if platform.system() != "Windows" or common.get_preferences().skip_indexing:
+	if common.get_preferences().skip_indexing:
 		print("Skipping vertex indexing.")
 		verts = np.empty((len(mesh.vertices), 3), 'f')
 		
