@@ -32,11 +32,8 @@ void main(void) {
         ks *= hardness;
     }
 
-    float dE = ks * (c - s);
-    float dD = Kd * (c - s);
-
-    float dif = c > s ? dE : dD;
-    dif = clamp(dif, -d, d);
+    float dif = (c > s ? ks : Kd) * (c - s);
+    dif = clamp(dif, -d, b);
 
     b -= dif;
     s += dif;

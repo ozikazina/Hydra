@@ -25,14 +25,15 @@ void main(void) {
 	vec4 d = imageLoad(d_map, pos);
 
 	float kr;
-	if (use_water_src) {
-		kr = imageLoad(water_src, pos).x;
-	}
-	else if (rainfall) {
-		kr = (pcg(uint(pos.x * 7877 + pos.y * 2833 + seed)) & 0xF) > 13 ? Kr : 0.0f;
+	if (rainfall) {
+		kr = (pcg(uint(pos.x * 7877 + pos.y * 2833 + seed)) & 0xFF) > 0xFA ? Kr : 0.0f;
 	}
 	else {
 		kr = Kr;
+	}
+
+	if (use_water_src) {
+		kr *= imageLoad(water_src, pos).x;
 	}
 
 	d.x = d.x * (1 - dt * Ke) + dt * kr;

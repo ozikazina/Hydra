@@ -159,7 +159,7 @@ class ErosionGroup(bpy.types.PropertyGroup):
 	#------------------------- Mei
 
 	mei_iter_num: IntProperty(
-		default=10,
+		default=100,
 		min=1, max=1000,
 		name="Iterations",
 		description="Number of iterations, each over the entire image"
@@ -214,7 +214,7 @@ class ErosionGroup(bpy.types.PropertyGroup):
 
 	mei_scale: IntProperty(
 		default=200,
-		min=10, max=2000,
+		min=1, max=2000,
 		name="Model scale",
 		description="Scale of the simulation in meters (roughly). A hill is 100, a mountain is 500+ and so on"
 	)
@@ -256,6 +256,13 @@ class ErosionGroup(bpy.types.PropertyGroup):
 		min=1, max=20,
 		name="Gravity",
 		description="Gravity force in m/s^2"
+	)
+
+	mei_max_depth: FloatProperty(
+		default=4,
+		min=0.01, max=100,
+		name="Max depth",
+		description="Maximum depth of at which erosion can occur"
 	)
 
 	#------------------------- Thermal

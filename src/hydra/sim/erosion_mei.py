@@ -124,6 +124,8 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 	progs[3]["lx"] = hyd.mei_length[0]
 	progs[3]["ly"] = hyd.mei_length[1]
 	progs[3]["minalpha"] = hyd.mei_min_alpha
+	progs[3]["scale"] = size[0] / (2 * hyd.mei_scale)
+	progs[3]["depth_scale"] = 1 / hyd.mei_max_depth
 
 	progs[4]["b_map"].value = BIND_HEIGHT
 	progs[4]["s_map"].value = BIND_SEDIMENT
@@ -143,7 +145,7 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 	progs[5]["tile_mult"] = (1 / size[0], 1 / size[1])
 
 	time = datetime.now()
-	for i in range(hyd.mei_iter_num * 100):
+	for i in range(hyd.mei_iter_num * 10):
 		switch = alternate and i % switch_after == switch_after - 1
 
 		if water_src is not None:

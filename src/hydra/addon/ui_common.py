@@ -378,10 +378,12 @@ class ErosionSettingsPanel(bpy.types.Panel):
 
 			if hyd.erosion_advanced:
 				p.prop(hyd, "mei_min_alpha")
+				p.prop(hyd, "mei_max_depth")
 
 				box = p.box()
 				box.prop_search(hyd, "erosion_hardness_src", bpy.data, "images")
 				box.prop(hyd, "erosion_invert_hardness")
+				box.prop_search(hyd, "mei_water_src", bpy.data, "images")
 
 
 class ThermalSettingsPanel():

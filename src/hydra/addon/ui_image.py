@@ -11,8 +11,8 @@ class LandscapePanel(ui_common.ImagePanel):
 		hyd = act.hydra_erosion
 		
 		col = self.layout.column()
-		col.prop(hyd, "gen_subscale")
 		col.operator('hydra.landscape', text="Generate", icon="RNDCURVE")
+		col.prop(hyd, "gen_subscale")
 
 #-------------------------------------------- Erosion
 
