@@ -29,7 +29,7 @@ void main(void) {
         if (!invert_hardness) {
             hardness = 1 - hardness;
         }
-        ks *= hardness;
+        ks = clamp(ks * hardness, 0, 1);
     }
 
     float dif = (c > s ? ks : Kd) * (c - s);

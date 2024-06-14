@@ -165,51 +165,28 @@ class ErosionGroup(bpy.types.PropertyGroup):
 		description="Number of iterations, each over the entire image"
 	)
 
-	mei_dt: FloatProperty(
-		default=2.0,
-		min=1, max=7,
-		name="Time subdivision",
-		description="Time step subdivision for the simulation"
-	)
-
 	mei_rain: FloatProperty(
-		default=5,
-		min=1, soft_max=100.0, max=1000,
+		default=25,
+		min=1, max=100.0,
 		subtype="PERCENTAGE",
 		name="Rain",
 		description="Amount of rain per iteration"
 	)
 
-	mei_evaporation: FloatProperty(
-		default=1,
-		min=0, max=99.0,
-		subtype="PERCENTAGE",
-		name="Evaporation",
-		description="Amount of water evaporated per iteration"
-	)
-
 	mei_capacity: FloatProperty(
-		default=15,
-		min=1, soft_max=100.0, max=200.0,
+		default=50,
+		min=1, max=100.0,
 		subtype="PERCENTAGE",
 		name="Capacity",
 		description="Erosion capacity of water per cell"
 	)
 
-	mei_deposition: FloatProperty(
-		default=25,
-		min=1, max=100,
+	mei_hardness: FloatProperty(
+		default=50,
+		min=0, soft_max=100, max=400,
 		subtype="PERCENTAGE",
-		name="Deposition",
-		description="Amount of sediment that can be deposited per iteration"
-	)
-
-	mei_erosion: FloatProperty(
-		default=25,
-		min=1, max=100,
-		subtype="PERCENTAGE",
-		name="Erosion strength",
-		description="Amount of sediment that can be eroded per iteration"
+		name="Hardness",
+		description="Hardness of the terrain. Higher values lead to less erosion. Also a multiplier for the hardness map"
 	)
 
 	mei_scale: IntProperty(
@@ -219,50 +196,28 @@ class ErosionGroup(bpy.types.PropertyGroup):
 		description="Scale of the simulation in meters (roughly). A hill is 100, a mountain is 500+ and so on"
 	)
 
-	mei_length: FloatVectorProperty(
-		default=(1,1),
-		name="Lengths",
-		min=0.1,
-		max=10.0,
-		description="Unit side lengths",
-		size=2
-	)
-
-	mei_min_alpha: FloatProperty(
-		default=0.001,
-		min=0.0, max=0.1,
-		name="Minimum angle",
-		description="Minimum angle value"
-	)
-
-	mei_direction: EnumProperty(
-		default="cardinal",
-		items=(
-			("both", "All", "Move material both in XY and diagonal directions", 0),
-			("cardinal", "Cardinal", "Only move material in XY directions", 1),
-			("diagonal", "Diagonal", "Only move material on diagonals", 2),
-		),
-		name="Direction",
-		description="Solver neighborhood type"
-	)
-
 	mei_water_src: StringProperty(
 		name="Water",
-		description="Water source image texture"
+		description="Water source image texture. Pure white will spawn the most water, black will spawn none"
 	)
 
-	mei_gravity: FloatProperty(
-		default=9.81,
-		min=1, max=20,
-		name="Gravity",
-		description="Gravity force in m/s^2"
+	mei_invert_water: BoolProperty(
+		default=False,
+		name="Invert water",
+		description="Inverts the water map. White will spawn no water, black will spawn the most"
+	)
+	
+	mei_randomize: BoolProperty(
+		default=False,
+		name="Randomize",
+		description="Spawns random drops of water on the terrain. This effectively decreases the amount of water spawned"
 	)
 
 	mei_max_depth: FloatProperty(
-		default=4,
+		default=10,
 		min=0.01, max=100,
-		name="Max depth",
-		description="Maximum depth of at which erosion can occur"
+		name="Max Depth",
+		description="Maximum depth of at which erosion can occur. Can help with very deep bodies of water"
 	)
 
 	#------------------------- Thermal

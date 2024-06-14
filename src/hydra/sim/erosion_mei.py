@@ -68,19 +68,8 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 	velocity_sampler.use(LOC_VELOCITY)
 	velocity.use(LOC_VELOCITY)
 
-	prog = data.shaders["scaling"]
-	prog["A"].value = 1
-	prog["scale"] = hyd.mei_scale
-	prog.run(group_x=size[0], group_y=size[1])
-	ctx.finish()
-
 	group_x = math.ceil(size[0] / 32)
 	group_y = math.ceil(size[1] / 32)
-
-	diagonal:bool = hyd.mei_direction == "diagonal"
-	alternate:bool = hyd.mei_direction == "both"
-
-	switch_after = 500
 
 	progs = [
 		data.shaders["mei1"],
@@ -91,48 +80,51 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 		data.shaders["mei6"]
 	]
 
-	dt = math.pow(10, -hyd.mei_dt)
+	dt = 1e-2
+	pipe_len = 1
+	evaporation = 0.01
+	deposition = 0.25
 
 	progs[0]["d_map"].value = BIND_WATER
 	progs[0]["dt"] = dt
-	progs[0]["Ke"] = hyd.mei_evaporation / 100
-	progs[0]["Kr"] = hyd.mei_rain / 100
+	progs[0]["Ke"] = evaporation
+	progs[0]["Kr"] = (1 - (1 - (0.25 * hyd.mei_rain / 100) ** 2) ** 0.5) * 0.1
 	progs[0]["water_src"].value = BIND_EXTRA
 	progs[0]["use_water_src"] = water_src is not None
+	progs[0]["rainfall"] = hyd.mei_randomize
 
 	progs[1]["b_map"].value = BIND_HEIGHT
 	progs[1]["pipe_map"].value = BIND_PIPE
 	progs[1]["d_map"].value = BIND_WATER
 	progs[1]["size"] = size
-	progs[1]["lx"] = hyd.mei_length[0]
-	progs[1]["ly"] = hyd.mei_length[1]
-	progs[1]["A"] = hyd.mei_gravity
+	progs[1]["lx"] = pipe_len
+	progs[1]["ly"] = pipe_len
+	progs[1]["A"] = 1
 
 	progs[2]["pipe_map"].value = BIND_PIPE
 	progs[2]["d_map"].value = BIND_WATER
 	progs[2]["c_map"].value = BIND_TEMP
 	progs[2]["dt"] = dt
-	progs[2]["lx"] = hyd.mei_length[0]
-	progs[2]["ly"] = hyd.mei_length[1]
+	progs[2]["lx"] = pipe_len
+	progs[2]["ly"] = pipe_len
 
 	progs[3]["b_map"].value = BIND_HEIGHT
 	progs[3]["pipe_map"].value = BIND_PIPE
 	progs[3]["v_map"].value = BIND_VELOCITY
 	progs[3]["d_map"].value = BIND_WATER
 	progs[3]["dmean_map"].value = BIND_TEMP
-	progs[3]["Kc"] = hyd.mei_capacity / 100
-	progs[3]["lx"] = hyd.mei_length[0]
-	progs[3]["ly"] = hyd.mei_length[1]
-	progs[3]["minalpha"] = hyd.mei_min_alpha
-	progs[3]["scale"] = size[0] / (2 * hyd.mei_scale)
-	progs[3]["depth_scale"] = 1 / hyd.mei_max_depth
+	progs[3]["Kc"] = (hyd.mei_capacity / 100) * 0.25 * 0.002
+	progs[3]["lx"] = pipe_len
+	progs[3]["ly"] = pipe_len
+	progs[3]["scale"] = size[0] / 2
+	progs[3]["depth_scale"] = 1 / (hyd.mei_max_depth * 0.002)
 
 	progs[4]["b_map"].value = BIND_HEIGHT
 	progs[4]["s_map"].value = BIND_SEDIMENT
 	progs[4]["c_map"].value = BIND_TEMP
 	progs[4]["d_map"].value = BIND_WATER
-	progs[4]["Ks"] = hyd.mei_erosion / (100 * 4)
-	progs[4]["Kd"] = hyd.mei_deposition / (100 * 2)
+	progs[4]["Ks"] = 1 - (1 - (hyd.mei_hardness / 100 - 1) ** 2) ** 0.15 # maps interval 0.5-1.0 to hardness 0.9-1.0
+	progs[4]["Kd"] = deposition
 	progs[4]["hardness_map"].value = BIND_EXTRA
 	progs[4]["use_hardness"] = hardness is not None
 	progs[4]["invert_hardness"] = hyd.erosion_invert_hardness
@@ -146,22 +138,14 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 
 	time = datetime.now()
 	for i in range(hyd.mei_iter_num * 10):
-		switch = alternate and i % switch_after == switch_after - 1
-
 		if water_src is not None:
 			water_src.bind_to_image(BIND_EXTRA, read=True, write=False)
 		
 		progs[0]["seed"] = i
 		progs[0].run(group_x=group_x, group_y=group_y)
 		
-		progs[1]["diagonal"] = diagonal
-		progs[1]["erase"] = switch
 		progs[1].run(group_x=group_x, group_y=group_y)
-
-		progs[2]["diagonal"] = diagonal
 		progs[2].run(group_x=group_x, group_y=group_y)
-
-		progs[3]["diagonal"] = diagonal
 		progs[3].run(group_x=group_x, group_y=group_y)
 
 		if hardness is not None:
@@ -169,9 +153,6 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 		progs[4].run(group_x=group_x, group_y=group_y)
 
 		progs[5].run(group_x=group_x, group_y=group_y)
-
-		if switch:
-			diagonal = not diagonal
 
 	ctx.finish()
 	print((datetime.now() - time).total_seconds())
@@ -191,12 +172,6 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 		water_src.release()
 		
 	size = hyd.get_size()
-
-	prog = data.shaders["scaling"]
-	prog["A"].value = 1
-	prog["scale"] = 1 / hyd.mei_scale
-	prog.run(group_x=size[0], group_y=size[1])
-	ctx.finish()
 
 	hyd = obj.hydra_erosion
 	data.try_release_map(hyd.map_result)
@@ -256,12 +231,6 @@ def color(obj: bpy.types.Object | bpy.types.Image)->Texture:
 	velocity_sampler.use(LOC_VELOCITY)
 	velocity.use(LOC_VELOCITY)
 
-	prog = data.shaders["scaling"]
-	prog["A"].value = 1
-	prog["scale"] = hyd.mei_scale
-	prog.run(group_x=size[0], group_y=size[1])
-	ctx.finish()
-
 	group_x = math.ceil(size[0] / 32)
 	group_y = math.ceil(size[1] / 32)
 
@@ -273,26 +242,26 @@ def color(obj: bpy.types.Object | bpy.types.Image)->Texture:
 		data.shaders["mei_color"],
 	]
 
+	dt = 0.25
+	pipe_len = 1
+
 	progs[0]["d_map"].value = BIND_WATER
-	progs[0]["dt"] = 0.25
+	progs[0]["dt"] = dt
 	progs[0]["Ke"] = hyd.mei_evaporation / 100
 	progs[0]["Kr"] = hyd.mei_rain / 100
 
 	progs[1]["b_map"].value = BIND_HEIGHT
 	progs[1]["pipe_map"].value = BIND_PIPE
 	progs[1]["d_map"].value = BIND_WATER
-	progs[1]["lx"] = hyd.mei_length[0]
-	progs[1]["ly"] = hyd.mei_length[1]
-	progs[1]["diagonal"] = False
-	progs[1]["erase"] = False
+	progs[1]["lx"] = pipe_len
+	progs[1]["ly"] = pipe_len
 
 	progs[2]["pipe_map"].value = BIND_PIPE
 	progs[2]["d_map"].value = BIND_WATER
 	progs[2]["c_map"].value = BIND_TEMP
-	progs[2]["dt"] = 0.25
-	progs[2]["lx"] = hyd.mei_length[0]
-	progs[2]["ly"] = hyd.mei_length[1]
-	progs[2]["diagonal"] = False
+	progs[2]["dt"] = dt
+	progs[2]["lx"] = pipe_len
+	progs[2]["ly"] = pipe_len
 
 	progs[3]["b_map"].value = BIND_HEIGHT
 	progs[3]["pipe_map"].value = BIND_PIPE
@@ -300,16 +269,14 @@ def color(obj: bpy.types.Object | bpy.types.Image)->Texture:
 	progs[3]["d_map"].value = BIND_WATER
 	progs[3]["dmean_map"].value = BIND_TEMP
 	progs[3]["Kc"] = hyd.mei_capacity / 100
-	progs[3]["lx"] = hyd.mei_length[0]
-	progs[3]["ly"] = hyd.mei_length[1]
+	progs[3]["lx"] = pipe_len
+	progs[3]["ly"] = pipe_len
 	progs[3]["minalpha"] = hyd.mei_min_alpha
-	progs[3]["diagonal"] = False
 
 	progs[4]["v_map"].value = BIND_VELOCITY
 	progs[4]["out_color_map"].value = BIND_COLOR
 	progs[4]["color_sampler"] = LOC_COLOR
-	progs[4]["dt"] = 0.25
-	progs[4]["diagonal"] = False
+	progs[4]["dt"] = dt
 	progs[4]["color_scaling"] =  1 / (100 - 99 * (hyd.color_mixing / 100))
 
 	time = datetime.now()

@@ -353,37 +353,26 @@ class ErosionSettingsPanel(bpy.types.Panel):
 				box.prop_search(hyd, "erosion_hardness_src", bpy.data, "images")
 				box.prop(hyd, "erosion_invert_hardness")
 		else:
+			p.prop(hyd, "mei_iter_num")
+
+			g = p.grid_flow(columns=1, align=True)
+			g.prop(hyd, "mei_hardness", slider=True)
 			if hyd.erosion_advanced:
-				split = p.split(factor=0.4)
-				split.label(text="Direction: ")
-				split.prop(hyd, "mei_direction", text="")
-				p.separator()
-
-			g = p.grid_flow(columns=1, align=True)
-			g.prop(hyd, "mei_iter_num")
-			g.prop(hyd, "mei_scale")
-			g.prop(hyd, "mei_dt")
-			g.prop(hyd, "mei_gravity")
-			
-			p.prop(hyd, "mei_length")
-
-			g = p.grid_flow(columns=1, align=True)
-			g.prop(hyd, "mei_erosion", slider=True)
-			g.prop(hyd, "mei_deposition", slider=True)
+				g.prop(hyd, "mei_deposition", slider=True)
 			g.prop(hyd, "mei_capacity", slider=True)
 
 			g = p.grid_flow(columns=1, align=True)
 			g.prop(hyd, "mei_rain", slider=True)
-			g.prop(hyd, "mei_evaporation", slider=True)
-
 			if hyd.erosion_advanced:
-				p.prop(hyd, "mei_min_alpha")
-				p.prop(hyd, "mei_max_depth")
+				g.prop(hyd, "mei_max_depth")
+
+				p.prop(hyd, "mei_randomize")
 
 				box = p.box()
 				box.prop_search(hyd, "erosion_hardness_src", bpy.data, "images")
 				box.prop(hyd, "erosion_invert_hardness")
 				box.prop_search(hyd, "mei_water_src", bpy.data, "images")
+				# box.prop(hyd, "mei_invert_water")
 
 
 class ThermalSettingsPanel():

@@ -10,12 +10,10 @@ uniform float dt = 0.25;
 uniform float lx = 1;
 uniform float ly = 1;
 
-uniform bool diagonal = true;
-
-#define LEFT   (diagonal ? pos + ivec2(-1, -1) : pos + ivec2(-1, 0))
-#define RIGHT  (diagonal ? pos + ivec2(+1, +1) : pos + ivec2(+1, 0))
-#define UP     (diagonal ? pos + ivec2(+1, -1) : pos + ivec2(0, -1))
-#define DOWN   (diagonal ? pos + ivec2(-1, +1) : pos + ivec2(0, +1))
+#define LEFT   (pos + ivec2(-1, 0))
+#define RIGHT  (pos + ivec2(+1, 0))
+#define UP     (pos + ivec2(0, -1))
+#define DOWN   (pos + ivec2(0, +1))
 
 //  1y -1
 //0x  2z
