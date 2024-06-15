@@ -25,7 +25,7 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 
 	size = hyd.get_size()
 
-	BIND_HEIGHT = 1
+	BIND_HEIGHT = 1 # don't use 0 -> default value -> cross-contamination
 	BIND_PIPE = 2
 	BIND_VELOCITY = 3
 	BIND_WATER = 4
@@ -53,7 +53,7 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 	else:
 		water_src = None
 
-	height.bind_to_image(BIND_HEIGHT, read=True, write=True) # don't use 0 -> default value -> cross-contamination
+	height.bind_to_image(BIND_HEIGHT, read=True, write=True)
 	pipe.bind_to_image(BIND_PIPE, read=True, write=True)
 	velocity.bind_to_image(BIND_VELOCITY, read=True, write=True)
 	water.bind_to_image(BIND_WATER, read=True, write=True)
@@ -199,7 +199,7 @@ def color(obj: bpy.types.Object | bpy.types.Image)->Texture:
 	
 	height = texture.clone(height)
 
-	BIND_HEIGHT = 1
+	BIND_HEIGHT = 1 # don't use 0 -> default value -> cross-contamination
 	BIND_PIPE = 2
 	BIND_VELOCITY = 3
 	BIND_WATER = 4
@@ -221,7 +221,7 @@ def color(obj: bpy.types.Object | bpy.types.Image)->Texture:
 	colorSamplerA = ctx.sampler(texture=colorA)
 	colorSamplerB = ctx.sampler(texture=colorB)
 
-	height.bind_to_image(BIND_HEIGHT, read=True, write=False) # don't use 0 -> default value -> cross-contamination
+	height.bind_to_image(BIND_HEIGHT, read=True, write=False)
 	pipe.bind_to_image(BIND_PIPE, read=True, write=True)
 	velocity.bind_to_image(BIND_VELOCITY, read=True, write=True)
 	water.bind_to_image(BIND_WATER, read=True, write=True)
@@ -242,19 +242,23 @@ def color(obj: bpy.types.Object | bpy.types.Image)->Texture:
 		data.shaders["mei_color"],
 	]
 
-	dt = 0.25
-	pipe_len = 1
+	dt = 0.25 + 0.25 * (hyd.color_detail / 100)
+	pipe_len = 1 + 2 * hyd.color_speed / 100
 
 	progs[0]["d_map"].value = BIND_WATER
 	progs[0]["dt"] = dt
-	progs[0]["Ke"] = hyd.mei_evaporation / 100
-	progs[0]["Kr"] = hyd.mei_rain / 100
+	progs[0]["Ke"] = hyd.color_evaporation / 100
+	progs[0]["Kr"] = (1 - (1 - (hyd.color_rain / 500) ** 2) ** 0.15) * 0.1
+	progs[0]["use_water_src"] = False
+	progs[0]["rainfall"] = False
 
 	progs[1]["b_map"].value = BIND_HEIGHT
 	progs[1]["pipe_map"].value = BIND_PIPE
 	progs[1]["d_map"].value = BIND_WATER
+	progs[1]["size"] = size
 	progs[1]["lx"] = pipe_len
 	progs[1]["ly"] = pipe_len
+	progs[1]["A"] = 1
 
 	progs[2]["pipe_map"].value = BIND_PIPE
 	progs[2]["d_map"].value = BIND_WATER
@@ -268,16 +272,19 @@ def color(obj: bpy.types.Object | bpy.types.Image)->Texture:
 	progs[3]["v_map"].value = BIND_VELOCITY
 	progs[3]["d_map"].value = BIND_WATER
 	progs[3]["dmean_map"].value = BIND_TEMP
-	progs[3]["Kc"] = hyd.mei_capacity / 100
+	progs[3]["Kc"] = 0
 	progs[3]["lx"] = pipe_len
 	progs[3]["ly"] = pipe_len
-	progs[3]["minalpha"] = hyd.mei_min_alpha
+	progs[3]["scale"] = size[0] / 2
 
 	progs[4]["v_map"].value = BIND_VELOCITY
+	progs[4]["color_map"].value = BIND_TEMP
 	progs[4]["out_color_map"].value = BIND_COLOR
 	progs[4]["color_sampler"] = LOC_COLOR
+	progs[4]["v_sampler"] = LOC_VELOCITY
 	progs[4]["dt"] = dt
 	progs[4]["color_scaling"] =  1 / (100 - 99 * (hyd.color_mixing / 100))
+	progs[4]["tile_mult"] = (1 / size[0], 1 / size[1])
 
 	time = datetime.now()
 	for _ in range(hyd.mei_iter_num):
@@ -288,9 +295,13 @@ def color(obj: bpy.types.Object | bpy.types.Image)->Texture:
 	
 		colorA.use(LOC_COLOR)
 		colorSamplerA.use(LOC_COLOR)
+		
+		colorA.bind_to_image(BIND_TEMP, read=True, write=False)
 		colorB.bind_to_image(BIND_COLOR, write=True)
 
 		progs[4].run(group_x=group_x, group_y=group_y)
+
+		temp.bind_to_image(BIND_TEMP, read=True, write=True)
 
 		colorA, colorB = swap(colorA, colorB)
 		colorSamplerA, colorSamplerB = swap(colorSamplerA, colorSamplerB)
@@ -298,13 +309,13 @@ def color(obj: bpy.types.Object | bpy.types.Image)->Texture:
 	ctx.finish()
 	print((datetime.now() - time).total_seconds())
 
-	ret, _ = texture.write_image(f"HYD_{obj.name}_Color", colorA)
-
 	height.release()
 	pipe.release()
 	velocity.release()
 	water.release()
 	temp.release()
+
+	ret, _ = texture.write_image(f"HYD_{obj.name}_Color", colorA)
 
 	colorA.release()
 	colorB.release()

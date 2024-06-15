@@ -218,13 +218,15 @@ class ExtrasPanel():
 					g.prop(hyd, "part_lateral_acceleration")
 				g.prop(hyd, "part_drag", slider=True)
 			elif hyd.color_solver == "pipe":
-				g = p.grid_flow(columns=1, align=True)
-				g.prop(hyd, "mei_iter_num")
-				g.prop(hyd, "mei_scale")
+				p.prop(hyd, "mei_iter_num")
 
 				g = p.grid_flow(columns=1, align=True)
-				g.prop(hyd, "mei_rain", slider=True)
-				g.prop(hyd, "mei_evaporation", slider=True)
+				g.prop(hyd, "color_detail", slider=True)
+				g.prop(hyd, "color_speed", slider=True)
+				
+				g = p.grid_flow(columns=1, align=True)
+				g.prop(hyd, "color_rain", slider=True)
+				g.prop(hyd, "color_evaporation")
 			# self.draw_nav_fragment(p, f"HYD_{target.name}_Color", "Color")
 
 #-------------------------------------------- Heightmap System

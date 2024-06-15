@@ -11,7 +11,7 @@ uniform float Kr = 0.1;
 
 uniform bool use_water_src = false;
 uniform int seed = 0;
-uniform bool rainfall = true;
+uniform bool rainfall = false;
 
 uint pcg(uint v)
 {

@@ -352,13 +352,45 @@ class ErosionGroup(bpy.types.PropertyGroup):
 		default=50,
 		min=1, max=100.0,
 		subtype="PERCENTAGE",
-		name="Color mixing",
-		description="Defines how strongly sediment colors the surface"
+		name="Color strength",
+		description="Defines how strongly sediment colors the surface. 100% directly paints the color of the sediment onto the surface"
 	)
 
 	color_src: StringProperty(
 		name="Color",
 		description="Color image texture"
+	)
+
+	color_rain: FloatProperty(
+		default=10,
+		min=1, max=100.0,
+		subtype="PERCENTAGE",
+		name="Rain",
+		description="Amount of rain per iteration. Small values focus more on small details in geometry"
+	)
+
+	color_evaporation: FloatProperty(
+		default=1,
+		min=1, max=99.0,
+		subtype="PERCENTAGE",
+		name="Evaporation",
+		description="Amount of water evaporated per iteration. Low values focus transport on concentrated flows, high values spread more evenly across the terrain geometry"
+	)
+
+	color_detail: FloatProperty(
+		default=50,
+		min=1, soft_max=100.0, max=200,
+		subtype="PERCENTAGE",
+		name="Detail",
+		description="Lower values create simpler patterns"
+	)
+
+	color_speed: FloatProperty(
+		default=25,
+		min=1.0, soft_max=100.0, max=200,
+		subtype="PERCENTAGE",
+		name="Flow speed",
+		description="Higher values lead to faster transport of material"
 	)
 
 	#------------------------- Utils
