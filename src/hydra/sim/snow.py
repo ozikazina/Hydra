@@ -52,11 +52,14 @@ def simulate(obj: bpy.types.Image | bpy.types.Object):
 	progA["offset"].value = 4
 	progA["useOffset"] = True
 	progA["ds"] = 1
+	progA["size"] = size
 
 	progB["requests"].value = 2
 	progB["ds"] = 1
 
-	snowProg["snow_add"] = (hyd.snow_add / 100) / hyd.mei_scale
+	SNOW_SCALE = 0.01
+
+	snowProg["snow_add"] = (hyd.snow_add / 100) * SNOW_SCALE
 
 	group_x = math.ceil(size[0] / 32)
 	group_y = math.ceil(size[1] / 32)
@@ -92,7 +95,7 @@ def simulate(obj: bpy.types.Image | bpy.types.Object):
 		snow_img.bind_to_image(5, read=True, write=True)
 		prog = data.shaders["scaling"]
 		prog["A"].value = 5	# snow
-		prog["scale"] = hyd.mei_scale / (hyd.snow_add / 100)
+		prog["scale"] = 1 / (SNOW_SCALE * hyd.snow_add / 100)
 		prog.run(group_x = size[0], group_y = size[1])
 
 		img_name = f"HYD_{obj.name}_Snow"

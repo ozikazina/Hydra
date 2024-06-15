@@ -189,13 +189,6 @@ class ErosionGroup(bpy.types.PropertyGroup):
 		description="Hardness of the terrain. Higher values lead to less erosion. Also a multiplier for the hardness map"
 	)
 
-	mei_scale: IntProperty(
-		default=200,
-		min=1, max=2000,
-		name="Model scale",
-		description="Scale of the simulation in meters (roughly). A hill is 100, a mountain is 500+ and so on"
-	)
-
 	mei_water_src: StringProperty(
 		name="Water",
 		description="Water source image texture. Pure white will spawn the most water, black will spawn none"
@@ -282,7 +275,7 @@ class ErosionGroup(bpy.types.PropertyGroup):
 		min=1, max=100.0,
 		subtype="PERCENTAGE",
 		name="Snow amount",
-		description="Amount of snow added to the object, scaled by model scale. Useful for fine-tuning snow amount for a given model scale"
+		description="Relative amount of snow added to the object"
 	)
 
 	snow_iter_num: IntProperty(
@@ -297,7 +290,7 @@ class ErosionGroup(bpy.types.PropertyGroup):
 		min=0.174533, max=1.48353,
 		subtype="ANGLE",
 		name="Angle",
-		description="Maximum angle the snow can hold in degrees"
+		description="Maximum surface angle the snow can have in degrees"
 	)
 
 	snow_output: EnumProperty(

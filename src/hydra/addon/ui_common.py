@@ -155,7 +155,6 @@ class SnowPanel():
 		col.label(text="Erosion settings")
 
 		col.prop(hyd, "snow_add", slider=True)
-		col.prop(hyd, "mei_scale")
 		col.prop(hyd, "snow_iter_num")
 		col.prop(hyd, "snow_angle", slider=True)
 
@@ -223,7 +222,7 @@ class ExtrasPanel():
 				g = p.grid_flow(columns=1, align=True)
 				g.prop(hyd, "color_detail", slider=True)
 				g.prop(hyd, "color_speed", slider=True)
-				
+
 				g = p.grid_flow(columns=1, align=True)
 				g.prop(hyd, "color_rain", slider=True)
 				g.prop(hyd, "color_evaporation")
