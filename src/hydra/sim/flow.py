@@ -9,7 +9,7 @@ from datetime import datetime
 
 # --------------------------------------------------------- Flow
 
-def genFlow(obj: bpy.types.Image | bpy.types.Object)->bpy.types.Image:
+def generate_flow(obj: bpy.types.Image | bpy.types.Object)->bpy.types.Image:
 	"""Simulates a flow map on the specified entity.
 	
 	:param obj: Object or image to simulate on.
@@ -18,56 +18,57 @@ def genFlow(obj: bpy.types.Image | bpy.types.Object)->bpy.types.Image:
 	:rtype: :class:`bpy.types.Image`"""
 	data = common.data
 	hyd = obj.hydra_erosion
-	if not data.hasMap(hyd.map_base):
-		heightmap.prepareHeightmap(obj)
+	if not data.has_map(hyd.map_base):
+		heightmap.prepare_heightmap(obj)
 
 	ctx = data.context
 	
-	size = hyd.getSize()
+	size = hyd.get_size()
 
-	if data.hasMap(hyd.map_current):
-		height = data.maps[hyd.map_current].texture
+	if data.has_map(hyd.map_result):
+		height = data.get_map(hyd.map_result).texture
 	else:
-		height = data.maps[hyd.map_source].texture
-	amount = texture.createTexture(size)
+		height = data.get_map(hyd.map_source).texture
+	
+	amount = texture.create_texture(size)
 
-	subdiv = int(hyd.flow_subdiv)
+	height_sampler = ctx.sampler(texture=height, repeat_x=False, repeat_y=False)
+	height.use(1)
+	height_sampler.use(1)
 
 	prog = data.shaders["flow"]
-	height.bind_to_image(1, read=True, write=False)
-	prog["img"].value = 1
+	prog["height_sampler"] = 1
 	amount.bind_to_image(2, read=True, write=True)
 	prog["flow"].value = 2
-	prog["squareSize"] = subdiv
-	prog["interpolate"] = hyd.interpolate_flow
 
-	prog["strength"] = 0.2*math.exp(-6.61*hyd.flow_contrast)	#map to aesthetic range 0.0003-0.2
+	prog["tile_mult"] = (1 / size[0], 1 / size[1])
+	prog["tile_size"] = (math.ceil(size[0] / 32), math.ceil(size[1] / 32))
 
-	prog["acceleration"] = hyd.part_acceleration
-	prog["iterations"] = hyd.part_lifetime
-	prog["drag"] = 1-hyd.part_drag	#multiplicative factor
+	# map to aesthetic range 0.0003-0.2
+	prog["strength"] = 0.2*math.exp(-6.61*(1 - hyd.flow_brightness / 100))
 
-	groupsX = math.ceil(size[0]/subdiv)
-	groupsY = math.ceil(size[1]/subdiv)
+	prog["iterations"] = hyd.flow_iter_num
+	prog["acceleration"] = hyd.part_acceleration / 100
+	prog["lifetime"] = hyd.part_lifetime
+	prog["drag"] = 1-(hyd.part_drag / 100)	# multiplicative factor
 
 	time = datetime.now()
-	for y in range(subdiv):
-		for x in range(subdiv):
-			prog["off"] = (x,y)
-			prog.run(group_x=groupsX, group_y=groupsY)
+	prog.run(group_x=1, group_y=1)
 	ctx.finish()
 
-	finalAmount = texture.createTexture(amount.size)
-	finalAmount.bind_to_image(3, read=True, write=True)
+	final_amount = texture.create_texture(amount.size)
+	final_amount.bind_to_image(3, read=True, write=True)
 	prog = data.shaders["plug"]
 	prog["inMap"].value = 2
 	prog["outMap"].value = 3
+
 	prog.run(group_x=size[0], group_y=size[1])
 
 	print((datetime.now() - time).total_seconds())
 
-	imgName = f"HYD_{obj.name}_Flow"
-	ret = texture.writeImage(imgName, finalAmount)
+	img_name = f"HYD_{obj.name}_Flow"
+	ret, _ = texture.write_image(img_name, final_amount)
 	amount.release()
-	finalAmount.release()
+	final_amount.release()
+	
 	return ret

@@ -5,12 +5,17 @@ from Hydra import common
 
 # --------------------------------------------------------- Init
 
-def initContext():
+def init_context():
 	"""Compiles shader programs and adds them to :data:`common.data`."""
 	data = common.data
 	ctx = data.context
 	dr = Path(__file__).resolve().parent
 	base = Path(dr, "GLSL")
+
+	for prog in data.programs.values():
+		prog.release()
+	
+	data.release_shaders()
 
 	def make_prog(name, v, f):
 		data.programs[name] = ctx.program(
@@ -18,45 +23,13 @@ def initContext():
 			fragment_shader=f
 		)
 
-	with open(Path(base, "height.vert"), "r") as f:
-		vert = f.read()
-	with open(Path(base, "height.frag"), "r") as f:
-		frag = f.read()
+	vert = Path(base, "height.vert").read_text()
+	frag = Path(base, "height.frag").read_text()
 	make_prog("heightmap", vert, frag)
 
-	with open(Path(base, "identity.vert"), "r") as f:
-		vert = f.read()
-	with open(Path(base, "redraw.frag"), "r") as f:
-		frag = f.read()
+	vert = Path(base, "identity.vert").read_text()
+	frag = Path(base, "redraw.frag").read_text()
 	make_prog("redraw", vert, frag)
-
-	with open(Path(base, "erosion.frag"), "r") as f:
-		frag = f.read()
-	make_prog("erosion", vert, frag)
 	
-	with open(Path(base, "flow.glsl"), "r") as f:
-		comp = f.read()
-	data.shaders["flow"] = ctx.compute_shader(comp)
-
-	with open(Path(base, "diff.glsl"), "r") as f:
-		comp = f.read()
-	data.shaders["diff"] = ctx.compute_shader(comp)
-
-	with open(Path(base, "thermalA.glsl"), "r") as f:
-		comp = f.read()
-	data.shaders["thermalA"] = ctx.compute_shader(comp)
-	with open(Path(base, "thermalB.glsl"), "r") as f:
-		comp = f.read()
-	data.shaders["thermalB"] = ctx.compute_shader(comp)
-
-	with open(Path(base, "linear.glsl"), "r") as f:
-		comp = f.read()
-	data.shaders["linear"] = ctx.compute_shader(comp)
-
-	with open(Path(base, "plug.glsl"), "r") as f:
-		comp = f.read()
-	data.shaders["plug"] = ctx.compute_shader(comp)
-
-	with open(Path(base, "scaling.glsl"), "r") as f:
-		comp = f.read()
-	data.shaders["scaling"] = ctx.compute_shader(comp)
+	frag = Path(base, "resize.frag").read_text()
+	make_prog("resize", vert, frag)

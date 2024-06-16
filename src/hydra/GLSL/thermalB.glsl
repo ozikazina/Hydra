@@ -1,17 +1,15 @@
 #version 430
 
-layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+layout(local_size_x = 32, local_size_y = 32, local_size_z = 1) in;
 
 layout (r32f) uniform image2D mapH;
 layout (rgba32f) uniform image2D requests;
 
 layout (r32f) uniform image2D outH;
 
-uniform bool diagonal = false;
+uniform int ds = 1;
 
-float getH(ivec2 pos) {
-	return imageLoad(mapH, pos).r;
-}
+uniform bool diagonal = false;
 
 //  1y
 //0x  2z
@@ -20,66 +18,26 @@ float getH(ivec2 pos) {
 void main(void) {
 	ivec2 base = ivec2(gl_GlobalInvocationID.xy);
 	
-	ivec2 neigh[4];
-	if (diagonal) {
-		neigh = ivec2[4](base + ivec2(-1,-1), base + ivec2(-1,1), base + ivec2(1,1), base + ivec2(1,-1));
-	}
-	else {
-		neigh = ivec2[4](base + ivec2(-1,0), base + ivec2(0,1), base + ivec2(1,0), base + ivec2(0,-1));
-	}
-	
-	vec4 oldH = imageLoad(mapH, base);
-	
-	float h = oldH.x;
-	float nh = h;
+	float nh = imageLoad(mapH, base).x;
 	vec4 request = imageLoad(requests, base);
 
-	//+ demand - request
-	//- supply + request
-
-	float inp;
+	float inp, sw;
 	
-	inp = imageLoad(requests, neigh[0]).z;
-	if (inp < 0) {	//supply
-		if (-inp > request.x) nh += request.x;
-		else nh -= inp;
-	}
-	else {	//demand
-		if (-inp < request.x) nh += request.x;
-		else nh -= inp;
-	}
+	inp = -imageLoad(requests, base + ivec2(-ds, diagonal ? -ds : 0)).z;
+	sw = inp < 0 ? -1 : 1;
+	nh += (request.x * sw < inp * sw) ? request.x : inp;
 	
-	inp = imageLoad(requests, neigh[1]).w;
-	if (inp < 0) {	//supply
-		if (-inp > request.y) nh += request.y;
-		else nh -= inp;
-	}
-	else {	//demand
-		if (-inp < request.y) nh += request.y;
-		else nh -= inp;
-	}
+	inp = -imageLoad(requests, base + ivec2(diagonal ? -ds : 0, ds)).w;
+	sw = inp < 0 ? -1 : 1;
+	nh += (request.y * sw < inp * sw) ? request.y : inp;
 	
-	inp = imageLoad(requests, neigh[2]).x;
-	if (inp < 0) {	//supply
-		if (-inp > request.z) nh += request.z;
-		else nh -= inp;
-	}
-	else {	//demand
-		if (-inp < request.z) nh += request.z;
-		else nh -= inp;
-	}
+	inp = -imageLoad(requests, base + ivec2(ds, diagonal ? ds : 0)).x;
+	sw = inp < 0 ? -1 : 1;
+	nh += (request.z * sw < inp * sw) ? request.z : inp;
 	
-	inp = imageLoad(requests, neigh[3]).y;
-	if (inp < 0) {	//supply
-		if (-inp > request.w) nh += request.w;
-		else nh -= inp;
-	}
-	else {	//demand
-		if (-inp < request.w) nh += request.w;
-		else nh -= inp;
-	}
+	inp = -imageLoad(requests, base + ivec2(diagonal ? ds : 0, -ds)).y;
+	sw = inp < 0 ? -1 : 1;
+	nh += (request.w * sw < inp * sw) ? request.w : inp;
 	
-	oldH.x = max(nh, 0);
-	
-	imageStore(outH, base, oldH);
+	imageStore(outH, base, vec4(nh));
 }

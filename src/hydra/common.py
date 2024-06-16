@@ -2,6 +2,7 @@
 
 import moderngl as mgl
 import bpy, bpy.types
+from pathlib import Path
 
 import uuid, re
 
@@ -17,7 +18,7 @@ class Heightmap:
 		self.name = name
 		self.texture = txt
 	
-	def release(self):
+	def release(self)->None:
 		"""Releases the stored texture."""
 		self.texture.release()
 	
@@ -38,6 +39,24 @@ class Heightmap:
 	size = property(get_size)
 	"""Texture size :class:`tuple` property."""
 
+class ShaderBank:
+	def __init__(self):
+		"""Sets the GLSL files path."""
+		self.source_path = Path(__file__).resolve().parent.joinpath("GLSL")
+
+	def __getitem__(self, key: str)->mgl.ComputeShader:
+		"""Lazy-loads and returns the specified compute shader.
+		Raises `KeyError` if not found."""
+		if key not in data._shaders_:
+			path = self.source_path.joinpath(key + ".glsl")
+			if path.exists():
+				comp = path.read_text("utf-8")
+				data._shaders_[key] = data.context.compute_shader(comp)
+			else:
+				raise KeyError(f"Shader '{key}' not found.")
+		
+		return data._shaders_[key]
+
 class HydraData(object):
 	"""Global data object. Stores all ModernGL resources, including the context."""
 
@@ -47,60 +66,52 @@ class HydraData(object):
 		self.context: mgl.Context = None
 		"""Addon's ModernGL context. Attached to Blender's OpenGL context."""
 
-		self.maps: dict[str, Heightmap] = {}
+		self._maps_: dict[str, Heightmap] = {}
 		"""Heightmap dictionary. Uses UUID strings as keys."""
-
-		self.active: list[mgl.Texture | None] = []
-		"""List of temporary textures for erosion simulations."""
 
 		self.programs: dict[str, mgl.Program] = {}
 		"""Compiled ModernGL program list."""
 
-		self.shaders: dict[str, mgl.ComputeShader] = {}
+		self.shaders: ShaderBank = ShaderBank()
+		"""Lazy-loaded ModernGL compute shader dictionary."""
+
+		self._shaders_: dict[str, mgl.ComputeShader] = {}
 		"""Compiled ModernGL compute shader list."""
-
-		self.scope: mgl.Scope = None
-		"""Temporary ModernGL scope."""
-
-		self.fbo: mgl.Framebuffer = None
-		"""Temporary ModernGL Frame Buffer Object."""
-
-		self.running: bool = False	#for progress bar if implemented
-		"""Unused. Allows erosion to be terminated."""
-		self.progress: float = 0.0
-		"""Unused. Erosion progress."""
-		self.iteration: int = 0
-		"""Unused. Erosion iteration."""
 		
 		self.lastPreview: str | None = None
 		"""Name of last previewed object."""
 
-		self.info: list[str] = []
+		self._info_: list[str] = []
 		"""Info message list."""
-		self.error: list[str] = []
+		self._error_: list[str] = []
 		"""Error message list."""
 	
-	def initContext(self):
+	def init_context(self):
 		"""Creates and saves the attached ModernGL :attr:`context`."""
 		self.context = mgl.create_context()	#standalone crashes blender
 
-	def hasMap(self, id: str | None)->bool:
+	def has_map(self, id: str | None)->bool:
 		"""Checks if map exists.
 
 		:return: `True` if map exists in the :attr:`maps` list. `False` otherwise.
 		:rtype: :class:`bool`"""
-		return id in self.maps
+		return id in self._maps_
 
-	def releaseMap(self, id: str | None):
+	def get_map(self, id: str | None)->Heightmap | None:
+		"""Returns map by ID. Returns `None` if not found."""
+		if id in self._maps_:
+			return self._maps_[id]
+
+	def try_release_map(self, id: str | None):
 		"""Release specified map. Does nothing on invalid `id`.
 
 		:param id: Map ID.
 		:type id: :class:`str` or :class:`None`"""
-		if id in self.maps:
-			self.maps[id].release()
-			del self.maps[id]
+		if id in self._maps_:
+			self._maps_[id].release()
+			del self._maps_[id]
 	
-	def createMap(self, name: str, txt: mgl.Texture)->str:
+	def create_map(self, name: str, txt: mgl.Texture)->str:
 		"""Creates and adds a heightmap into maps. Returns map ID.
 
 		:param name: Name of created map.
@@ -110,55 +121,51 @@ class HydraData(object):
 		:return: New map UUID string.
 		:rtype: :class:`str`"""
 		id = str(uuid.uuid4())
-		self.maps[id] = Heightmap(name, txt)
+		self._maps_[id] = Heightmap(name, txt)
 		return id
-
-	def releaseActive(self):
-		"""Releases all temporary textures from the :attr:`active` list."""
-		for i in self.active:
-			if i:
-				i.release()
-		self.active = []
-		
-	def clear(self):
-		"""Clears :attr:`info` and :attr:`error` messages."""
-		self.running = False
-		self.progress = 0.0
-		self.iteration = 0
-		self.info = []
-		self.error = []
 	
-	def report(self, caller, callerName:str="Hydra"):
-		"""Shows either stored error or info messages.
+	def report(self, caller, callerName:str="Hydra")->None:
+		"""Shows either stored error or info messages and clears them.
 
 		:param caller: `Operation` calling this function.
+		:type caller: :class:`set`
 		:param callerName: Message box title.
 		:type callerName: :class:`str`"""
-		if len(self.error) != 0:
-			showMessage(" ".join(self.error), title=callerName, icon="ERROR")
-		if len(self.info) != 0:
-			caller.report({"INFO"}, " ".join(self.info))
-	
-	def freeAll(self):
-		"""Frees all allocated textures."""
-		for i in self.maps.values():
-			i.release()
-		self.maps = {}
-		self.releaseActive()
+		if len(self._error_) != 0:
+			show_message(" ".join(self._error_), title=callerName, icon="ERROR")
+		if len(self._info_) != 0:
+			caller.report({"INFO"}, " ".join(self._info_))
 
-	def addMessage(self, message: str, error: bool=False):
+		self._info_ = []
+		self._error_ = []
+	
+	def free_all(self)->None:
+		"""Frees all allocated maps."""
+		for i in self._maps_.values():
+			i.release()
+		self._maps_ = {}
+
+	def add_message(self, message: str, error: bool=False)->None:
 		"""Adds an info message.
 
 		:param message: Message to be added.
-		:type message: :class:`str`"""
+		:type message: :class:`str`
+		:param error: `True` if message is an error.
+		:type error: :class:`bool`"""
 		if error:
-			self.error.append(message)
+			self._error_.append(message)
 		else:
-			self.info.append(message)
+			self._info_.append(message)
+
+	def release_shaders(self)->None:
+		"""Releases all stored shaders."""
+		for i in self._shaders_.values():
+			i.release()
+		self._shaders_ = {}
 
 #-------------------------------------------- Extra
 
-def showMessage(message: str, title:str="Hydra", icon:str='INFO'):
+def show_message(message: str, title:str="Hydra", icon:str='INFO')->None:
 	"""Displays a message as popup.
 
 	:param message: Message to be shown.
@@ -170,7 +177,7 @@ def showMessage(message: str, title:str="Hydra", icon:str='INFO'):
 	draw = lambda s,_: s.layout.label(text=message)
 	bpy.context.window_manager.popup_menu(draw, title=title, icon=icon)
 
-def getPreferences():
+def get_preferences()->None:
 	"""Returns Hydra Blender preferences.
 
 	:returns: Blender preferences for the Hydra addon."""
@@ -178,7 +185,7 @@ def getPreferences():
 
 _R_NUMBER: re.Pattern = re.compile(r"\d+$")
 """Ending number RegEx."""
-def incrementLayer(name: str, default: str)->str:
+def increment_layer(name: str, default: str)->str:
 	"""Increments given layer name.
 
 	:param name: Layer name to be incremented.
@@ -192,22 +199,8 @@ def incrementLayer(name: str, default: str)->str:
 	else:
 		return default
 
-_R_OWNER: re.Pattern = re.compile(r"HYD_(.+?)_\w+$")
-"""Hydra naming convention RegEx. Groups original owner name."""
-def getOwner(name: str, previewName: str)->str | None:
-	"""Gets the original object, which generated the given name.
-
-	:param name: Name, which was generated by other object.
-	:type name: :class:`str`
-	:param previewName: Name for a corresponding preview object.
-	:type previewName: :class:`str`
-	:returns: Name of the original object. `None` if not found or if `name` is a preview.
-	:rtype: :class:`str` or :class:`None`"""
-	if name == previewName:
-		return None
-	if m := _R_OWNER.match(name):
-		return m.group(1)
-	return None
+_SPACE_OBJECT = "VIEW_3D"
+_SPACE_IMAGE = "IMAGE_EDITOR"
 
 #-------------------------------------------- Vars
 
