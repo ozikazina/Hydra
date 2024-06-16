@@ -322,11 +322,11 @@ class ErosionSettingsPanel(bpy.types.Panel):
 		p = self.layout
 		hyd = self.get_settings(ctx)
 		
-		if hyd.erosion_solver == "particle":
-			p.label(text="Simulation resolution:")
-			p.prop(hyd, "erosion_subres", text="", slider=True)
-			p.separator()
+		p.label(text="Simulation resolution:")
+		p.prop(hyd, "erosion_subres", text="", slider=True)
+		p.separator()
 
+		if hyd.erosion_solver == "particle":
 			g = p.grid_flow(columns=1, align=True)
 			g.prop(hyd, "part_iter_num")
 			g.prop(hyd, "part_lifetime")
@@ -362,7 +362,7 @@ class ErosionSettingsPanel(bpy.types.Panel):
 			if hyd.erosion_advanced:
 				g.prop(hyd, "mei_max_depth")
 
-				p.prop(hyd, "mei_randomize")
+				# p.prop(hyd, "mei_randomize")
 
 				box = p.box()
 				box.prop_search(hyd, "erosion_hardness_src", bpy.data, "images")

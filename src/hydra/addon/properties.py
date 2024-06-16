@@ -4,7 +4,6 @@ import bpy
 from bpy.props import (
 	BoolProperty,
 	FloatProperty,
-	FloatVectorProperty,
 	IntProperty,
 	IntVectorProperty,
 	StringProperty,
@@ -69,7 +68,7 @@ class ErosionGroup(bpy.types.PropertyGroup):
 		soft_max=100.0,
 		subtype="PERCENTAGE",
 		name="Simulation resolution",
-		description="Percentage of heightmap resolution to simulate at. Lower resolution creates larger features and speeds up simulation time. Simulating at 512x512 offers the best balance between feature size and detail"
+		description="Percentage of heightmap resolution to simulate at. Lower resolution creates larger features and speeds up simulation time. Simulating at 512x512 is a good starting point for erosion"
 	)
 
 	erosion_hardness_src: StringProperty(

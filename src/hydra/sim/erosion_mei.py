@@ -36,7 +36,14 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 	LOC_SEDIMENT = 1
 	LOC_VELOCITY = 2
 
-	height = texture.clone(data.get_map(hyd.map_source).texture)
+	if hyd.erosion_subres != 100.0:
+		size = (math.ceil(size[0] * hyd.erosion_subres / 100.0), math.ceil(size[1] * hyd.erosion_subres / 100.0))
+		height = heightmap.resize_texture(data.get_map(hyd.map_source).texture, size)
+		height_base = texture.clone(height)
+	else:
+		height = texture.clone(data.get_map(hyd.map_source).texture)
+		height_base = None
+
 	pipe = texture.create_texture(size, channels=4)
 	velocity = texture.create_texture(size, channels=2)
 	water = texture.create_texture(size)
@@ -172,6 +179,9 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 		water_src.release()
 		
 	size = hyd.get_size()
+
+	if height_base is not None: # resize back to original size
+		height = heightmap.add_subres(height, height_base, data.get_map(hyd.map_source).texture)
 
 	hyd = obj.hydra_erosion
 	data.try_release_map(hyd.map_result)

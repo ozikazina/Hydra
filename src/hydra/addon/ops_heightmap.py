@@ -139,7 +139,7 @@ class DeleteOp(ops_common.HydraOperator):
 	bl_label = "Delete this layer"
 	bl_description = "Deletes the generated heightmap"
 
-	def invoke(self, ctx, event):
+	def execute(self, ctx):
 		target = self.get_target(ctx)
 		hyd = target.hydra_erosion
 
@@ -148,6 +148,9 @@ class DeleteOp(ops_common.HydraOperator):
 		common.data.try_release_map(hyd.map_result)
 		hyd.map_result = ""
 		return {'FINISHED'}
+	
+	def invoke(self, ctx, event):
+		return ctx.window_manager.invoke_confirm(self, event)
 
 class ClearOp(ops_common.HydraOperator):
 	"""Clear object textures operator."""
@@ -289,7 +292,7 @@ class ReloadOp(ops_common.HydraOperator):
 class ForceReloadOp(ops_common.HydraOperator):
 	"""Recalculate base and source maps operator."""
 	bl_idname = "hydra.hm_force_reload"
-	bl_label = "Recalculate source heightmap from object?"
+	bl_label = "Recalculate source heightmap from object"
 	bl_description = "Create a base heightmap from the current object"
 
 	def execute(self, ctx):
