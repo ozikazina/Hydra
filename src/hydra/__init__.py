@@ -22,7 +22,9 @@ def checkModernGL():
 	global _hydra_invalid
 	try:
 		import moderngl
+		import glcontext
 	except:
+		print("ModernGL or GLContext not found.")
 		_hydra_invalid = True
 
 checkModernGL()
@@ -60,8 +62,9 @@ def register():
 
 	if not _hydra_invalid:
 		common.data = common.HydraData()
-		common.data.init_context()
+
 		try:
+			common.data.init_context()
 			opengl.init_context()
 			startup.invalid = False
 		except Exception as e:

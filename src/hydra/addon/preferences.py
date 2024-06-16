@@ -11,12 +11,8 @@ class AddonPanel(bpy.types.AddonPreferences):
 	"""Addon preferences panel."""
 	bl_idname = "Hydra"
 
-	particle_use_vao: BoolProperty(name="Fragment shader for particle erosion", default=False,
-		description="Use a fragment shader for particle erosion. It is slightly faster for integrated GPUs"
-	)
-
-	skip_indexing: BoolProperty(name="Force heightmaps", default=False,
-		description="Fixes heightmap generation if it fails. Skips vertex indexing, which fails outside Windows in ModernGL. Uses slightly more memory during generation"
+	skip_indexing: BoolProperty(name="Fix heightmaps", default=False,
+		description="Fixes heightmap generation if it fails. Skips vertex indexing, which can fail outside Windows in ModernGL. Uses more memory during generation"
 	)
 	"""Heightmap generation indexing override."""
 
@@ -40,7 +36,6 @@ class AddonPanel(bpy.types.AddonPreferences):
 		layout = self.layout
 
 		box = layout.box()
-		box.prop(self, "particle_use_vao")
 		box.prop(self, "skip_indexing")
 		split = box.split(factor=0.33)
 		split.label(text="Preview split direction: ")
