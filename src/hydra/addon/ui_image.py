@@ -1,3 +1,5 @@
+"""Module for Image editor panels."""
+
 import bpy
 from Hydra.addon import ui_common
 

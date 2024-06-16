@@ -52,12 +52,21 @@ def write_image(name: str, texture: mgl.Texture)->tuple[bpy.types.Image, bool]:
 		image.pixels = np.frombuffer(texture.read(), dtype=np.float32)
 	
 	image.pack()
-	# if updated:
-	# 	common.data.add_message(f"Image updated: {name}.")
 	return image, updated
 
 def create_texture(size: 'tuple[int,int]', pixels: bytes|None = None, image: bpy.types.Image|None = None, channels: int = 1)->mgl.Texture:
-	"""Creates a :class:`moderngl.Texture` of the specified size."""
+	"""Creates a :class:`moderngl.Texture` of the specified size.
+	
+	:param size: Resolution tuple.
+	:type size: :class:`tuple[int,int]`
+	:param pixels: Pixel data.
+	:type pixels: :class:`bytes`
+	:param image: Image to be used as a source.
+	:type image: :class:`bpy.types.Image`
+	:param channels: Channel count.
+	:type channels: :class:`int`
+	:return: Created texture.
+	:rtype: :class:`moderngl.Texture`"""
 
 	if channels < 1 or channels > 4:
 		raise ValueError("Invalid channel count")

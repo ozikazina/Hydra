@@ -1,4 +1,4 @@
-"""Module responsible for water erosion."""
+"""Module responsible for pipe-based water erosion."""
 
 from Hydra.utils import texture
 from Hydra.sim import heightmap
@@ -10,8 +10,8 @@ from datetime import datetime
 
 # --------------------------------------------------------- Erosion
 
-def erode(obj: bpy.types.Object | bpy.types.Image):
-	"""Erodes the specified entity. Can be run multiple times.
+def erode(obj: bpy.types.Object | bpy.types.Image)->None:
+	"""Erodes the specified entity.
 	
 	:param obj: Object or image to erode.
 	:type obj: :class:`bpy.types.Object` or :class:`bpy.types.Image`"""
@@ -192,7 +192,15 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 
 	print("Erosion finished")
 
-def color(obj: bpy.types.Object | bpy.types.Image)->Texture:
+def color(obj: bpy.types.Object | bpy.types.Image)->bpy.types.Image:
+	"""Simulates color transport on the specified entity.
+	
+	:param obj: Object or image to simulate on.
+	:type obj: :class:`bpy.types.Object` or :class:`bpy.types.Image`
+	:return: Color map.
+	:rtype: :class:`bpy.types.Image`"""
+
+	print("Preparing for color transport")
 	data = common.data
 
 	hyd = obj.hydra_erosion

@@ -1,4 +1,4 @@
-"""Module responsible for image UI elements and operators."""
+"""Module responsible for image operators."""
 
 from Hydra import common
 from Hydra.utils import apply, texture

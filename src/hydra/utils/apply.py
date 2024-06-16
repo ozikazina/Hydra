@@ -18,7 +18,7 @@ PREVIEW_IMG_NAME = "HYDP_Image_Preview"	#different from object preview heightmap
 PREVIEW_GEO_NAME = "HYDP_Preview"
 """Geometry Nodes group name."""
 
-def show_gen_modifier(obj: bpy.types.Object, visible: bool):
+def show_gen_modifier(obj: bpy.types.Object, visible: bool)->None:
 	"""Internal. Shows or hides the first modifier created by Hydra belonging to the specified object.
 	
 	:param obj: Object to add to.
@@ -29,13 +29,11 @@ def show_gen_modifier(obj: bpy.types.Object, visible: bool):
 	if mod and mod.name != PREVIEW_MOD_NAME:
 		mod.show_viewport = visible
 
-def add_preview(target: bpy.types.Object|bpy.types.Image):
-	"""Previews the specified texture as a geometry node on the specified object, or as an image.
+def add_preview(target: bpy.types.Object|bpy.types.Image)->None:
+	"""Previews the Result texture as a geometry node on the specified object, or as an image.
 	
-	:param obj: Object to add to.
-	:type obj: :class:`bpy.types.Object`
-	:param src: Source texture to add.
-	:type src: :class:`moderngl.Texture`"""
+	:param obj: Object or image to add to.
+	:type obj: :class:`bpy.types.Object` or :class:`bpy.types.Image`"""
 	data = common.data
 	hyd = target.hydra_erosion
 
@@ -71,7 +69,7 @@ def add_preview(target: bpy.types.Object|bpy.types.Image):
 
 		nav.goto_modifier()
 
-def remove_preview():
+def remove_preview()->None:
 	"""Removes the preview modifier from the last previewed object and deletes last preview image."""
 	data = common.data
 	if str(data.lastPreview) in bpy.data.objects:
@@ -108,14 +106,14 @@ def remove_preview():
 H_NAME_BUMP = "Hydra Bump"
 """Bump map node name."""
 
-def add_bump(obj: bpy.types.Object, img: bpy.types.Image):
-	"""Adds a Bump map for the given texture in the specified object's material.
+def add_bump(obj: bpy.types.Object, img: bpy.types.Image)->None:
+	"""Adds a Bump map for the given image in the specified object's material.
 	Creates a material if needed, otherwise selects the first material slot.
 
 	:param obj: Object to add to.
 	:type obj: :class:`bpy.types.Object`
-	:param src: Source texture to add.
-	:type src: :class:`moderngl.Texture`"""
+	:param img: Bump image to add.
+	:type img: :class:`bpy.types.Image`"""
 	data = common.data
 
 	mats = obj.material_slots
@@ -172,14 +170,14 @@ def add_bump(obj: bpy.types.Object, img: bpy.types.Image):
 H_NAME_DISP = "Hydra Displacement"
 """Displacement map node name."""
 
-def add_displacement(obj: bpy.types.Object, img: bpy.types.Image):
-	"""Adds a Displacement map for the given texture in the specified object's material.
+def add_displacement(obj: bpy.types.Object, img: bpy.types.Image)->None:
+	"""Adds a Displacement map for the given image in the specified object's material.
 	Creates a material if needed, otherwise selects the first material slot.
 
 	:param obj: Object to add to.
 	:type obj: :class:`bpy.types.Object`
-	:param src: Source texture to add.
-	:type src: :class:`moderngl.Texture`"""
+	:param img: Displacement image to add.
+	:type img: :class:`bpy.types.Image`"""
 	data = common.data
 
 	mats = obj.material_slots
@@ -230,13 +228,13 @@ def add_displacement(obj: bpy.types.Object, img: bpy.types.Image):
 
 # -------------------------------------------------- Modifier
 
-def add_modifier(obj: bpy.types.Object, img: bpy.types.Image):
+def add_modifier(obj: bpy.types.Object, img: bpy.types.Image)->None:
 	"""Adds a Displace modifier to the specified object.
 
 	:param obj: Object to add to.
 	:type obj: :class:`bpy.types.Object`
-	:param src: Source texture to add.
-	:type src: :class:`moderngl.Texture`"""
+	:param img: Displacement image to add.
+	:type img: :class:`bpy.types.Image`"""
 	data = common.data
 
 	if len(obj.modifiers) == 0:
@@ -289,7 +287,11 @@ def add_modifier(obj: bpy.types.Object, img: bpy.types.Image):
 
 # -------------------------------------------------- Landscape
 
-def add_landscape(img: bpy.types.Image):
+def add_landscape(img: bpy.types.Image)->None:
+	"""Generates a landscape from the specified image.
+	
+	:param img: Image to generate from.
+	:type img: :class:`bpy.types.Image`"""
 	hyd = img.hydra_erosion
 
 	if common.data.has_map(hyd.map_result):
@@ -336,13 +338,13 @@ def add_landscape(img: bpy.types.Image):
 
 # -------------------------------------------------- Geometry Nodes
 
-def add_geometry_nodes(obj: bpy.types.Object, img: bpy.types.Image):
+def add_geometry_nodes(obj: bpy.types.Object, img: bpy.types.Image)->None:
 	"""Adds a Geometry Nodes modifier to the specified object.
 
 	:param obj: Object to add to.
 	:type obj: :class:`bpy.types.Object`
-	:param src: Source texture to add.
-	:type src: :class:`moderngl.Texture`"""
+	:param img: Displacement image to add.
+	:type img: :class:`bpy.types.Image`"""
 
 	if len(obj.modifiers) == 0:
 		mod = obj.modifiers.new("HYD_" + obj.name, "NODES")
@@ -357,13 +359,13 @@ def add_geometry_nodes(obj: bpy.types.Object, img: bpy.types.Image):
 	
 	mod.node_group = nodes.get_or_make_displace_group(f"HYD_{obj.name}", img)
 
-def add_into_geometry_nodes(obj: bpy.types.Object, img: bpy.types.Image):
-	"""Adds the texture into an existing Geometry Nodes modifier.
+def add_into_geometry_nodes(obj: bpy.types.Object, img: bpy.types.Image)->None:
+	"""Adds the image into an existing Geometry Nodes modifier.
 
 	:param obj: Object to add to.
 	:type obj: :class:`bpy.types.Object`
-	:param src: Source texture to add.
-	:type src: :class:`moderngl.Texture`"""
+	:param img: Displacement image to add.
+	:type img: :class:`bpy.types.Image`"""
 	data = common.data
 
 	mod = None

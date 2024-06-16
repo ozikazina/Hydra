@@ -18,7 +18,7 @@ class Heightmap:
 		self.name = name
 		self.texture = txt
 	
-	def release(self):
+	def release(self)->None:
 		"""Releases the stored texture."""
 		self.texture.release()
 	
@@ -41,9 +41,12 @@ class Heightmap:
 
 class ShaderBank:
 	def __init__(self):
+		"""Sets the GLSL files path."""
 		self.source_path = Path(__file__).resolve().parent.joinpath("GLSL")
 
 	def __getitem__(self, key: str)->mgl.ComputeShader:
+		"""Lazy-loads and returns the specified compute shader.
+		Raises `KeyError` if not found."""
 		if key not in data._shaders_:
 			path = self.source_path.joinpath(key + ".glsl")
 			if path.exists():
@@ -70,6 +73,7 @@ class HydraData(object):
 		"""Compiled ModernGL program list."""
 
 		self.shaders: ShaderBank = ShaderBank()
+		"""Lazy-loaded ModernGL compute shader dictionary."""
 
 		self._shaders_: dict[str, mgl.ComputeShader] = {}
 		"""Compiled ModernGL compute shader list."""
@@ -94,6 +98,7 @@ class HydraData(object):
 		return id in self._maps_
 
 	def get_map(self, id: str | None)->Heightmap | None:
+		"""Returns map by ID. Returns `None` if not found."""
 		if id in self._maps_:
 			return self._maps_[id]
 
@@ -119,10 +124,11 @@ class HydraData(object):
 		self._maps_[id] = Heightmap(name, txt)
 		return id
 	
-	def report(self, caller, callerName:str="Hydra"):
+	def report(self, caller, callerName:str="Hydra")->None:
 		"""Shows either stored error or info messages and clears them.
 
 		:param caller: `Operation` calling this function.
+		:type caller: :class:`set`
 		:param callerName: Message box title.
 		:type callerName: :class:`str`"""
 		if len(self._error_) != 0:
@@ -133,23 +139,25 @@ class HydraData(object):
 		self._info_ = []
 		self._error_ = []
 	
-	def free_all(self):
+	def free_all(self)->None:
 		"""Frees all allocated maps."""
 		for i in self._maps_.values():
 			i.release()
 		self._maps_ = {}
 
-	def add_message(self, message: str, error: bool=False):
+	def add_message(self, message: str, error: bool=False)->None:
 		"""Adds an info message.
 
 		:param message: Message to be added.
-		:type message: :class:`str`"""
+		:type message: :class:`str`
+		:param error: `True` if message is an error.
+		:type error: :class:`bool`"""
 		if error:
 			self._error_.append(message)
 		else:
 			self._info_.append(message)
 
-	def release_shaders(self):
+	def release_shaders(self)->None:
 		"""Releases all stored shaders."""
 		for i in self._shaders_.values():
 			i.release()
@@ -157,7 +165,7 @@ class HydraData(object):
 
 #-------------------------------------------- Extra
 
-def show_message(message: str, title:str="Hydra", icon:str='INFO'):
+def show_message(message: str, title:str="Hydra", icon:str='INFO')->None:
 	"""Displays a message as popup.
 
 	:param message: Message to be shown.
@@ -169,7 +177,7 @@ def show_message(message: str, title:str="Hydra", icon:str='INFO'):
 	draw = lambda s,_: s.layout.label(text=message)
 	bpy.context.window_manager.popup_menu(draw, title=title, icon=icon)
 
-def get_preferences():
+def get_preferences()->None:
 	"""Returns Hydra Blender preferences.
 
 	:returns: Blender preferences for the Hydra addon."""

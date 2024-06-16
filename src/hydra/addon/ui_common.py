@@ -1,3 +1,5 @@
+"""Module for common UI panels used in the Hydra addon."""
+
 import bpy, bpy.types
 from Hydra import common
 from Hydra.utils import nav

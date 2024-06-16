@@ -1,3 +1,5 @@
+"""Module for object mode UI panels."""
+
 import bpy, bpy.types
 
 from Hydra import common

@@ -66,7 +66,7 @@ def get_or_make_area(type: str, uiType: str = "")->bpy.types.Area:
 	return target
 
 
-def goto_image(img: bpy.types.Image|None):
+def goto_image(img: bpy.types.Image|None)->None:
 	"""Navigates Blender to the specified image.
 	
 	:param img: Image to navigate to.
@@ -78,7 +78,7 @@ def goto_image(img: bpy.types.Image|None):
 	space = imgEditor.spaces[0]
 	space.image = img
 
-def goto_shader(obj: bpy.types.Object):
+def goto_shader(obj: bpy.types.Object)->None:
 	"""Navigates Blender to the material of the specified object.
 	
 	:param obj: Object to navigate to.
@@ -91,7 +91,7 @@ def goto_shader(obj: bpy.types.Object):
 	space = nodeEditor.spaces[0]
 	space.shader_type = "OBJECT"
 
-def goto_object(obj: bpy.types.Object):
+def goto_object(obj: bpy.types.Object)->None:
 	"""Navigates Blender to the specified object.
 	
 	:param obj: Object to navigate to.
@@ -100,17 +100,17 @@ def goto_object(obj: bpy.types.Object):
 	space.region_3d.view_rotation = Euler((3/math.pi,0,math.pi/4), "XYZ").to_quaternion()
 	space.region_3d.view_location = obj.location
 
-def goto_modifier():
+def goto_modifier()->None:
 	"""Navigates to the Modifiers tab."""
 	space = get_or_make_area("PROPERTIES").spaces[0]
 	space.context = "MODIFIER"
 
-def goto_shape():
+def goto_shape()->None:
 	"""Navigates to the Mesh data tab."""
 	space = get_or_make_area("PROPERTIES").spaces[0]
 	space.context = "DATA"
 
-def goto_geometry(obj: bpy.types.Object):
+def goto_geometry(obj: bpy.types.Object)->None:
 	"""Navigates to the Geometry Nodes tab."""
 	nodes = [m for m in obj.modifiers if m.type == "NODES"]
 	if len(nodes) == 0 or nodes[-1].node_group is None:

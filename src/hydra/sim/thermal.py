@@ -9,7 +9,7 @@ from datetime import datetime
 
 # --------------------------------------------------------- Flow
 
-def erode(obj: bpy.types.Image | bpy.types.Object):
+def erode(obj: bpy.types.Image | bpy.types.Object)->None:
 	"""Erodes the specified entity. Can be run multiple times.
 	
 	:param obj: Object or image to erode.
@@ -28,8 +28,6 @@ def erode(obj: bpy.types.Image | bpy.types.Object):
 	height = texture.clone(data.get_map(hyd.map_source).texture)
 	request = texture.create_texture(size, channels=4)
 	free = texture.create_texture(size)
-
-	print("Preparation finished")
 
 	progA = data.shaders["thermalA"]
 	progB = data.shaders["thermalB"]

@@ -1,3 +1,5 @@
+"""Module for common operators used in the Hydra addon."""
+
 import bpy
 from bpy.props import BoolProperty
 

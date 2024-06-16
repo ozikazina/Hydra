@@ -9,7 +9,12 @@ from datetime import datetime
 
 # --------------------------------------------------------- Flow
 
-def simulate(obj: bpy.types.Image | bpy.types.Object):
+def simulate(obj: bpy.types.Image | bpy.types.Object)->bpy.types.Image|None:
+	"""Simulates snow movement on the specified entity.
+	
+	:param obj: Object or image to simulate on.
+	:type obj: :class:`bpy.types.Object` or :class:`bpy.types.Image`"""
+
 	data = common.data
 	ctx = data.context
 	hyd = obj.hydra_erosion
@@ -118,6 +123,6 @@ def simulate(obj: bpy.types.Image | bpy.types.Object):
 	request.release()
 	free.release()
 
-	print("Erosion finished")
+	print("Simulation finished")
 
 	return ret

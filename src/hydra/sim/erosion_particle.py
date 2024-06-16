@@ -12,7 +12,7 @@ import bpy, bpy.types
 
 PARTICLE_MULTIPLIER = 20
 
-def erode(obj: bpy.types.Object | bpy.types.Image):
+def erode(obj: bpy.types.Object | bpy.types.Image)->None:
 	"""Erodes the specified entity.
 	
 	:param obj: Object or image to erode.
@@ -95,13 +95,15 @@ def erode(obj: bpy.types.Object | bpy.types.Image):
 
 	print("Erosion finished")
 
-def color(obj: bpy.types.Object | bpy.types.Image)->Texture:
+def color(obj: bpy.types.Object | bpy.types.Image)->bpy.types.Image:
 	"""Simulates color transport on the specified entity.
 	
 	:param obj: Object or image to simulate on.
-	:type obj: :class:`bpy.types.Object` or :class:`bpy.types.Image`"""
+	:type obj: :class:`bpy.types.Object` or :class:`bpy.types.Image`
+	:return: Color map.
+	:rtype: :class:`bpy.types.Image`"""
 
-	print("Preparing for water erosion")
+	print("Preparing for color transport")
 	data = common.data
 
 	hyd = obj.hydra_erosion

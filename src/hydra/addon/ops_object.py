@@ -1,4 +1,4 @@
-"""Module responsible for object UI elements and operators."""
+"""Module responsible for object operators."""
 
 import bpy, bpy.types
 

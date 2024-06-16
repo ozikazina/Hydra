@@ -7,7 +7,7 @@ import moderngl as mgl
 
 # --------------------------------------------------------- Models
 
-def create_vao(ctx: mgl.Context, program: mgl.Program, vertices:list[tuple[float]]=None, indices:list[int]=None):
+def create_vao(ctx: mgl.Context, program: mgl.Program, vertices:list[tuple[float]]=None, indices:list[int]=None)->mgl.VertexArray:
 	"""Creates a :class:`moderngl.VertexArray` object.
 	
 	:param ctx: ModernGL context.
@@ -50,7 +50,7 @@ def evaluate_mesh(obj: bpy.types.Object)->bpy.types.Mesh:
 	mesh.calc_loop_triangles()
 	return mesh
 
-def get_resize_matrix(obj: bpy.types.Object) -> tuple[float]:
+def get_resize_matrix(obj: bpy.types.Object)->tuple[float]:
 	"""
 	Creates a resizing matrix that scales the input object into normalized device coordinates, so that 1-Z is the normalized surface height.
 
@@ -69,14 +69,12 @@ def get_resize_matrix(obj: bpy.types.Object) -> tuple[float]:
 
 	return (dx,0,0,-cx*dx, 0,dy,0,-cy*dy, 0,0,-dz,0.5+cz*dz, 0,0,0,1)
 
-def recalculate_scales(obj: bpy.types.Object) -> None:
+def recalculate_scales(obj: bpy.types.Object)->None:
 	"""
-	Sets :data:`hydra_erosion.scale_ratio`, `hydra_erosion.org_scale`. `hydra_erosion.org_width` and :data:`hydra_erosion.height_scale` for the object.
+	Sets :data:`hydra_erosion.scale_ratio`, :data:`hydra_erosion.org_scale`, :data:`hydra_erosion.org_width` and :data:`hydra_erosion.height_scale` for the object.
 
 	:param obj: Object to be evaluated.
 	:type obj: :class:`bpy.types.Object`
-	:return: Created resizing matrix.
-	:rtype: :class:`tuple[float]`
 	"""
 	ar = np.array(obj.bound_box)
 	dx = (ar[4][0] - ar[0][0]) / 2

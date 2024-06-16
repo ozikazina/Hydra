@@ -6,14 +6,18 @@ from Hydra import common
 import bpy
 import bpy.types
 import numpy as np
-import platform
-from datetime import datetime
 
 def generate_heightmap(obj: bpy.types.Object, normalized: bool=False, world_scale: bool=False, local_scale: bool=False)->mgl.Texture:
 	"""Creates a heightmap for the specified object and returns it.
 	
 	:param obj: Object to generate from.
 	:type obj: :class:`bpy.types.Object`
+	:param normalized: If `True`, the heightmap will be normalized.
+	:type normalized: :class:`bool`
+	:param world_scale: If `True`, the heightmap will have local-space heights.
+	:type world_scale: :class:`bool`
+	:param local_scale: If `True`, the heightmap will have world-space heights.
+	:type local_scale: :class:`bool`
 	:return: Generated heightmap.
 	:rtype: :class:`moderngl.Texture`"""
 	print("Preparing heightmap generation.")
@@ -90,7 +94,7 @@ def generate_heightmap_from_image(img:bpy.types.Image)->mgl.Texture:
 		prog.run(txt.width, txt.height)	# txt = linearize(txt)
 	return txt
 
-def prepare_heightmap(obj: bpy.types.Image | bpy.types.Object):
+def prepare_heightmap(obj: bpy.types.Image | bpy.types.Object)->None:
 	"""Creates or replaces a base map for the given Image or Object. Also creates a source map if needed.
 
 	:param obj: Object or image to generate from.
@@ -126,7 +130,11 @@ def subtract(modified: mgl.Texture, base: mgl.Texture, factor: float = 1.0, scal
 	:type modified: :class:`moderngl.Texture`
 	:param base: Base heightmap. Subtrahend.
 	:type base: :class:`moderngl.Texture`
-	:return: A texture equal to (modified - base).
+	:param scale: Scale factor for the result.
+	:type scale: :class:`float`
+	:param factor: Multiplication factor for the second texture.
+	:type factor: :class:`float`
+	:return: A texture equal to (scale * (modified - factor * base)).
 	:rtype: :class:`moderngl.Texture`"""
 	return add(modified, base, -factor, scale)
 
@@ -162,10 +170,10 @@ def get_displacement(obj: bpy.types.Object, name:str)->bpy.types.Image:
 
 	:param obj: Object to apply to.
 	:type obj: :class:`bpy.types.Object`
-	:param current: Current heightmap to preview.
-	:type current: :class:`common.Heightmap`
-	:param base: Base heightmap for difference calculation.
-	:type base: :class:`common.Heightmap`"""
+	:param name: Name of the created image.
+	:type name: :class:`str`
+	:return: Created image.
+	:rtype: :class:`bpy.types.Image`"""
 	data = common.data
 	hyd = obj.hydra_erosion
 
@@ -183,7 +191,7 @@ def get_displacement(obj: bpy.types.Object, name:str)->bpy.types.Image:
 
 	return ret
 
-def set_result_as_source(obj: bpy.types.Object | bpy.types.Image, as_base: bool = False):
+def set_result_as_source(obj: bpy.types.Object | bpy.types.Image, as_base: bool = False)->None:
 	"""Applies the Result map as a Source map.
 
 	:param obj: Object or image to modify.
@@ -240,7 +248,16 @@ def add_subres(height: mgl.Texture, height_prior: mgl.Texture, height_prior_full
 	"""Adds a resized difference to the original heightmap.
 
 	Releases height_prior and height.
-	"""
+
+	:param height: Resulting heightmap to add.
+	:type height: :class:`moderngl.Texture`
+	:param height_prior: Previous heightmap for difference calculation.
+	:type height_prior: :class:`moderngl.Texture`
+	:param height_prior_fullres: Full resolution previous heightmap to add to.
+	:type height_prior_fullres: :class:`moderngl.Texture`
+	:return: New heightmap.
+	:rtype: :class:`moderngl.Texture`"""
+	
 	dif = subtract(height, height_prior) # get difference
 	height_prior.release()
 	height.release()

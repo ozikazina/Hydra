@@ -8,10 +8,12 @@ COLOR_VECTOR = (0.172,0.172,0.376)
 
 # -------------------------------------------------- Node Utils
 
-def minimize_node(node, collapse_node:bool=True):
+def minimize_node(node, collapse_node:bool=True)->None:
 	"""Hides unused inputs and minimizes the specified node.
 	
-	:param node: Node to minimize."""
+	:param node: Node to minimize.
+	:param collapse_node: Whether to collapse the node.
+	:type collapse_node: :class:`bool`"""
 	if collapse_node:
 		node.hide = True
 	
@@ -20,7 +22,7 @@ def minimize_node(node, collapse_node:bool=True):
 	for n in node.outputs:
 		n.hide = True
 
-def stagger_nodes(baseNode:bpy.types.ShaderNode, *args, forwards:bool=False):
+def stagger_nodes(baseNode:bpy.types.ShaderNode, *args, forwards:bool=False)->None:
 	"""Spaces and shifts specified nodes around.
 	
 	:param baseNode: Rightmost node.
@@ -54,7 +56,13 @@ def stagger_nodes(baseNode:bpy.types.ShaderNode, *args, forwards:bool=False):
 				y -= node.height + 40
 			x -= maxwidth + 20
 
-def space_nodes(*args, forwards:bool=False):
+def space_nodes(*args, forwards:bool=False)->None:
+	"""Spaces specified nodes.
+	
+	:param args: Node arguments to be spaced.
+	:type args: :class:`bpy.types.ShaderNode`
+	:param forwards: Shift direction. `True` shifts towards the root of the node tree.
+	:type forwards: :class:`bool`"""
 	offset = 50
 	for n in args[::-1 if forwards else 1]:
 		if forwards:
@@ -63,7 +71,18 @@ def space_nodes(*args, forwards:bool=False):
 			n.location.x -= offset
 		offset += 50
 
-def frame_nodes(nodes, *args, label:str|None = None, color:tuple[float,float,float]|None=None):
+def frame_nodes(nodes, *args, label:str|None = None, color:tuple[float,float,float]|None=None)->bpy.types.ShaderNode:
+	"""Creates a frame node and parents specified nodes to it.
+	
+	:param nodes: Node graph.
+	:param args: Nodes to parent.
+	:type args: :class:`bpy.types.ShaderNode`
+	:param label: Frame label.
+	:type label: :class:`str`
+	:param color: Frame color.
+	:type color: :class:`tuple[float,float,float]`
+	:return: Created frame node.
+	:rtype: :class:`bpy.types.ShaderNode`"""
 	frame = nodes.new("NodeFrame")
 	frame.label = label
 	if color is not None:
@@ -128,7 +147,7 @@ def make_bsdf(nodes)->bpy.types.ShaderNode:
 
 	return ret
 
-def get_or_make_output_node(nodes):
+def get_or_make_output_node(nodes)->bpy.types.ShaderNode:
 	"""Finds or creates an Output node.
 	
 	:param nodes: Node graph.
@@ -146,7 +165,15 @@ def get_or_make_output_node(nodes):
 	
 	return out
 
-def get_or_make_displace_group(name, image: bpy.types.Image=None):
+def get_or_make_displace_group(name, image: bpy.types.Image=None)->bpy.types.NodeGroup:
+	"""Finds or creates a displacement node group.
+
+	:param name: Node group name.
+	:type name: :class:`str`
+	:param image: Image to use for displacement.
+	:type image: :class:`bpy.types.Image`
+	:return: Displacement node group.
+	:rtype: :class:`bpy.types.NodeGroup`"""
 	if name in bpy.data.node_groups:
 		g = bpy.data.node_groups[name]
 		sockets = g.interface.items_tree
