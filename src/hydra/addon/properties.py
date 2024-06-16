@@ -341,6 +341,13 @@ class ErosionGroup(bpy.types.PropertyGroup):
 		description="Solver type for color transport"
 	)
 
+	color_iter_num: IntProperty(
+		default=100,
+		min=1, max=500, soft_max=1000,
+		name="Iterations",
+		description="Number of iterations of color simulation"
+	)
+
 	color_mixing: FloatProperty(
 		default=50,
 		min=1, max=100.0,
@@ -376,6 +383,22 @@ class ErosionGroup(bpy.types.PropertyGroup):
 		subtype="PERCENTAGE",
 		name="Detail",
 		description="Lower values create simpler patterns"
+	)
+
+	color_acceleration: FloatProperty(
+		default=50,
+		min=1, soft_max=100.0, max=200,
+		subtype="PERCENTAGE",
+		name="Acceleration",
+		description="Higher values lead to longer streaks"
+	)
+
+	color_lifetime: IntProperty(
+		default=50,
+		min=1, max=300,
+		soft_max=100,
+		name="Lifetime",
+		description="Number of steps a particle will take per iteration"
 	)
 
 	color_speed: FloatProperty(

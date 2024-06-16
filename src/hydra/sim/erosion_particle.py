@@ -134,16 +134,16 @@ def color(obj: bpy.types.Object | bpy.types.Image)->Texture:
 	prog["tile_size"] = (math.ceil(size[0] / 32), math.ceil(size[1] / 32))
 	prog["tile_mult"] = (1 / size[0], 1 / size[1])
 
-	prog["erosion_strength"] = hyd.part_fineness / 100
-	prog["deposition_strength"] = hyd.part_deposition / 100
-	prog["capacity_factor"] = hyd.part_capacity / 100
+	prog["erosion_strength"] = max(hyd.color_acceleration / 100, 0.01)
+	prog["deposition_strength"] = 1 - hyd.color_mixing / 100
+	prog["capacity_factor"] = max(1 - hyd.color_acceleration / 100, 0.01)
 
 	prog["max_velocity"] = 2
-	prog["acceleration"] = hyd.part_acceleration / 100
-	prog["lateral_acceleration"] = hyd.part_lateral_acceleration / 100
-	prog["lifetime"] = hyd.part_lifetime
-	prog["iterations"] = hyd.part_iter_num * PARTICLE_MULTIPLIER
-	prog["drag"] = 1 - (hyd.part_drag / 100)
+	prog["acceleration"] = hyd.color_acceleration / 100
+	prog["lateral_acceleration"] = 1
+	prog["lifetime"] = hyd.color_lifetime
+	prog["iterations"] = hyd.color_iter_num * PARTICLE_MULTIPLIER
+	prog["drag"] = max(1 - (hyd.color_detail / 100), 0.01)
 
 	prog["color_strength"] = hyd.color_mixing / 100
 

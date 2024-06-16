@@ -203,21 +203,17 @@ class ExtrasPanel():
 
 			if hyd.color_solver == "particle":
 				g = p.grid_flow(columns=1, align=True)
-				g.prop(hyd, "part_iter_num")
-				g.prop(hyd, "part_lifetime")
+				g.prop(hyd, "color_iter_num")
+				g.prop(hyd, "color_lifetime")
 
 				g = p.grid_flow(columns=1, align=True)
-				g.prop(hyd, "part_fineness", slider=True)
-				g.prop(hyd, "part_deposition", slider=True)
-				g.prop(hyd, "part_capacity", slider=True)
-
-				g = p.grid_flow(columns=1, align=True)
-				g.prop(hyd, "part_acceleration", slider=True)
+				g.prop(hyd, "color_acceleration", slider=True)
 				if hyd.erosion_advanced:
 					g.prop(hyd, "part_lateral_acceleration")
-				g.prop(hyd, "part_drag", slider=True)
+				g.prop(hyd, "color_detail", slider=True)
+
 			elif hyd.color_solver == "pipe":
-				p.prop(hyd, "mei_iter_num")
+				p.prop(hyd, "color_iter_num")
 
 				g = p.grid_flow(columns=1, align=True)
 				g.prop(hyd, "color_detail", slider=True)
@@ -226,7 +222,6 @@ class ExtrasPanel():
 				g = p.grid_flow(columns=1, align=True)
 				g.prop(hyd, "color_rain", slider=True)
 				g.prop(hyd, "color_evaporation")
-			# self.draw_nav_fragment(p, f"HYD_{target.name}_Color", "Color")
 
 #-------------------------------------------- Heightmap System
 

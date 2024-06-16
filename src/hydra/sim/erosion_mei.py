@@ -287,7 +287,7 @@ def color(obj: bpy.types.Object | bpy.types.Image)->Texture:
 	progs[4]["tile_mult"] = (1 / size[0], 1 / size[1])
 
 	time = datetime.now()
-	for _ in range(hyd.mei_iter_num):
+	for _ in range(hyd.color_iter_num):
 		progs[0].run(group_x=group_x, group_y=group_y)
 		progs[1].run(group_x=group_x, group_y=group_y)
 		progs[2].run(group_x=group_x, group_y=group_y)
