@@ -52,7 +52,7 @@ The add-on works by converting Blender objects and images into [internal heightm
 | :--: | :--: |
 | ![256 by 256 pixel heightmap example](./github/img/example_256.webp) | ![512 by 512 pixel heightmap example](./github/img/example_512.webp) |
 
-- Once erosion starts, the resolution becomes locked. To pick a different resolution you first have to **clear&nbsp;(C)** generated textures for the current object.
+- Once erosion starts, the resolution becomes locked. To pick a different resolution you first have to clear existing heightmaps for the current object.
 
 - If the height of the object changes (e.g. you apply Scale) or the resolution of the original image changes, then you should first clear existing heightmaps.
 
@@ -67,63 +67,53 @@ The add-on creates two internal heightmaps - **Source** and **Result**.
 - `Result` - Result of erosion. It is automatically previewed.
 
 Choosing different parameters and eroding again will start erosion from the Source map, giving you the option to test different settings. To use the Result map as a starting point, use:
- - **Set & Continue (B)** - which sets *Result* as *Source* and starts erosion - or
- - **Set as Source (E)**
+ - **Set & Continue** - which sets *Result* as *Source* and starts erosion - or
+ - **Set as Source**
 
-
-
-The *Result* map can be applied in the following ways using buttons in the *Heightmaps* subtab.
+The *Result* map can be applied in the following ways using buttons in the *Heightmaps* subtab:
 
 ### Object options
 
-<table><tr>
-<td  width=160px> <img src="./github/img/ui.svg"> </td>
-<td> <table class="ui_table">
+<table>
 <thead>
     <th width=100px>Type</th>
-    <th>Button</th>
     <th>Description</th>
 </thead>
-<tr><td align="right"><code>Image</code></td><td align="center">G</td><td>
+<tr><td align="right"><code>Image</code></td><td>
         Creates a Blender image of the resulting heightmap.
 </td></tr>
-<tr><td align="right"><code>Nodes</code></td><td align="center">H</td><td>
+<tr><td align="right"><code>Nodes</code></td><td>
     Applies erosion as a Geometry Nodes group.
 </td></tr>
-<tr><td align="right"><code>Modifier</code></td><td align="center">I</td><td>
+<tr><td align="right"><code>Modifier</code></td><td>
     Applies erosion as a Displace modifier.
 </td></tr>
-<tr><td align="right"><code>Displacement</code></td><td align="center">J</td><td>
+<tr><td align="right"><code>Displacement</code></td><td>
     Adds a displacement map to the first material slot. Creates material if necessary.
 </td></tr>
-<tr><td align="right"><code>Bump</code></td><td align="center">K</td><td>
+<tr><td align="right"><code>Bump</code></td><td>
     Adds a bump map to the first material slot. Creates material if necessary.
 </td></tr>
-<tr><td align="right"><code>Mesh</code></td><td align="center">L</td><td>
+<tr><td align="right"><code>Mesh</code></td><td>
     Applies modifiers to the mesh. Available if the preview or modifier option was chosen.
-</td></tr>
-</table></td>
+</td>
 
 </tr></table>
 
 ### Image options
 
-<table><tr>
-<td><table class="ui_table">
+<table>
 <thead>
     <th width=100px>Type</th>
-    <th>Button</th>
     <th>Description</th>
 </thead>
-<tr><td align="right"><code>Image</code></td><td align="center">P</td><td>
+<tr><td align="right"><code>Image</code></td><td>
         Creates a new Blender image of the resulting heightmap. This image won't be erased by launching erosion, unlike the image preview.
 </td></tr>
-<tr><td align="right"><code>To Original</code></td><td align="center">Q</td><td>
+<tr><td align="right"><code>To&nbsp;Original</code></td><td>
     Writes the resulting heightmap to the original image.
 </td></tr>
-</table></td>
-<td width=160px><img src="./github/img/ui_image.svg"></td>
-</tr></table>
+</table>
 
 Water erosion
 =============
@@ -193,7 +183,7 @@ It has the following parameters:
 
 ### Water source
 
-This type of erosion can use a **texture as a water source** in the **Advanced** settings. Water is otherwise added evenly across the entire terrain.
+Pipe-based erosion can use a **texture as a water source** in the **Advanced** settings. Water is otherwise added evenly across the entire terrain.
 
 | Source | Result |
 | :--: | :--: |
@@ -217,13 +207,8 @@ Snow simulation also outputs a texture with the resulting snow placement.
 
 ![Snow texture example.](./github/img/example_snow2.webp)
 
-Extras
+Extras - Color transport
 =========
-
-A special tab is offered for flow map generation and color transport.
-
-Color transport
----------------
 
 Color transport takes an image and moves colors around based on the flow of water.
 
@@ -231,15 +216,28 @@ Color transport takes an image and moves colors around based on the flow of wate
 
 Similarly to water erosion, color transport has two solvers with different characteristics: particle-based and pipe-based.
 
-| **Particle** | **Pipe** |
+### Particle-based color transport
+
+| | |
 | :--: | :--: |
-| ![Particle color transport example](./github/img/color_particle.webp) | ![Pipe color transport example](./github/img/color_pipe.webp) |
+| Default | High lifetime / Strength |
+| ![Default color transport example](./github/img/color_default.webp) | ![High lifetime example](./github/img/color_high_lifetime.webp) |
+| Low acceleration / Strength | Low detail |
+| ![Low acceleration example](./github/img/color_low_accel.webp) | ![Low detail example](./github/img/color_low_detail.webp) |
 
-Flow maps
----------
+### Pipe-based color transport
 
-The output texture stores flow concentration, which can be varied by a contrast slider.
-Particle settings are shared with water erosion.
+| | |
+| :--: | :--: |
+| High evaporation | Low detail |
+| ![High evaporation example](./github/img/color_mei_high_evap.webp) | ![Low detail example](./github/img/color_mei_low_detail.webp) |
+| High flow speed | High rain |
+| ![High flow speed example](./github/img/color_mei_high_flow.webp) | ![High rain example](./github/img/color_mei_high_rain.webp) |
+
+Extras - Flow
+=========
+
+The output texture of this opertaion stores paths of flowing particles. Some particle settings are shared with water erosion.
 
 | Default | Low drag |
 | :--: | :--: |
@@ -264,9 +262,10 @@ The image viewer tab also has a utility to generate landscapes directly from hei
 
 Future plans
 ============
+ - Water source texture for particle-based erosion
  - Simple planetary erosion
- - Unified node-based UI
  - CUDA acceleration
+ - Unified node-based UI (hopefully one day)
 
 License
 =======
