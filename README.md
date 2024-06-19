@@ -66,7 +66,7 @@ The add-on creates two internal heightmaps - **Source** and **Result**.
 - `Source` - Starting point for erosion.
 - `Result` - Result of erosion. It is automatically previewed.
 
-Choosing different parameters and eroding again will start erosion from the Source map, giving you the option to test different settings. To use the Result map as a starting point, use:
+Choosing different parameters and eroding again will start erosion from the Source map, giving the option to test different settings. To use the Result map as a starting point, use:
  - **Set & Continue** - which sets *Result* as *Source* and starts erosion - or
  - **Set as Source**
 
@@ -108,7 +108,7 @@ The *Result* map can be applied in the following ways using buttons in the *Heig
     <th>Description</th>
 </thead>
 <tr><td align="right"><code>Image</code></td><td>
-        Creates a new Blender image of the resulting heightmap. This image won't be erased by launching erosion, unlike the image preview.
+        Creates a new Blender image of the resulting heightmap. Unlike the image preview, this image won't be erased by launching erosion.
 </td></tr>
 <tr><td align="right"><code>To&nbsp;Original</code></td><td>
     Writes the resulting heightmap to the original image.
@@ -120,7 +120,7 @@ Water erosion
 
 The main focus of this add-on is water erosion, where the flow of water carves material away and deposits it lower down. Two types of water erosion are implemented: particle-based and pipe-based.
 
-Both types have a **Simulation resolution** slider, which allows the user simulate erosion at different scales. It is recommended to start at **512x512** pixels for large scale features.
+Both types have a **Simulation resolution** slider, which allows the user to simulate erosion at different scales. It is recommended to start at **512x512** pixels for large-scale features.
 
 Both types also support variable hardness in the **Advanced** settings.
 
@@ -237,7 +237,7 @@ Similarly to water erosion, color transport has two solvers with different chara
 Extras - Flow
 =========
 
-The output texture of this opertaion stores paths of flowing particles. Some particle settings are shared with water erosion.
+The output texture of this operation stores paths of flowing particles. Some particle settings are shared with water erosion.
 
 | Default | Low drag |
 | :--: | :--: |
