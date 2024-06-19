@@ -52,7 +52,7 @@ The add-on works by converting Blender objects and images into [internal heightm
 | :--: | :--: |
 | ![256 by 256 pixel heightmap example](./github/img/example_256.webp) | ![512 by 512 pixel heightmap example](./github/img/example_512.webp) |
 
-- Once erosion starts, the resolution becomes locked. To pick a different resolution you first have to **clear&nbsp;(<span style="color:#ffd200ff">C</span>)** generated textures for the current object.
+- Once erosion starts, the resolution becomes locked. To pick a different resolution you first have to **clear&nbsp;(C)** generated textures for the current object.
 
 - If the height of the object changes (e.g. you apply Scale) or the resolution of the original image changes, then you should first clear existing heightmaps.
 
@@ -67,8 +67,8 @@ The add-on creates two internal heightmaps - **Source** and **Result**.
 - `Result` - Result of erosion. It is automatically previewed.
 
 Choosing different parameters and eroding again will start erosion from the Source map, giving you the option to test different settings. To use the Result map as a starting point, use:
- - **Set & Continue (<span style="color:#ffd200ff">B</span>)** - which sets *Result* as *Source* and starts erosion - or
- - **Set as Source (<span style="color:#ffd200ff">E</span>)**
+ - **Set & Continue (B)** - which sets *Result* as *Source* and starts erosion - or
+ - **Set as Source (E)**
 
 
 
@@ -76,80 +76,54 @@ The *Result* map can be applied in the following ways using buttons in the *Heig
 
 ### Object options
 
-<style>
-    .ui_table {
-        /* width=100%; */
-    }
-    .ui_table td:nth-child(1), .ui_table th:nth-child(1) {
-        text-align: end;
-    }
-    .ui_table td:nth-child(2) {
-        text-align: center;
-        font-weight: bold;
-    }
-    .ui_flow img {
-        width: 170px;
-    }
-    .ui_flow {
-        display:flex;
-        gap: 30px;
-    }
-    .ui_flow:last-of-type {
-        margin-bottom: 30px;
-    }
-</style>
-
-<span class="ui_flow">
-<img src="./github/img/ui.svg">
-<table class="ui_table">
+<table><tr>
+<td  width=160px> <img src="./github/img/ui.svg"> </td>
+<td> <table class="ui_table">
 <thead>
     <th width=100px>Type</th>
     <th>Button</th>
     <th>Description</th>
 </thead>
-<tr>
-    <td><code>Image</code></td><td><span style="color:#ffd200ff">G</span></td><td>
+<tr><td align="right"><code>Image</code></td><td align="center">G</td><td>
         Creates a Blender image of the resulting heightmap.
-    </td>
-</tr>
-<tr><td><code>Nodes</code></td><td><span style="color:#ffd200ff">H</span></td><td>
+</td></tr>
+<tr><td align="right"><code>Nodes</code></td><td align="center">H</td><td>
     Applies erosion as a Geometry Nodes group.
 </td></tr>
-<tr><td><code>Modifier</code></td><td><span style="color:#ffd200ff">I</span></td><td>
+<tr><td align="right"><code>Modifier</code></td><td align="center">I</td><td>
     Applies erosion as a Displace modifier.
 </td></tr>
-<tr><td><code>Displacement</code></td><td><span style="color:#ffd200ff">J</span></td><td>
+<tr><td align="right"><code>Displacement</code></td><td align="center">J</td><td>
     Adds a displacement map to the first material slot. Creates material if necessary.
 </td></tr>
-<tr><td><code>Bump</code></td><td><span style="color:#ffd200ff">K</span></td><td>
+<tr><td align="right"><code>Bump</code></td><td align="center">K</td><td>
     Adds a bump map to the first material slot. Creates material if necessary.
 </td></tr>
-<tr><td><code>Mesh</code></td><td><span style="color:#ffd200ff">L</span></td><td>
+<tr><td align="right"><code>Mesh</code></td><td align="center">L</td><td>
     Applies modifiers to the mesh. Available if the preview or modifier option was chosen.
 </td></tr>
-</table>
-</span>
+</table></td>
+
+</tr></table>
 
 ### Image options
 
-<span class="ui_flow">
-<table class="ui_table">
+<table><tr>
+<td><table class="ui_table">
 <thead>
     <th width=100px>Type</th>
     <th>Button</th>
     <th>Description</th>
 </thead>
-<tr>
-    <td><code>Image</code></td><td><span style="color:#ffd200ff">P</span></td><td>
+<tr><td align="right"><code>Image</code></td><td align="center">P</td><td>
         Creates a new Blender image of the resulting heightmap. This image won't be erased by launching erosion, unlike the image preview.
-    </td>
-</tr>
-<tr><td><code>To Original</code></td><td><span style="color:#ffd200ff">Q</span></td><td>
+</td></tr>
+<tr><td align="right"><code>To Original</code></td><td align="center">Q</td><td>
     Writes the resulting heightmap to the original image.
 </td></tr>
-</table>
-<img src="./github/img/ui_image.svg">
-</span>
+</table></td>
+<td width=160px><img src="./github/img/ui_image.svg"></td>
+</tr></table>
 
 Water erosion
 =============
@@ -290,7 +264,7 @@ The image viewer tab also has a utility to generate landscapes directly from hei
 
 Future plans
 ============
- - Planetary erosion
+ - Simple planetary erosion
  - Unified node-based UI
  - CUDA acceleration
 
