@@ -43,13 +43,13 @@ def write_image(name: str, texture: mgl.Texture)->tuple[bpy.types.Image, bool]:
 	image, updated = get_or_make_image(texture.size, name)
 
 	if texture.components == 1:
-		pixels = np.frombuffer(texture.read(), dtype=np.float32)
-		pixels = [x for p in pixels for x in (p,p,p,1)]
-		image.pixels = pixels
+		pixels = np.frombuffer(texture.read(), dtype=np.float32).repeat(4)
+		pixels[3:4] = 1.0
+		image.pixels.foreach_set(pixels)
 	elif texture.components == 2 or texture.components == 3:
 		raise ValueError("Two or three channel fill isn't supported.")
 	elif texture.components == 4:
-		image.pixels = np.frombuffer(texture.read(), dtype=np.float32)
+		image.pixels.foreach_set(np.frombuffer(texture.read(), dtype=np.float32))
 	
 	image.pack()
 	return image, updated
@@ -77,8 +77,10 @@ def create_texture(size: 'tuple[int,int]', pixels: bytes|None = None, image: bpy
 	ctx = data.context
 
 	if image is not None:
-		pixels = np.array(image.pixels).astype('f4').tobytes()
-		color = ctx.texture(tuple(image.size), 4, dtype="f4", data=pixels)
+		pixels = np.empty(image.size[0] * image.size[1] * 4, dtype='f4')
+		image.pixels.foreach_get(pixels)
+
+		color = ctx.texture(tuple(image.size), 4, dtype="f4", data=pixels.tobytes())
 		
 		dest = ctx.texture(size, channels, dtype="f4")
 		
