@@ -42,7 +42,9 @@ def add_preview(target: bpy.types.Object|bpy.types.Image)->None:
 
 	if isinstance(target, bpy.types.Image):
 		img, _ = texture.write_image(PREVIEW_IMG_NAME, data.get_map(hyd.map_result).texture)
-		nav.goto_image(img)
+		add_landscape(img, subdiv=1, name=PREVIEW_IMG_NAME, detach=False)
+		# as preference?
+		# nav.goto_image(img)
 	else:
 		if data.lastPreview and data.lastPreview in bpy.data.objects:
 			last = bpy.data.objects[data.lastPreview]
@@ -94,6 +96,14 @@ def remove_preview()->None:
 	if PREVIEW_IMG_NAME in bpy.data.images:
 		img = bpy.data.images[PREVIEW_IMG_NAME]
 		bpy.data.images.remove(img)
+
+	if PREVIEW_IMG_NAME in bpy.data.objects:
+		obj = bpy.data.objects[PREVIEW_IMG_NAME]
+		bpy.data.objects.remove(obj)
+
+	if PREVIEW_IMG_NAME in bpy.data.node_groups:
+		g = bpy.data.node_groups[PREVIEW_IMG_NAME]
+		bpy.data.node_groups.remove(g)
 
 	if PREVIEW_GEO_NAME in bpy.data.node_groups:
 		g = bpy.data.node_groups[PREVIEW_GEO_NAME]
@@ -287,52 +297,57 @@ def add_modifier(obj: bpy.types.Object, img: bpy.types.Image)->None:
 
 # -------------------------------------------------- Landscape
 
-def add_landscape(img: bpy.types.Image)->None:
-	"""Generates a landscape from the specified image.
+def add_landscape(img: bpy.types.Image, subdiv: int = 1, name: str|None = None, detach: bool = False)->None:
+	"""Generates a landscape from the specified image. Does not free image.
 	
 	:param img: Image to generate from.
-	:type img: :class:`bpy.types.Image`"""
+	:type img: :class:`bpy.types.Image`
+	:param generate_new: Whether to generate a new object or use existing one (if found).
+	:type generate_new: :class:`bool`
+	:param apply_mod: Whether to apply the modifier after generating the object.
+	:type apply_mod: :class:`bool`"""
 	hyd = img.hydra_erosion
+	displacement = img
 
-	if common.data.has_map(hyd.map_result):
-		displacement, _ = texture.write_image("HYD_Temp", common.data.get_map(hyd.map_result).texture)
-		free_img = True
+	if name is None:
+		if "." in img.name:
+			name = img.name[:img.name.rfind(".")]
+		else:
+			name = img.name
+
+	name = f"HYD_Gen_{name}"
+
+	if not detach and name in bpy.data.objects:
+		act = bpy.data.objects[name]
+		common.data.add_message("Object already exists, it should update automatically.")
 	else:
-		displacement = img
-		free_img = False
+		resX = math.ceil(img.size[0] / subdiv)
+		resY = math.ceil(img.size[1] / subdiv)
 
-	resX = math.ceil(img.size[0] / hyd.gen_subscale)
-	resY = math.ceil(img.size[1] / hyd.gen_subscale)
+		bpy.ops.mesh.primitive_grid_add(x_subdivisions=resX, y_subdivisions=resY, location=bpy.context.scene.cursor.location)
+		act = bpy.context.active_object
 
-	bpy.ops.mesh.primitive_grid_add(x_subdivisions=resX, y_subdivisions=resY, location=bpy.context.scene.cursor.location)
-	act = bpy.context.active_object
+		act.name = name
+		for k in hyd.keys():
+			act.hydra_erosion[k] = hyd[k]
+		act.hydra_erosion.is_generated = True
+		act.scale[1] = img.size[1] / img.size[0]
 
-	if "." in img.name:
-		name = img.name[:img.name.rfind(".")]
-	else:
-		name = img.name
+		for polygon in act.data.polygons:
+			polygon.use_smooth = True
 
-	act.name = f"HYD_Gen_{name}"
-	for k in hyd.keys():
-		act.hydra_erosion[k] = hyd[k]
-	act.hydra_erosion.is_generated = True
-	act.scale[1] = img.size[1] / img.size[0]
+		mod = act.modifiers.new(PREVIEW_MOD_NAME, "NODES")
+		
+		mod.node_group = nodes.get_or_make_displace_group(act.name, image=displacement)
 
-	for polygon in act.data.polygons:
-		polygon.use_smooth = True
+		bpy.ops.object.mode_set(mode="OBJECT")	# modifiers can't be applied in EDIT mode
 
-	mod = act.modifiers.new(PREVIEW_MOD_NAME, "NODES")
-	
-	mod.node_group = nodes.get_or_make_displace_group(PREVIEW_MOD_NAME, image=displacement)
+		bpy.ops.object.transform_apply(scale=True, location=False, rotation=False, properties=False, isolate_users=False)
 
-	bpy.ops.object.mode_set(mode="OBJECT")	# modifiers can't be applied in EDIT mode
+		if detach:
+			bpy.ops.object.modifier_apply(modifier=PREVIEW_MOD_NAME)
 
-	bpy.ops.object.transform_apply(scale=True, location=False, rotation=False, properties=False, isolate_users=False)
-	bpy.ops.object.modifier_apply(modifier=PREVIEW_MOD_NAME)
-	
-	bpy.data.node_groups.remove(bpy.data.node_groups[PREVIEW_MOD_NAME])
-	if free_img:
-		bpy.data.images.remove(displacement)
+			bpy.data.node_groups.remove(bpy.data.node_groups[PREVIEW_MOD_NAME])
 
 	nav.goto_object(act)
 

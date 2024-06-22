@@ -14,7 +14,8 @@ class LandscapeOperator(ops_common.ImageOperator):
 	bl_description = "Generate a landscape using this heightmap"
 			
 	def invoke(self, ctx, event):
-		apply.add_landscape(self.get_target(ctx))
+		hyd = self.get_target(ctx).hydra_erosion
+		apply.add_landscape(self.get_target(ctx), subdiv=hyd.gen_subscale)
 		return {'FINISHED'}
 
 class OverrideImageOperator(ops_common.ImageOperator):

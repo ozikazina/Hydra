@@ -19,41 +19,42 @@ def get_split_direction(target)->str:
 	else:
 		return "VERTICAL" if target.height < target.width else "HORIZONTAL"
 
-def get_or_make_area(type: str, uiType: str = "")->bpy.types.Area:
+def get_or_make_area(type: str, uiType: str = "")->'tuple[bpy.types.Area, bool]':
 	"""Gets or creates a window of the specified type.
 	
 	:param type: Window type.
 	:type type: :class:`str`
 	:param uiType: Window subtype.
 	:type uiType: :class:`str`
-	:return: Created or found area.
+	:return: Created or found area. If the area already existed, returns `True` as the second value.
 	:rtype: :class:`bpy.types.Area`"""
 	active = bpy.context.area.spaces.active
+	# if active window has the target type, try to find another window
 	if active.type == type:
-		other = None
 		for area in bpy.context.screen.areas:	#tries to find a different window
 			if area.type == type and area.spaces[0] != active:
 				if not uiType or uiType == area.ui_type:
-					other = area
-					break
-		if not other:	#splits active
-			area = next(i for i in bpy.context.screen.areas if i.spaces[0] == active)
-			bpy.ops.screen.area_split(direction=get_split_direction(area))
-			other = bpy.context.screen.areas[-1]
-		return other
+					return area, True
+			
+		# otherwise split active window
+		area = next(i for i in bpy.context.screen.areas if i.spaces[0] == active)
+		bpy.ops.screen.area_split(direction=get_split_direction(area))
+		area = bpy.context.screen.areas[-1]
+		return area, False
 
 	target = None
+	# try finding a window of the target type
 	for area in bpy.context.screen.areas:
 		if area.type == type:
 			if not uiType or uiType == area.ui_type:
-				return area
+				return area, True
+		# VIEW_3D as backup target - splits 3D View if type not found
 		if area.type == "VIEW_3D":
 			target = area
 	
-	#splits 3D view if type not found
-	if not target:	#else anything other than outliner or properties
+	if not target:	# else anything other than outliner or properties
 		target = [i for i in bpy.context.screen.areas if i.type != "OUTLINER" and i.type != "PROPERTIES"][-1]
-	if not target:	#else anything
+	if not target:	# else anything
 		target = bpy.context.screen.areas[-1]
 	
 	with bpy.context.temp_override(area=target): #select target area for split
@@ -63,7 +64,7 @@ def get_or_make_area(type: str, uiType: str = "")->bpy.types.Area:
 	target.type = type
 	if uiType:
 		target.ui_type = uiType
-	return target
+	return target, False
 
 
 def goto_image(img: bpy.types.Image|None)->None:
@@ -74,7 +75,7 @@ def goto_image(img: bpy.types.Image|None)->None:
 	if img is None:
 		return
 	
-	imgEditor = get_or_make_area("IMAGE_EDITOR")
+	imgEditor, _ = get_or_make_area("IMAGE_EDITOR")
 	space = imgEditor.spaces[0]
 	space.image = img
 
@@ -87,7 +88,7 @@ def goto_shader(obj: bpy.types.Object)->None:
 	if (len(mats) == 0):
 		return
 	
-	nodeEditor = get_or_make_area("NODE_EDITOR", "ShaderNodeTree")
+	nodeEditor, _ = get_or_make_area("NODE_EDITOR", "ShaderNodeTree")
 	space = nodeEditor.spaces[0]
 	space.shader_type = "OBJECT"
 
@@ -96,18 +97,22 @@ def goto_object(obj: bpy.types.Object)->None:
 	
 	:param obj: Object to navigate to.
 	:type obj: :class:`bpy.types.Object`"""
-	space = get_or_make_area("VIEW_3D").spaces[0]
-	space.region_3d.view_rotation = Euler((3/math.pi,0,math.pi/4), "XYZ").to_quaternion()
-	space.region_3d.view_location = obj.location
+	area, found = get_or_make_area("VIEW_3D")
+	space = area.spaces[0]
+	if not found:
+		space.region_3d.view_rotation = Euler((3/math.pi,0,math.pi/4), "XYZ").to_quaternion()
+		space.region_3d.view_location = obj.location
 
 def goto_modifier()->None:
 	"""Navigates to the Modifiers tab."""
-	space = get_or_make_area("PROPERTIES").spaces[0]
+	area, _ = get_or_make_area("PROPERTIES")[0]
+	space = area.spaces[0]
 	space.context = "MODIFIER"
 
 def goto_shape()->None:
 	"""Navigates to the Mesh data tab."""
-	space = get_or_make_area("PROPERTIES").spaces[0]
+	area = get_or_make_area("PROPERTIES")
+	space = area.spaces[0]
 	space.context = "DATA"
 
 def goto_geometry(obj: bpy.types.Object)->None:
@@ -116,7 +121,7 @@ def goto_geometry(obj: bpy.types.Object)->None:
 	if len(nodes) == 0 or nodes[-1].node_group is None:
 		return
 	
-	nodeEditor = get_or_make_area("NODE_EDITOR", "GeometryNodeTree")
+	nodeEditor, _ = get_or_make_area("NODE_EDITOR", "GeometryNodeTree")
 	space = nodeEditor.spaces[0]
 	space.geometry_nodes_type = "MODIFIER"
 	space.node_tree = nodes[-1].node_group

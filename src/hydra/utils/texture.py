@@ -13,7 +13,7 @@ def get_or_make_image(size: 'tuple[int,int]', name: str)->'tuple[bpy.types.Image
 	:type size: :class:`tuple[int,int]`
 	:param name: Name of created image.
 	:type name: :class:`str`
-	:return: Created image.
+	:return: Created image. If the image was updated, returns `True` as the second value.
 	:rtype: :class:`bpy.types.Image`"""
 	updated = False
 
