@@ -6,7 +6,7 @@ import moderngl as mgl
 from Hydra.utils import model
 from Hydra import common
 
-def get_or_make_image(size: 'tuple[int,int]', name: str)->tuple[bpy.types.Image, bool]:
+def get_or_make_image(size: 'tuple[int,int]', name: str)->'tuple[bpy.types.Image, bool]':
 	"""Gets or creates an image of the specified name. If sizes are different, then it gets scaled to `size`.
 	
 	:param size: Resolution tuple.
@@ -18,12 +18,12 @@ def get_or_make_image(size: 'tuple[int,int]', name: str)->tuple[bpy.types.Image,
 	updated = False
 
 	if name not in bpy.data.images:
-		img = bpy.data.images.new(name, size[0], size[1], alpha=False, float_buffer=True)
+		img = bpy.data.images.new(name, size[0], size[1], alpha=False, float_buffer=True, is_data=True)
 	else:
 		img = bpy.data.images[name]
+		img.colorspace_settings.name = "Non-Color"
 		updated = True
 	
-	img.colorspace_settings.name = "Non-Color"
 
 	if tuple(img.size) != size:
 		img.scale(size[0], size[1])
@@ -31,7 +31,7 @@ def get_or_make_image(size: 'tuple[int,int]', name: str)->tuple[bpy.types.Image,
 	img.hydra_erosion.is_generated = True
 	return img, updated
 
-def write_image(name: str, texture: mgl.Texture)->tuple[bpy.types.Image, bool]:
+def write_image(name: str, texture: mgl.Texture)->'tuple[bpy.types.Image, bool]':
 	"""Writes texture to an `Image` of the specified name.
 	
 	:param name: Image name.
@@ -44,13 +44,14 @@ def write_image(name: str, texture: mgl.Texture)->tuple[bpy.types.Image, bool]:
 
 	if texture.components == 1:
 		pixels = np.frombuffer(texture.read(), dtype=np.float32).repeat(4)
-		pixels[3:4] = 1.0
+		pixels[3::4] = 1.0
 		image.pixels.foreach_set(pixels)
 	elif texture.components == 2 or texture.components == 3:
 		raise ValueError("Two or three channel fill isn't supported.")
 	elif texture.components == 4:
 		image.pixels.foreach_set(np.frombuffer(texture.read(), dtype=np.float32))
 	
+	image.update()
 	image.pack()
 	return image, updated
 
