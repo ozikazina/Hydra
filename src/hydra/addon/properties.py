@@ -43,6 +43,24 @@ class ErosionGroup(bpy.types.PropertyGroup):
 		description="To erode objects, they are first converted into heightmaps. This property defines the heightmap resolution. Once erosion occurs this resolution is set and can only be reset by clearing cached heightmaps",
 		size=2
 	)
+
+	tiling: EnumProperty(
+		name="Tiling",
+		default="none",
+		description="Tiling mode for the texture",
+		items=(
+			("none", "None", "No tiling", 0),
+			("x", "X", "Tiling along the X direction (image width)", 1),
+			("y", "Y", "Tiling along the Y direction (image height)", 2),
+			("xy", "XY", "Tiling in both directions", 3),
+		),
+	)
+
+	advanced: BoolProperty(
+		default=False,
+		name="Advanced",
+		description="Show advanced settings"
+	)
 	
 	#------------------------- Erosion
 	
@@ -54,12 +72,6 @@ class ErosionGroup(bpy.types.PropertyGroup):
 		),
 		name="Erosion solver",
 		description="Solver type for erosion"
-	)
-
-	erosion_advanced: BoolProperty(
-		default=False,
-		name="Advanced",
-		description="Show advanced settings"
 	)
 
 	erosion_subres: FloatProperty(
@@ -246,12 +258,6 @@ class ErosionGroup(bpy.types.PropertyGroup):
 		),
 		name="Direction",
 		description="Solver neighborhood type"
-	)
-
-	thermal_advanced: BoolProperty(
-		default=False,
-		name="Advanced",
-		description="Show advanced settings"
 	)
 
 	thermal_stride: IntProperty(

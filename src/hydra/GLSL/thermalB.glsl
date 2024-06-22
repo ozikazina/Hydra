@@ -11,6 +11,17 @@ uniform int ds = 1;
 
 uniform bool diagonal = false;
 
+uniform ivec2 size = ivec2(512,512);
+
+uniform bool tile_x = false;
+uniform bool tile_y = false;
+
+ivec2 wrap(ivec2 pos) {
+	if (tile_x) pos.x += pos.x < 0 ? size.x : (pos.x >= size.x ? -size.x : 0);
+	if (tile_y) pos.y += pos.y < 0 ? size.y : (pos.y >= size.y ? -size.y : 0);
+	return pos;
+}
+
 //  1y
 //0x  2z
 //  3w
@@ -22,20 +33,20 @@ void main(void) {
 	vec4 request = imageLoad(requests, base);
 
 	float inp, sw;
-	
-	inp = -imageLoad(requests, base + ivec2(-ds, diagonal ? -ds : 0)).z;
+
+	inp = -imageLoad(requests, wrap(base + ivec2(-ds, diagonal ? -ds : 0))).z;
 	sw = inp < 0 ? -1 : 1;
 	nh += (request.x * sw < inp * sw) ? request.x : inp;
 	
-	inp = -imageLoad(requests, base + ivec2(diagonal ? -ds : 0, ds)).w;
+	inp = -imageLoad(requests, wrap(base + ivec2(diagonal ? -ds : 0, ds))).w;
 	sw = inp < 0 ? -1 : 1;
 	nh += (request.y * sw < inp * sw) ? request.y : inp;
 	
-	inp = -imageLoad(requests, base + ivec2(ds, diagonal ? ds : 0)).x;
+	inp = -imageLoad(requests, wrap(base + ivec2(ds, diagonal ? ds : 0))).x;
 	sw = inp < 0 ? -1 : 1;
 	nh += (request.z * sw < inp * sw) ? request.z : inp;
 	
-	inp = -imageLoad(requests, base + ivec2(diagonal ? ds : 0, -ds)).y;
+	inp = -imageLoad(requests, wrap(base + ivec2(diagonal ? ds : 0, -ds))).y;
 	sw = inp < 0 ? -1 : 1;
 	nh += (request.w * sw < inp * sw) ? request.w : inp;
 	

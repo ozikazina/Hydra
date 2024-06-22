@@ -107,7 +107,7 @@ class ErosionPanel():
 		self.draw_size_fragment(col.box(), ctx, hyd)
 
 		col.prop(hyd, "erosion_solver", text="Solver")
-		col.prop(hyd, "erosion_advanced")
+		col.prop(hyd, "advanced")
 
 #-------------------------------------------- Thermal
 
@@ -127,7 +127,11 @@ class ThermalPanel():
 
 		self.draw_size_fragment(col.box(), ctx, hyd)
 
-		col.prop(hyd, "thermal_advanced")
+		col.prop(hyd, "advanced")
+
+		if hyd.advanced:
+			col.prop(hyd, "tiling")
+
 
 #-------------------------------------------- Snow
 
@@ -210,7 +214,7 @@ class ExtrasPanel():
 
 				g = p.grid_flow(columns=1, align=True)
 				g.prop(hyd, "color_acceleration", slider=True)
-				if hyd.erosion_advanced:
+				if hyd.advanced:
 					g.prop(hyd, "part_lateral_acceleration")
 				g.prop(hyd, "color_detail", slider=True)
 
@@ -250,7 +254,7 @@ class HeightmapSystemPanel():
 			if isinstance(target, bpy.types.Image):
 				box = col.box()
 				split = box.split(factor=0.5)
-				split.label(text="Current:")
+				split.label(text="Result:")
 				split.label(text=name)
 				cols = box.column_flow(columns=3, align=True)
 				cols.operator('hydra.hm_preview', text="", icon="HIDE_OFF")
@@ -340,11 +344,11 @@ class ErosionSettingsPanel(bpy.types.Panel):
 
 			g = p.grid_flow(columns=1, align=True)
 			g.prop(hyd, "part_acceleration", slider=True)
-			if hyd.erosion_advanced:
+			if hyd.advanced:
 				g.prop(hyd, "part_lateral_acceleration")
 			g.prop(hyd, "part_drag", slider=True)
 
-			if hyd.erosion_advanced:
+			if hyd.advanced:
 				p.prop(hyd, "part_max_change")
 
 				box = p.box()
@@ -355,13 +359,13 @@ class ErosionSettingsPanel(bpy.types.Panel):
 
 			g = p.grid_flow(columns=1, align=True)
 			g.prop(hyd, "mei_hardness", slider=True)
-			if hyd.erosion_advanced:
+			if hyd.advanced:
 				g.prop(hyd, "mei_deposition", slider=True)
 			g.prop(hyd, "mei_capacity", slider=True)
 
 			g = p.grid_flow(columns=1, align=True)
 			g.prop(hyd, "mei_rain", slider=True)
-			if hyd.erosion_advanced:
+			if hyd.advanced:
 				g.prop(hyd, "mei_max_depth")
 
 				# p.prop(hyd, "mei_randomize")
@@ -381,7 +385,7 @@ class ThermalSettingsPanel():
 		hyd = self.get_settings(ctx)
 		p = self.layout
 		
-		if hyd.thermal_advanced:
+		if hyd.advanced:
 			split = p.split(factor=0.4)
 			split.label(text="Direction: ")
 			split.prop(hyd, "thermal_solver", text="")
@@ -391,7 +395,7 @@ class ThermalSettingsPanel():
 		p.prop(hyd, "thermal_strength", slider=True)
 		p.prop(hyd, "thermal_angle", slider=True)
 
-		if hyd.thermal_advanced:
+		if hyd.advanced:
 			p.prop(hyd, "thermal_stride")
 			p.prop(hyd, "thermal_stride_grad")
 

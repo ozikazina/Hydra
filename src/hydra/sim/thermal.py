@@ -44,14 +44,22 @@ def erode(obj: bpy.types.Image | bpy.types.Object)->None:
 	if hyd.thermal_stride_grad:
 		next_pass = hyd.thermal_iter_num // 2
 
+	tile_x = hyd.tiling == "x" or hyd.tiling == "xy"
+	tile_y = hyd.tiling == "y" or hyd.tiling == "xy"
+
 	progA["requests"].value = 2
 	progA["Ks"] = (hyd.thermal_strength / 100) * 0.5	#0-1 -> 0-0.5, higher is unstable
 	progA["alpha"] = math.tan(hyd.thermal_angle) * 2 / size[0] # images are scaled to 2 z/x -> angle depends only on image width
 	progA["by"] = hyd.scale_ratio
 	progA["useOffset"] = False
 	progA["size"] = size
+	progA["tile_x"] = tile_x
+	progA["tile_y"] = tile_y
 
 	progB["requests"].value = 2
+	progB["size"] = size
+	progB["tile_x"] = tile_x
+	progB["tile_y"] = tile_y
 
 	diagonal = hyd.thermal_solver == "diagonal"
 	alternate = hyd.thermal_solver == "both"

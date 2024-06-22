@@ -21,7 +21,19 @@ uniform int ds = 1;
 
 uniform ivec2 size = ivec2(512,512);
 
+uniform bool tile_x = false;
+uniform bool tile_y = false;
+
 float getH(ivec2 pos) {
+	if (tile_x) {
+		pos.x += pos.x < 0 ? size.x : (pos.x >= size.x ? -size.x : 0);
+	}
+	if (tile_y) {
+		pos.y += pos.y < 0 ? size.y : (pos.y >= size.y ? -size.y : 0);
+	}
+
+	pos = clamp(pos, ivec2(0), size - 1);
+
 	if (useOffset) {
 		return imageLoad(mapH, pos).x + imageLoad(offset, pos).x;
 	}
@@ -51,25 +63,21 @@ void main(void) {
 	dh = getH(npos) - h;
 	p.x = dh + (dh > 0 ? -1 : 1) * alpha * lx;
 	p.x *= float(abs(dh) > alpha * lx);
-	p.x *= float(npos.x >= 0 && npos.y >= 0);
 
 	npos = base + ivec2(diagonal ? -ds : 0, ds);
 	dh = getH(npos) - h;
 	p.y = dh + (dh > 0 ? -1 : 1) * alpha * ly;
 	p.y *= float(abs(dh) > alpha * ly);
-	p.y *= float(npos.x >= 0 && npos.y < size.y);
 	
 	npos = base + ivec2(ds, diagonal ? ds : 0);
 	dh = getH(npos) - h;
 	p.z = dh + (dh > 0 ? -1 : 1) * alpha * lx;
 	p.z *= float(abs(dh) > alpha * lx);
-	p.z *= float(npos.x < size.x && npos.y < size.y);
 	
 	npos = base + ivec2(diagonal ? ds : 0, -ds);
 	dh = getH(npos) - h;
 	p.w = dh + (dh > 0 ? -1 : 1) * alpha * ly;
 	p.w *= float(abs(dh) > alpha * ly);
-	p.w *= float(npos.x < size.x && npos.y >= 0);
 	
 	vec4 d = 0.5 * (p + abs(p));	//positive part
 	vec4 s = p - d;	//negative part
