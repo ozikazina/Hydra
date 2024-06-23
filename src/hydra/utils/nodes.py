@@ -165,7 +165,7 @@ def get_or_make_output_node(nodes)->bpy.types.ShaderNode:
 	
 	return out
 
-def get_or_make_displace_group(name, image: bpy.types.Image=None)->bpy.types.NodeGroup:
+def get_or_make_displace_group(name, image: bpy.types.Image=None, tiling: bool = False)->bpy.types.NodeGroup:
 	"""Finds or creates a displacement node group.
 
 	:param name: Node group name.
@@ -182,7 +182,7 @@ def get_or_make_displace_group(name, image: bpy.types.Image=None)->bpy.types.Nod
 			n_image = g.nodes.new("GeometryNodeImageTexture")
 			n_image.label = "Displacement"
 			n_image.name = "HYD_Displacement"
-			n_image.extension = "EXTEND"
+			n_image.extension = "REPEAT" if tiling else "EXTEND"
 			n_image.interpolation = "Cubic"
 			n_image.inputs[0].default_value = image
 			common.data.add_message(f"Existing group {name} was missing HYD_Displacement image node. It has been added, but hasn't been connected.", error=True)
@@ -190,6 +190,9 @@ def get_or_make_displace_group(name, image: bpy.types.Image=None)->bpy.types.Nod
 			not any(i for i in sockets if i.in_out == "INPUT" and i.socket_type == "NodeSocketGeometry"):
 			common.data.add_message(f"Updated existing group {name}, but it doesn't have Geometry input/output!", error=True)
 		else:
+			# Update image
+			n_image = next(i for i in g.nodes if i.type == "IMAGE_TEXTURE" and i.name == "HYD_Displacement")
+			n_image.inputs[0].default_value = image
 			common.data.add_message(f"Updated existing group {name}.")
 		return g
 	else:

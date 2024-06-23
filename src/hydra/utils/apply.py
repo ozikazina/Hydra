@@ -9,7 +9,7 @@ import math
 
 # -------------------------------------------------- Previews
 
-PREVIEW_MOD_NAME = "HYD_Preview_Modifier"
+PREVIEW_MOD_NAME = "HYDP_Preview_Modifier"
 """Preview modifier name."""
 PREVIEW_DISP_NAME = "HYDP_Preview_Displacement"
 """Preview temporary image name."""
@@ -42,9 +42,11 @@ def add_preview(target: bpy.types.Object|bpy.types.Image)->None:
 
 	if isinstance(target, bpy.types.Image):
 		img, _ = texture.write_image(PREVIEW_IMG_NAME, data.get_map(hyd.map_result).texture)
-		add_landscape(img, subdiv=1, name=PREVIEW_IMG_NAME, detach=False)
-		# as preference?
-		# nav.goto_image(img)
+		prefs = common.get_preferences()
+		if prefs.image_preview == "image":
+			nav.goto_image(img)
+		else:
+			add_landscape(img, max_verts_per_side=prefs.image_preview_resolution, name=PREVIEW_IMG_NAME, detach=False)
 	else:
 		if data.lastPreview and data.lastPreview in bpy.data.objects:
 			last = bpy.data.objects[data.lastPreview]
@@ -297,11 +299,13 @@ def add_modifier(obj: bpy.types.Object, img: bpy.types.Image)->None:
 
 # -------------------------------------------------- Landscape
 
-def add_landscape(img: bpy.types.Image, subdiv: int = 1, name: str|None = None, detach: bool = False)->None:
+def add_landscape(img: bpy.types.Image, max_verts_per_side: int = 1024, name: str|None = None, detach: bool = False)->None:
 	"""Generates a landscape from the specified image. Does not free image.
 	
 	:param img: Image to generate from.
 	:type img: :class:`bpy.types.Image`
+	:param max_verts_per_side: Maximum vertices per side.
+	:type max_verts_per_side: :class:`int`
 	:param generate_new: Whether to generate a new object or use existing one (if found).
 	:type generate_new: :class:`bool`
 	:param apply_mod: Whether to apply the modifier after generating the object.
@@ -314,15 +318,22 @@ def add_landscape(img: bpy.types.Image, subdiv: int = 1, name: str|None = None, 
 			name = img.name[:img.name.rfind(".")]
 		else:
 			name = img.name
-
-	name = f"HYD_Gen_{name}"
+		name = f"HYD_Gen_{name}"
 
 	if not detach and name in bpy.data.objects:
 		act = bpy.data.objects[name]
-		common.data.add_message("Object already exists, it should update automatically.")
+		common.data.add_message("Object already exists (delete it or subdivide it to change resolution).")
 	else:
-		resX = math.ceil(img.size[0] / subdiv)
-		resY = math.ceil(img.size[1] / subdiv)
+		if max_verts_per_side == 0:
+			resX = img.size[0]
+			resY = img.size[1]
+		else:
+			if img.size[0] > img.size[1]:
+				resX = min(max_verts_per_side, img.size[0])
+				resY = math.ceil(img.size[1] / img.size[0] * resX)
+			else:
+				resY = min(max_verts_per_side, img.size[1])
+				resX = math.ceil(img.size[0] / img.size[1] * resY)
 
 		bpy.ops.mesh.primitive_grid_add(x_subdivisions=resX, y_subdivisions=resY, location=bpy.context.scene.cursor.location)
 		act = bpy.context.active_object
@@ -338,7 +349,9 @@ def add_landscape(img: bpy.types.Image, subdiv: int = 1, name: str|None = None, 
 
 		mod = act.modifiers.new(PREVIEW_MOD_NAME, "NODES")
 		
-		mod.node_group = nodes.get_or_make_displace_group(act.name, image=displacement)
+		group_name = PREVIEW_MOD_NAME if detach else act.name
+
+		mod.node_group = nodes.get_or_make_displace_group(group_name, image=displacement)
 
 		bpy.ops.object.mode_set(mode="OBJECT")	# modifiers can't be applied in EDIT mode
 
@@ -347,7 +360,7 @@ def add_landscape(img: bpy.types.Image, subdiv: int = 1, name: str|None = None, 
 		if detach:
 			bpy.ops.object.modifier_apply(modifier=PREVIEW_MOD_NAME)
 
-			bpy.data.node_groups.remove(bpy.data.node_groups[PREVIEW_MOD_NAME])
+			bpy.data.node_groups.remove(bpy.data.node_groups[group_name])
 
 	nav.goto_object(act)
 

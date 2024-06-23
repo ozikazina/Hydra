@@ -12,9 +12,10 @@ class LandscapePanel(ui_common.ImagePanel):
 		act = ctx.area.spaces.active.image
 		hyd = act.hydra_erosion
 		
-		col = self.layout.column()
-		col.operator('hydra.landscape', text="Generate", icon="RNDCURVE")
-		col.prop(hyd, "gen_subscale")
+		col = self.layout.grid_flow(columns=1, align=True)
+		col.operator('hydra.landscape', text="Generate", icon="RNDCURVE").detach = False
+		col.operator('hydra.landscape', text="Generate & Detach", icon="UNLINKED").detach = True
+		self.layout.prop(hyd, "landscape_resolution")
 
 #-------------------------------------------- Erosion
 

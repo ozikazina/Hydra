@@ -2,7 +2,7 @@
 
 import bpy, bpy.types
 from Hydra import common
-from Hydra.utils import nav
+from Hydra.utils import nav, apply
 
 #-------------------------------------------- Base classes
 
@@ -257,7 +257,10 @@ class HeightmapSystemPanel():
 				split.label(text="Result:")
 				split.label(text=name)
 				cols = box.column_flow(columns=3, align=True)
-				cols.operator('hydra.hm_preview', text="", icon="HIDE_OFF")
+				if apply.PREVIEW_IMG_NAME in bpy.data.objects or apply.PREVIEW_IMG_NAME in bpy.data.images:
+					cols.operator('hydra.hm_remove_preview', text="", icon="HIDE_ON")
+				else:
+					cols.operator('hydra.hm_preview', text="", icon="HIDE_OFF")
 				cols.operator('hydra.hm_move', text="", icon="TRIA_DOWN_BAR")
 				cols.operator('hydra.hm_delete', text="", icon="PANEL_CLOSE")
 

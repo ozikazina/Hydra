@@ -5,6 +5,8 @@ from Hydra.utils import apply, texture
 from Hydra.addon import ops_common
 from Hydra.sim import heightmap
 
+from bpy.props import BoolProperty
+
 #-------------------------------------------- Generate
 
 class LandscapeOperator(ops_common.ImageOperator):
@@ -13,9 +15,15 @@ class LandscapeOperator(ops_common.ImageOperator):
 	bl_label = "Generate"
 	bl_description = "Generate a landscape using this heightmap"
 			
+	detach: BoolProperty(name="Detach", default=False,
+		description="Detach the generated landscape from the original image"
+	)
+
 	def invoke(self, ctx, event):
 		hyd = self.get_target(ctx).hydra_erosion
-		apply.add_landscape(self.get_target(ctx), subdiv=hyd.gen_subscale)
+		apply.add_landscape(self.get_target(ctx), max_verts_per_side=hyd.landscape_resolution, detach=self.detach)
+
+		common.data.report(self, "Landscape")
 		return {'FINISHED'}
 
 class OverrideImageOperator(ops_common.ImageOperator):

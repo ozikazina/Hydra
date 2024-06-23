@@ -4,7 +4,7 @@ import bpy
 from Hydra import startup
 
 from bpy.props import (
-	BoolProperty, StringProperty, EnumProperty
+	BoolProperty, IntProperty, EnumProperty
 )
 
 class AddonPanel(bpy.types.AddonPreferences):
@@ -24,7 +24,7 @@ class AddonPanel(bpy.types.AddonPreferences):
 			("y", "Vertical", "Splits into top and bottom views", 2),
 		),
 		name="Preview split direction",
-		description="Direction in which the window is split to view resulting outputs (e.g. to create an Image Viewer for generated images.)"
+		description="Direction in which the window is split to view resulting outputs (e.g. to create an Image Viewer for generated images)"
 	)
 	"""Split direction preference."""
 
@@ -32,17 +32,41 @@ class AddonPanel(bpy.types.AddonPreferences):
 		description="Enables debug mode, giving access to additional operators"
 	)
 
+	image_preview: EnumProperty(
+		default="landscape",
+		items=(
+			("landscape", "3D View", "Creates a landscape to preview erosion in 3D", 0),
+			("image", "Image View", "Previews erosion as an image", 1),
+		),
+		name="Image erosion preview",
+		description="Type of preview for image erosion results"
+	)
+
+	image_preview_resolution: IntProperty(
+		name="3D preview resolution",
+		description="Maximum side length of preview landscape in vertices",
+		default=1024,
+		min=2
+	)
+
 	def draw(self, context):
 		layout = self.layout
 
 		box = layout.box()
-		box.prop(self, "skip_indexing")
+		split = box.split(factor=0.33)
+		split.label(text="Image erosion preview: ")
+		split.prop(self, "image_preview", text="")
+
+		if self.image_preview == "landscape":
+			box.prop(self, "image_preview_resolution")
+
 		split = box.split(factor=0.33)
 		split.label(text="Preview split direction: ")
 		split.prop(self, "split_direction", text="")
 		if startup.invalid and not startup.promptRestart:
 			box.enabled = False
 			
+		box.prop(self, "skip_indexing")
 		box.prop(self, "debug_mode")
 
 		box = layout.box()

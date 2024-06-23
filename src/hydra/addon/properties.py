@@ -445,13 +445,13 @@ class ErosionGroup(bpy.types.PropertyGroup):
 	)
 	"""Image size for direct heightmap generation."""
 
-	gen_subscale: IntProperty(
-		default=2,
-		name="Subscale",
-		min=1, max=16,
-		description="Resolution divisor for landscape generation"
+	landscape_resolution: IntProperty(
+		default=1024,
+		name="Model resolution",
+		min=256,
+		description="Maximum side length of the generated landscape in vertices"
 	)
-	"""Resolution divisor for landscape generation"""
+	"""Model resolution for landscape generation"""
 	
 	#------------------------- Funcs
 	
