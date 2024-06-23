@@ -24,9 +24,12 @@ def get_or_make_image(size: 'tuple[int,int]', name: str)->'tuple[bpy.types.Image
 		img.colorspace_settings.name = "Non-Color"
 		updated = True
 	
-
 	if tuple(img.size) != size:
-		img.scale(size[0], size[1])
+		try:
+			img.scale(size[0], size[1])
+		except Exception:
+			bpy.data.images.remove(img)
+			img = bpy.data.images.new(name, size[0], size[1], alpha=False, float_buffer=True, is_data=True)
 
 	img.hydra_erosion.is_generated = True
 	return img, updated
