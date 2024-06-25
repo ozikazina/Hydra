@@ -105,7 +105,7 @@ def goto_object(obj: bpy.types.Object)->None:
 
 def goto_modifier()->None:
 	"""Navigates to the Modifiers tab."""
-	area, _ = get_or_make_area("PROPERTIES")[0]
+	area, _ = get_or_make_area("PROPERTIES")
 	space = area.spaces[0]
 	space.context = "MODIFIER"
 

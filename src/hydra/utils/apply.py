@@ -335,6 +335,9 @@ def add_landscape(img: bpy.types.Image, max_verts_per_side: int = 1024, name: st
 				resY = min(max_verts_per_side, img.size[1])
 				resX = math.ceil(img.size[0] / img.size[1] * resY)
 
+		resX = max(2, resX)
+		resY = max(2, resY)
+
 		bpy.ops.mesh.primitive_grid_add(x_subdivisions=resX, y_subdivisions=resY, location=bpy.context.scene.cursor.location)
 		act = bpy.context.active_object
 
