@@ -134,6 +134,10 @@ class ErosionPanel():
 		col.prop(hyd, "erosion_solver", text="Solver")
 		col.prop(hyd, "advanced")
 
+		if hyd.advanced:
+			col.prop(hyd, "tiling")
+
+
 #-------------------------------------------- Thermal
 
 class ThermalPanel():

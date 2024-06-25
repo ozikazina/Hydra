@@ -7,6 +7,7 @@ uniform sampler2D hardness_sampler;
 
 layout (r32f) uniform image2D height_map;
 
+uniform ivec2 size = ivec2(512,512);
 uniform ivec2 tile_size = ivec2(32,32);
 uniform vec2 tile_mult = vec2(1.0/512.0,1.0/512.0);
 
@@ -91,6 +92,9 @@ void erode(uvec2 base, int seed) {
 		imageStore(height_map, ipos, imageLoad(height_map, ipos) - vec4(dif));
 
 		pos += dir;
+
+		pos.x += pos.x < 0 ? size.x : pos.x >= size.x ? -size.x : 0;
+		pos.y += pos.y < 0 ? size.y : pos.y >= size.y ? -size.y : 0;
 		
 		vel *= drag;
 	}//i loop

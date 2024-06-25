@@ -39,10 +39,13 @@ def erode(obj: bpy.types.Object | bpy.types.Image)->None:
 		height = texture.clone(data.get_map(hyd.map_source).texture)
 		height_base = None
 
+	tile_x = hyd.tiling == "x" or hyd.tiling == "xy"
+	tile_y = hyd.tiling == "y" or hyd.tiling == "xy"
+
 	if hyd.erosion_hardness_src in bpy.data.images:
 		img = bpy.data.images[hyd.erosion_hardness_src]
 		hardness = texture.create_texture(tuple(img.size), channels=1, image=img)
-		hardness_sampler = ctx.sampler(texture=hardness, repeat_x=False, repeat_y=False)
+		hardness_sampler = ctx.sampler(texture=hardness, repeat_x=tile_x, repeat_y=tile_y)
 		hardness.use(2)
 		hardness_sampler.use(2)
 	else:
@@ -50,7 +53,7 @@ def erode(obj: bpy.types.Object | bpy.types.Image)->None:
 
 	prog = data.shaders["particle"]
 	
-	height_sampler = ctx.sampler(texture=height, repeat_x=False, repeat_y=False)
+	height_sampler = ctx.sampler(texture=height, repeat_x=tile_x, repeat_y=tile_y)
 
 	height.bind_to_image(1, read=True, write=True)
 	height.use(1)
@@ -62,6 +65,7 @@ def erode(obj: bpy.types.Object | bpy.types.Image)->None:
 	prog["use_hardness"] = hardness is not None
 	prog["invert_hardness"] = hyd.erosion_invert_hardness
 
+	prog["size"] = size
 	prog["tile_size"] = (math.ceil(size[0] / 32), math.ceil(size[1] / 32))
 	prog["tile_mult"] = (1 / size[0], 1 / size[1])
 
