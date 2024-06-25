@@ -34,10 +34,12 @@ def erode(obj: bpy.types.Object | bpy.types.Image)->None:
 	BIND_EXTRA = 7
 
 	LOC_SEDIMENT = 1
-	LOC_VELOCITY = 2
 
-	if hyd.erosion_subres != 100.0:
-		size = (math.ceil(size[0] * hyd.erosion_subres / 100.0), math.ceil(size[1] * hyd.erosion_subres / 100.0))
+	if hyd.erosion_subres != min(size[0], size[1]):
+		if size[0] > size[1]:
+			size = (math.ceil(size[0] * hyd.erosion_subres / size[1]), hyd.erosion_subres)
+		else:
+			size = (hyd.erosion_subres, math.ceil(size[1] * hyd.erosion_subres / size[0]))
 		height = heightmap.resize_texture(data.get_map(hyd.map_source).texture, size)
 		height_base = texture.clone(height)
 	else:
@@ -70,10 +72,6 @@ def erode(obj: bpy.types.Object | bpy.types.Image)->None:
 	sedimentSampler = ctx.sampler(texture=temp, repeat_x=False, repeat_y=False) # sediment will be in temp at stage 6
 	temp.use(LOC_SEDIMENT)
 	sedimentSampler.use(LOC_SEDIMENT)
-
-	velocity_sampler = ctx.sampler(texture=velocity, repeat_x=False, repeat_y=False)
-	velocity_sampler.use(LOC_VELOCITY)
-	velocity.use(LOC_VELOCITY)
 
 	group_x = math.ceil(size[0] / 32)
 	group_y = math.ceil(size[1] / 32)
@@ -139,7 +137,6 @@ def erode(obj: bpy.types.Object | bpy.types.Image)->None:
 	progs[5]["out_s_map"].value = BIND_SEDIMENT
 	progs[5]["v_map"].value = BIND_VELOCITY
 	progs[5]["s_sampler"] = LOC_SEDIMENT
-	progs[5]["v_sampler"] = LOC_VELOCITY
 	progs[5]["dt"] = dt
 	progs[5]["tile_mult"] = (1 / size[0], 1 / size[1])
 
@@ -166,7 +163,6 @@ def erode(obj: bpy.types.Object | bpy.types.Image)->None:
 
 	pipe.release()
 	velocity.release()
-	velocity_sampler.release()
 	water.release()
 	sediment.release()
 	sedimentSampler.release()

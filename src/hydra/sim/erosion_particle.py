@@ -28,8 +28,11 @@ def erode(obj: bpy.types.Object | bpy.types.Image)->None:
 	ctx = data.context
 	size = hyd.get_size()
 	
-	if hyd.erosion_subres != 100.0:
-		size = (math.ceil(size[0] * hyd.erosion_subres / 100.0), math.ceil(size[1] * hyd.erosion_subres / 100.0))
+	if hyd.erosion_subres != min(size[0], size[1]):
+		if size[0] > size[1]:
+			size = (math.ceil(size[0] * hyd.erosion_subres / size[1]), hyd.erosion_subres)
+		else:
+			size = (hyd.erosion_subres, math.ceil(size[1] * hyd.erosion_subres / size[0]))
 		height = heightmap.resize_texture(data.get_map(hyd.map_source).texture, size)
 		height_base = texture.clone(height)
 	else:

@@ -18,11 +18,6 @@ void main(void) {
 	vec2 vel = dt * imageLoad(v_map, pos).xy;
     vec2 vpos = vec2(pos) - vel;
 
-	vel = dt * texture(v_sampler, (vpos + vec2(0.5)) * tile_mult).xy;
-	vec2 vpos2 = vpos + vel;
-
-	vpos += 0.5 * (vec2(pos) - vpos2);
-
 	float s = texture(s_sampler, (vpos + vec2(0.5)) * tile_mult).r;
     imageStore(out_s_map, pos, vec4(max(s, 0)));
 }//main

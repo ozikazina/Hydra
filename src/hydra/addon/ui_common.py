@@ -3,6 +3,7 @@
 import bpy, bpy.types
 from Hydra import common
 from Hydra.utils import nav, apply
+import math
 
 #-------------------------------------------- Base classes
 
@@ -38,11 +39,18 @@ class ImagePanel(HydraPanel):
 			return None
 		return img.hydra_erosion
 
-	def draw_size_fragment(self, container, ctx, settings):
-		split = container.split(factor=0.5)
+	def draw_size_fragment(self, container, ctx, settings, draw_subres:bool = False):
+		g = container.grid_flow(columns=1, align=True)
+		split = g.split(factor=0.5)
 		split.label(text=f"Resolution:")
-		split.label(text=f"{tuple(ctx.area.spaces.active.image.size)}")
-		container.enabled = False
+		r = split.row()
+		size = ctx.area.spaces.active.image.size
+		r.label(text=f"({size[0]}, {size[1]}) px")
+		r.alignment = "RIGHT"
+		split.enabled = False
+
+		if draw_subres:
+			g.prop(settings, "erosion_subres", text="Simulation")
 
 	@classmethod
 	def poll(cls, ctx):
@@ -66,14 +74,31 @@ class ObjectPanel(HydraPanel):
 		except AttributeError:
 			return None
 
-	def draw_size_fragment(self, container, ctx, settings):
+	def draw_size_fragment(self, container, ctx, settings, draw_subres:bool = False):
+		g = container.grid_flow(columns=1, align=True)
+
 		if common.data.has_map(settings.map_base):
-			split = container.split(factor=0.5)
+			split = g.split(factor=0.42)
 			split.label(text=f"Resolution:")
-			split.label(text=f"{tuple(settings.img_size)}")
-			container.enabled = False
+			c = split.row()
+			c.label(text=f"({settings.img_size[0]}, {settings.img_size[1]}) px")
+			c.alignment = "RIGHT"
+			c.enabled = False
 		else:
-			container.prop(settings, "img_size")
+			split = g.split(factor=0.42)
+			split.label(text=f"Resolution:")
+			if settings.advanced:
+				g.prop(settings, "x_img_size_x", text="X")
+				g.prop(settings, "x_img_size_y", text="Y")
+			else:
+				c = split.row()
+				c.label(text=f"({settings.img_size[0]}, {settings.img_size[1]}) px")
+				c.enabled=False
+				c.alignment = "RIGHT"
+				g.prop(settings, "x_img_res", text="Heightmap")
+
+		if draw_subres:
+			g.prop(settings, "erosion_subres", text="Simulation")
 
 	@classmethod
 	def poll(cls, ctx):
@@ -104,7 +129,7 @@ class ErosionPanel():
 		if common.data.has_map(hyd.map_result):
 			grid.operator("hydra.erode", text="Set & Continue", icon="ANIM").apply = True
 
-		self.draw_size_fragment(col.box(), ctx, hyd)
+		self.draw_size_fragment(col.box(), ctx, hyd, draw_subres=True)
 
 		col.prop(hyd, "erosion_solver", text="Solver")
 		col.prop(hyd, "advanced")
@@ -152,7 +177,6 @@ class SnowPanel():
 
 		self.draw_size_fragment(col.box(), ctx, hyd)
 
-		col.separator()
 		split = col.split(factor=0.4)
 		split.label(text="Output: ")
 		split.prop(hyd, "snow_output", text="")
@@ -330,10 +354,6 @@ class ErosionSettingsPanel(bpy.types.Panel):
 	def draw(self, ctx):
 		p = self.layout
 		hyd = self.get_settings(ctx)
-		
-		p.label(text="Simulation resolution:")
-		p.prop(hyd, "erosion_subres", text="", slider=True)
-		p.separator()
 
 		if hyd.erosion_solver == "particle":
 			g = p.grid_flow(columns=1, align=True)
@@ -377,7 +397,6 @@ class ErosionSettingsPanel(bpy.types.Panel):
 				box.prop_search(hyd, "erosion_hardness_src", bpy.data, "images")
 				box.prop(hyd, "erosion_invert_hardness")
 				box.prop_search(hyd, "mei_water_src", bpy.data, "images")
-				# box.prop(hyd, "mei_invert_water")
 
 
 class ThermalSettingsPanel():

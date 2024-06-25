@@ -9,7 +9,7 @@ from bpy.props import (
 	StringProperty,
 	EnumProperty)
 
-from Hydra import common
+import math
 
 #-------------------------------------------- Settings
 
@@ -39,9 +39,83 @@ class ErosionGroup(bpy.types.PropertyGroup):
 		default=(1024,1024),
 		name="Heightmap size",
 		min=32,
-		max=4096,
+		max=8192,
 		description="To erode objects, they are first converted into heightmaps. This property defines the heightmap resolution. Once erosion occurs this resolution is set and can only be reset by clearing cached heightmaps",
 		size=2
+	)
+
+	def _set_size_x(self, val):
+		self.img_size[0] = val
+		self.x_use_img_size = True
+
+	def _set_size_y(self, val):
+		self.img_size[1] = val
+		self.x_use_img_size = True
+
+	def _get_size_x(self):
+		return self.img_size[0]
+	
+	def _get_size_y(self):
+		return self.img_size[1]
+	
+	def _set_size_from_res(self, val):
+		ctx = bpy.context
+		if ctx.area.type == "VIEW_3D" and ctx.active_object:
+			self.x_use_img_size = False
+			ar = list(bpy.context.active_object.bound_box)
+			dx = ar[4][0] - ar[0][0]
+			dy = ar[2][1] - ar[0][1]
+
+			try:
+				if dy > dx:
+					val = (val, int(math.ceil(val * dy / dx)))
+				else:
+					val = (int(math.ceil(val * dx / dy)), val)
+
+				self.img_size = val
+			except ZeroDivisionError:
+				pass
+
+	def _get_res(self):
+		return min(self.img_size[0], self.img_size[1])
+
+	x_img_size_x: IntProperty(
+		default=1024,
+		name="X Resolution",
+		min=32,
+		soft_max=8192,
+		description="To erode objects, they are first converted into heightmaps. This property defines the heightmap resolution. Once erosion occurs this resolution is set and can only be reset by clearing cached heightmaps",
+		subtype="PIXEL",
+		set=_set_size_x,
+		get=_get_size_x
+	)
+
+	x_img_size_y: IntProperty(
+		default=1024,
+		name="Y Resolution",
+		min=32,
+		soft_max=8192,
+		description="To erode objects, they are first converted into heightmaps. This property defines the heightmap resolution. Once erosion occurs this resolution is set and can only be reset by clearing cached heightmaps",
+		subtype="PIXEL",
+		set=_set_size_y,
+		get=_get_size_y
+	)
+
+	x_img_res: IntProperty(
+		default=1024,
+		name="Resolution",
+		min=32,
+		soft_max=8192,
+		description="To erode objects, they are first converted into heightmaps. This property defines the heightmap resolution. Once erosion occurs this resolution is set and can only be reset by clearing cached heightmaps",
+		subtype="PIXEL",
+		set=_set_size_from_res,
+		get=_get_res
+	)
+
+	x_use_img_size: BoolProperty(
+		default=False,
+		name="Use size directly",
+		description="Internal. Use direct size for heightmap"
 	)
 
 	tiling: EnumProperty(
@@ -74,13 +148,12 @@ class ErosionGroup(bpy.types.PropertyGroup):
 		description="Solver type for erosion"
 	)
 
-	erosion_subres: FloatProperty(
-		default=50.0,
-		min=10, max=200.0,
-		soft_max=100.0,
-		subtype="PERCENTAGE",
+	erosion_subres: IntProperty(
+		default=512,
+		min=32, soft_max=8192,
+		subtype="PIXEL",
 		name="Simulation resolution",
-		description="Percentage of heightmap resolution to simulate at. Lower resolution creates larger features and speeds up simulation time. Simulating at 512x512 is a good starting point for erosion"
+		description="Resolution to simulate at. Lower resolutions create larger features and speed up simulation time. Simulating at 512x512 is a good starting point for erosion. It is independent of the heightmap resolution and defines the smaller side of the texture size"
 	)
 
 	erosion_hardness_src: StringProperty(

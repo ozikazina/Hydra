@@ -7,7 +7,7 @@ import bpy
 import bpy.types
 import numpy as np
 
-def generate_heightmap(obj: bpy.types.Object, normalized: bool=False, world_scale: bool=False, local_scale: bool=False)->mgl.Texture:
+def generate_heightmap(obj: bpy.types.Object, size: 'tuple[int,int]|None' = None, normalized: bool=False, world_scale: bool=False, local_scale: bool=False)->mgl.Texture:
 	"""Creates a heightmap for the specified object and returns it.
 	
 	:param obj: Object to generate from.
@@ -46,7 +46,9 @@ def generate_heightmap(obj: bpy.types.Object, normalized: bool=False, world_scal
 
 		vao = model.create_vao(ctx, data.programs["heightmap"], vertices=verts, indices=inds)
 
-	size = obj.hydra_erosion.get_size()
+	if size is None:
+		size = obj.hydra_erosion.get_size()
+		
 	txt = ctx.texture(size, 1, dtype="f4")
 	depth = ctx.depth_texture(size)
 

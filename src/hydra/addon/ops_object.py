@@ -18,17 +18,14 @@ class HeightmapOperator(ops_common.ObjectOperator):
 	def invoke(self, ctx, event):
 		act = self.get_target(ctx)
 
-		size = tuple(act.hydra_erosion.img_size)
-		act.hydra_erosion.img_size = tuple(act.hydra_erosion.heightmap_gen_size)
-
 		normalized = act.hydra_erosion.heightmap_gen_type == "normalized"
 		world_scale = act.hydra_erosion.heightmap_gen_type == "world"
 		local_scale = act.hydra_erosion.heightmap_gen_type == "object"
-		txt = heightmap.generate_heightmap(act, normalized=normalized, world_scale=world_scale, local_scale=local_scale)
+		txt = heightmap.generate_heightmap(act, size=act.hydra_erosion.heightmap_gen_size, normalized=normalized, world_scale=world_scale, local_scale=local_scale)
 
 		img, _ = texture.write_image(f"HYD_{act.name}_Heightmap", txt)
 		txt.release()
-		act.hydra_erosion.img_size = size
+
 		nav.goto_image(img)
 		self.report({'INFO'}, f"Successfuly created heightmap: {img.name}")
 		return {'FINISHED'}
