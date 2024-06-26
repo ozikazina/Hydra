@@ -50,6 +50,9 @@ def simulate(obj: bpy.types.Image | bpy.types.Object)->bpy.types.Image|None:
 	free.bind_to_image(3, read=True, write=True)
 	offset.bind_to_image(4, read=True, write=False)
 
+	tile_x = hyd.tiling == "x" or hyd.tiling == "xy"
+	tile_y = hyd.tiling == "y" or hyd.tiling == "xy"
+
 	progA["requests"].value = 2
 	progA["Ks"] = 0.5
 	progA["alpha"] = math.tan(hyd.snow_angle) * 2 / size[0] # images are scaled to 2 z/x -> angle depends only on image width
@@ -58,8 +61,13 @@ def simulate(obj: bpy.types.Image | bpy.types.Object)->bpy.types.Image|None:
 	progA["useOffset"] = True
 	progA["ds"] = 1
 	progA["size"] = size
+	progA["tile_x"] = tile_x
+	progA["tile_y"] = tile_y
 
 	progB["requests"].value = 2
+	progB["size"] = size
+	progB["tile_x"] = tile_x
+	progB["tile_y"] = tile_y
 	progB["ds"] = 1
 
 	SNOW_SCALE = 0.01

@@ -185,6 +185,11 @@ class SnowPanel():
 		split.label(text="Output: ")
 		split.prop(hyd, "snow_output", text="")
 
+		col.prop(hyd, "advanced")
+
+		if hyd.advanced:
+			col.prop(hyd, "tiling")
+
 		col.separator()
 		col.label(text="Erosion settings")
 
