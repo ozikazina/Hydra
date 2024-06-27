@@ -24,6 +24,8 @@ class HeightmapPanel(ui_common.ObjectPanel):
 
 		col.prop(hyd, "heightmap_gen_size")
 
+		col.prop(hyd, "heightmap_equirect")
+		
 		col.separator()
 
 		if data.has_map(hyd.map_base):

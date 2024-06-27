@@ -525,6 +525,12 @@ class ErosionGroup(bpy.types.PropertyGroup):
 		description="Maximum side length of the generated landscape in vertices"
 	)
 	"""Model resolution for landscape generation"""
+
+	heightmap_equirect: BoolProperty(
+		default=False,
+		name="Planet mode",
+		description="Use equirectangular projection for heightmap generation"
+	)
 	
 	#------------------------- Funcs
 	

@@ -27,6 +27,9 @@ def init_context():
 	frag = Path(base, "height.frag").read_text()
 	make_prog("heightmap", vert, frag)
 
+	vert = Path(base, "height_polar.vert").read_text()
+	make_prog("polar", vert, frag)
+
 	vert = Path(base, "identity.vert").read_text()
 	frag = Path(base, "redraw.frag").read_text()
 	make_prog("redraw", vert, frag)

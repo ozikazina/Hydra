@@ -17,11 +17,18 @@ class HeightmapOperator(ops_common.ObjectOperator):
 
 	def invoke(self, ctx, event):
 		act = self.get_target(ctx)
+		hyd = act.hydra_erosion
+		gen_type = hyd.heightmap_gen_type
 
-		normalized = act.hydra_erosion.heightmap_gen_type == "normalized"
-		world_scale = act.hydra_erosion.heightmap_gen_type == "world"
-		local_scale = act.hydra_erosion.heightmap_gen_type == "object"
-		txt = heightmap.generate_heightmap(act, size=act.hydra_erosion.heightmap_gen_size, normalized=normalized, world_scale=world_scale, local_scale=local_scale)
+		normalized = gen_type == "normalized"
+		world_scale = gen_type == "world"
+		local_scale = gen_type == "object"
+		txt = heightmap.generate_heightmap(act,
+			size=hyd.heightmap_gen_size,
+			normalized=normalized,
+			world_scale=world_scale,
+			local_scale=local_scale,
+			equirect=hyd.heightmap_equirect)
 
 		img, _ = texture.write_image(f"HYD_{act.name}_Heightmap", txt)
 		txt.release()

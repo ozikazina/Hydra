@@ -6,8 +6,123 @@ from Hydra import common
 import bpy
 import bpy.types
 import numpy as np
+import math
 
-def generate_heightmap(obj: bpy.types.Object, size: 'tuple[int,int]|None' = None, normalized: bool=False, world_scale: bool=False, local_scale: bool=False)->mgl.Texture:
+def _generate_heightmap_flat(obj: bpy.types.Object, vao: mgl.VertexArray, size:tuple[int,int]|None = None, normalized: bool=False, world_scale: bool=False, local_scale: bool=False):
+	resize_matrix = model.get_resize_matrix(obj)
+
+	ctx = common.data.context
+
+	if normalized:
+		scale = 1
+	elif world_scale:
+		scale = obj.hydra_erosion.org_scale * obj.scale.z
+	elif local_scale:
+		scale = obj.hydra_erosion.org_scale
+	else:
+		scale = obj.hydra_erosion.height_scale
+
+	txt = ctx.texture(size, 1, dtype="f4")
+	depth = ctx.depth_texture(size)
+	fbo = ctx.framebuffer(color_attachments=(txt), depth_attachment=depth)
+
+	with ctx.scope(fbo, mgl.DEPTH_TEST):
+		fbo.clear(depth=256.0)
+		vao.program["resize_matrix"].value = resize_matrix
+		vao.program["scale"] = scale
+		vao.render()
+		ctx.finish()
+
+	depth.release()
+	fbo.release()
+	vao.release()
+
+	return txt
+
+def _generate_heightmap_equirect(obj: bpy.types.Object, vao: mgl.VertexArray, size:tuple[int,int]|None = None, normalized: bool=False, world_scale: bool=False, local_scale: bool=False):
+	ctx = common.data.context
+
+	if normalized:
+		scale = 1
+	elif world_scale:
+		scale = obj.hydra_erosion.org_scale * obj.scale.z
+	elif local_scale:
+		scale = obj.hydra_erosion.org_scale
+	else:
+		scale = obj.hydra_erosion.height_scale
+
+	polar_size = min(size[0], size[1])
+	polar_size = (polar_size, polar_size)
+
+	polar_up = ctx.texture(polar_size, 1, dtype="f4")
+	polar_down = ctx.texture(polar_size, 1, dtype="f4")
+	depth = ctx.depth_texture(polar_size)
+
+	#vao.program["resize_matrix"].value = resize_matrix
+	#vao.program["scale"] = scale
+
+	fbo = ctx.framebuffer(color_attachments=(polar_down), depth_attachment=depth)
+
+	with ctx.scope(fbo, mgl.DEPTH_TEST | mgl.CULL_FACE):
+		fbo.clear(depth=256.0)
+		vao.program["resize_matrix"].value = (1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1)
+		vao.render()
+		ctx.finish()
+
+	fbo = ctx.framebuffer(color_attachments=(polar_up), depth_attachment=depth)
+
+	with ctx.scope(fbo, mgl.DEPTH_TEST | mgl.CULL_FACE):
+		fbo.clear(depth=256.0)
+		vao.program["resize_matrix"].value = (-1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1)
+		vao.render()
+		ctx.finish()
+		
+	fbo.release()
+
+	fbo.release()
+	depth.release()
+	vao.release()
+
+	polar_up_sampler = ctx.sampler(texture=polar_up, repeat_x=False, repeat_y=False)
+	polar_up_sampler.use(1)
+	polar_down_sampler = ctx.sampler(texture=polar_down, repeat_x=False, repeat_y=False)
+	polar_down_sampler.use(2)
+	polar_up.use(1)
+	polar_down.use(2)
+
+	texture.write_image("polar_up", polar_up)
+	texture.write_image("polar_down", polar_down)
+
+	equirect_txt = ctx.texture(size, 1, dtype="f4")
+	equirect_txt.bind_to_image(1, read=False, write=True)
+
+	prog = common.data.shaders["to_equirect"]
+	groups = (math.ceil(size[0] / 32), math.ceil(size[1] / 64))
+
+	prog["in_height"] = 1
+	prog["out_height"].value = 1
+	prog["tile_mult"] = (1 / size[0], 1 / size[1])
+	prog["offset_y"] = 0
+	prog["flip_y"] = False
+	prog.run(groups[0], groups[1])
+
+	ctx.finish()
+
+	prog["in_height"] = 2
+	prog["offset_y"] = math.ceil(size[1] / 2)
+	prog["flip_y"] = True
+	prog.run(groups[0], groups[1])
+
+	ctx.finish()
+
+	polar_down_sampler.release()
+	polar_up_sampler.release()
+	polar_down.release()
+	polar_up.release()
+
+	return equirect_txt
+
+def generate_heightmap(obj: bpy.types.Object, size:tuple[int,int]|None = None, normalized: bool=False, world_scale: bool=False, local_scale: bool=False, equirect: bool=False)->mgl.Texture:
 	"""Creates a heightmap for the specified object and returns it.
 	
 	:param obj: Object to generate from.
@@ -26,6 +141,8 @@ def generate_heightmap(obj: bpy.types.Object, size: 'tuple[int,int]|None' = None
 	ctx = data.context
 	mesh = model.evaluate_mesh(obj)
 
+	prog = data.programs["polar"] if equirect else data.programs["heightmap"]
+
 	if common.get_preferences().skip_indexing:
 		print("Skipping vertex indexing.")
 		verts = np.empty((len(mesh.vertices), 3), 'f')
@@ -34,7 +151,7 @@ def generate_heightmap(obj: bpy.types.Object, size: 'tuple[int,int]|None' = None
 			"co", np.reshape(verts, len(mesh.vertices) * 3))
 
 		verts = [verts[i] for face in mesh.loop_triangles for i in face.vertices]
-		vao = model.create_vao(ctx, data.programs["heightmap"], vertices=verts)
+		vao = model.create_vao(ctx, prog, vertices=verts)
 	else:
 		verts = np.empty((len(mesh.vertices), 3), 'f')
 		inds = np.empty((len(mesh.loop_triangles), 3), 'i')
@@ -44,38 +161,17 @@ def generate_heightmap(obj: bpy.types.Object, size: 'tuple[int,int]|None' = None
 		mesh.loop_triangles.foreach_get(
 			"vertices", np.reshape(inds, len(mesh.loop_triangles) * 3))
 
-		vao = model.create_vao(ctx, data.programs["heightmap"], vertices=verts, indices=inds)
+		vao = model.create_vao(ctx, prog, vertices=verts, indices=inds)
 
 	if size is None:
 		size = obj.hydra_erosion.get_size()
-		
-	txt = ctx.texture(size, 1, dtype="f4")
-	depth = ctx.depth_texture(size)
 
 	model.recalculate_scales(obj)
-	resize_matrix = model.get_resize_matrix(obj)
 
-	if normalized:
-		scale = 1
-	elif world_scale:
-		scale = obj.hydra_erosion.org_scale * obj.scale.z
-	elif local_scale:
-		scale = obj.hydra_erosion.org_scale
+	if equirect:
+		txt = _generate_heightmap_equirect(obj, vao, size, normalized, world_scale, local_scale)
 	else:
-		scale = obj.hydra_erosion.height_scale
-
-	fbo = ctx.framebuffer(color_attachments=(txt), depth_attachment=depth)
-
-	with ctx.scope(fbo, mgl.DEPTH_TEST):
-		fbo.clear(depth=2.0)
-		vao.program["resize_matrix"].value = resize_matrix
-		vao.program["scale"] = scale
-		vao.render()
-		ctx.finish()
-
-	depth.release()
-	fbo.release()
-	vao.release()
+		txt = _generate_heightmap_flat(obj, vao, size, normalized, world_scale, local_scale)
 
 	print("Generation finished.")
 	return txt
