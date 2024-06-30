@@ -24,12 +24,19 @@ uniform ivec2 size = ivec2(512,512);
 uniform bool tile_x = false;
 uniform bool tile_y = false;
 
+#define LEFT   (base + ivec2(-ds, diagonal ? -ds : 0))
+#define RIGHT  (base + ivec2(ds, diagonal ? ds : 0))
+#define UP     (base + ivec2(diagonal ? ds : 0, -ds))
+#define DOWN   (base + ivec2(diagonal ? -ds : 0, ds))
+
 float getH(ivec2 pos) {
 	if (tile_x) {
-		pos.x += pos.x < 0 ? size.x : (pos.x >= size.x ? -size.x : 0);
+		pos.x += pos.x < 0 ? size.x : 0;
+		pos.x -= pos.x >= size.x ? size.x : 0;
 	}
 	if (tile_y) {
-		pos.y += pos.y < 0 ? size.y : (pos.y >= size.y ? -size.y : 0);
+		pos.y += pos.y < 0 ? size.y : 0;
+		pos.y -= pos.y >= size.y ? size.y : 0;
 	}
 
 	pos = clamp(pos, ivec2(0), size - 1);
@@ -57,25 +64,20 @@ void main(void) {
 	vec4 p = vec4(0.0);
 
 	float dh;
-	ivec2 npos;
 
-	npos = base + ivec2(-ds, diagonal ? -ds : 0);
-	dh = getH(npos) - h;
+	dh = getH(LEFT) - h;
 	p.x = dh + (dh > 0 ? -1 : 1) * alpha * lx;
 	p.x *= float(abs(dh) > alpha * lx);
 
-	npos = base + ivec2(diagonal ? -ds : 0, ds);
-	dh = getH(npos) - h;
+	dh = getH(UP) - h;
 	p.y = dh + (dh > 0 ? -1 : 1) * alpha * ly;
 	p.y *= float(abs(dh) > alpha * ly);
 	
-	npos = base + ivec2(ds, diagonal ? ds : 0);
-	dh = getH(npos) - h;
+	dh = getH(RIGHT) - h;
 	p.z = dh + (dh > 0 ? -1 : 1) * alpha * lx;
 	p.z *= float(abs(dh) > alpha * lx);
 	
-	npos = base + ivec2(diagonal ? ds : 0, -ds);
-	dh = getH(npos) - h;
+	dh = getH(DOWN) - h;
 	p.w = dh + (dh > 0 ? -1 : 1) * alpha * ly;
 	p.w *= float(abs(dh) > alpha * ly);
 	
