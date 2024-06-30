@@ -8,10 +8,12 @@ import bpy.types
 import numpy as np
 import math
 
-def _generate_heightmap_flat(obj: bpy.types.Object, vao: mgl.VertexArray, size:tuple[int,int]|None = None, normalized: bool=False, world_scale: bool=False, local_scale: bool=False):
+def _generate_heightmap_flat(obj: bpy.types.Object, size:tuple[int,int]|None = None, normalized: bool=False, world_scale: bool=False, local_scale: bool=False):
 	resize_matrix = model.get_resize_matrix(obj)
 
 	ctx = common.data.context
+
+	vao = model.create_vaos(ctx, [common.data.programs["heightmap"]], obj)[0]
 
 	if normalized:
 		scale = 1
@@ -39,7 +41,7 @@ def _generate_heightmap_flat(obj: bpy.types.Object, vao: mgl.VertexArray, size:t
 
 	return txt
 
-def _generate_heightmap_equirect(obj: bpy.types.Object, vao: mgl.VertexArray, size:tuple[int,int]|None = None, normalized: bool=False, world_scale: bool=False, local_scale: bool=False):
+def _generate_heightmap_equirect(obj: bpy.types.Object, size:tuple[int,int]|None = None, normalized: bool=False, world_scale: bool=False, local_scale: bool=False):
 	ctx = common.data.context
 
 	if normalized:
@@ -50,75 +52,82 @@ def _generate_heightmap_equirect(obj: bpy.types.Object, vao: mgl.VertexArray, si
 		scale = obj.hydra_erosion.org_scale
 	else:
 		scale = obj.hydra_erosion.height_scale
-
-	polar_size = min(size[0], size[1])
-	polar_size = (polar_size, polar_size)
-
-	polar_up = ctx.texture(polar_size, 1, dtype="f4")
-	polar_down = ctx.texture(polar_size, 1, dtype="f4")
-	depth = ctx.depth_texture(polar_size)
-
-	#vao.program["resize_matrix"].value = resize_matrix
-	#vao.program["scale"] = scale
-
-	fbo = ctx.framebuffer(color_attachments=(polar_down), depth_attachment=depth)
-
-	with ctx.scope(fbo, mgl.DEPTH_TEST | mgl.CULL_FACE):
-		fbo.clear(depth=256.0)
-		vao.program["resize_matrix"].value = (1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1)
-		vao.render()
-		ctx.finish()
-
-	fbo = ctx.framebuffer(color_attachments=(polar_up), depth_attachment=depth)
-
-	with ctx.scope(fbo, mgl.DEPTH_TEST | mgl.CULL_FACE):
-		fbo.clear(depth=256.0)
-		vao.program["resize_matrix"].value = (-1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1)
-		vao.render()
-		ctx.finish()
-		
-	fbo.release()
-
-	fbo.release()
-	depth.release()
-	vao.release()
-
-	polar_up_sampler = ctx.sampler(texture=polar_up, repeat_x=False, repeat_y=False)
-	polar_up_sampler.use(1)
-	polar_down_sampler = ctx.sampler(texture=polar_down, repeat_x=False, repeat_y=False)
-	polar_down_sampler.use(2)
-	polar_up.use(1)
-	polar_down.use(2)
-
-	texture.write_image("polar_up", polar_up)
-	texture.write_image("polar_down", polar_down)
+	
+	vao_polar, vao_equirect = model.create_vaos(ctx, [common.data.programs["polar"], common.data.programs["equirect"]], obj)
 
 	equirect_txt = ctx.texture(size, 1, dtype="f4")
 	equirect_txt.bind_to_image(1, read=False, write=True)
+	depth = ctx.depth_texture(size)
 
-	prog = common.data.shaders["to_equirect"]
-	groups = (math.ceil(size[0] / 32), math.ceil(size[1] / 64))
+	#vao.program["scale"] = scale
 
-	prog["in_height"] = 1
-	prog["out_height"].value = 1
-	prog["tile_mult"] = (1 / size[0], 1 / size[1])
-	prog["offset_y"] = 0
-	prog["flip_y"] = False
-	prog.run(groups[0], groups[1])
+	fbo = ctx.framebuffer(color_attachments=(equirect_txt), depth_attachment=depth)
 
-	ctx.finish()
+	with ctx.scope(fbo, mgl.DEPTH_TEST | mgl.CULL_FACE):
+		fbo.clear(depth=256.0)
+		vao_equirect.program["resize_matrix"].value = (-1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1)
+		vao_equirect.program["offset_x"] = -0.5
+		vao_equirect.render()
 
-	prog["in_height"] = 2
-	prog["offset_y"] = math.ceil(size[1] / 2)
-	prog["flip_y"] = True
-	prog.run(groups[0], groups[1])
+		vao_equirect.program["resize_matrix"].value = (1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1)
+		vao_equirect.program["offset_x"] = 0.5
+		vao_equirect.render()
+		ctx.finish()
 
-	ctx.finish()
+	vao_equirect.release()
+	fbo.release()
+	depth.release()
+	
+	polar_size = min(size[0], size[1])
+	polar_size = (polar_size, polar_size)
 
-	polar_down_sampler.release()
-	polar_up_sampler.release()
-	polar_down.release()
-	polar_up.release()
+	polar = ctx.texture(polar_size, 1, dtype="f4")
+	depth = ctx.depth_texture(polar_size)
+
+	polar_sampler = ctx.sampler(texture=polar, repeat_x=False, repeat_y=False)
+	polar_sampler.use(1)
+	polar.use(1)
+
+	# Mapping from polar to equirectangular
+	equi_mapping = common.data.shaders["to_equirect"]
+	groups = (math.ceil(size[0] / 32), math.ceil(0.25 * size[1] / 32))	# only half the hemisphere is mapped from polar, one hemisphere at a time
+	equi_mapping["in_height"] = 1 # sampler
+	equi_mapping["out_height"].value = 1 # equirect_txt
+	equi_mapping["tile_mult"] = (1 / size[0], 1 / size[1])
+
+	fbo = ctx.framebuffer(color_attachments=(polar), depth_attachment=depth)
+	with ctx.scope(fbo, mgl.DEPTH_TEST):
+		# Upper polar projection
+		fbo.clear(depth=256.0)
+		vao_polar.program["resize_matrix"].value = (1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1)
+		vao_polar.render()
+		ctx.finish()
+
+		texture.write_image("polar_up.png", polar)
+
+		equi_mapping["offset_y"] = math.ceil(3 * size[1] / 4)
+		equi_mapping["flip_y"] = True
+		equi_mapping.run(groups[0], groups[1])
+		ctx.finish()
+
+		# Lower polar projection
+		fbo.clear(depth=256.0)
+		vao_polar.program["resize_matrix"].value = (-1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1)
+		vao_polar.render()
+		ctx.finish()
+
+		texture.write_image("polar_down.png", polar)
+
+		equi_mapping["offset_y"] = 0
+		equi_mapping["flip_y"] = False
+		equi_mapping.run(groups[0], groups[1])
+		ctx.finish()
+		
+	vao_polar.release()
+	fbo.release()
+	depth.release()
+	polar_sampler.release()
+	polar.release()
 
 	return equirect_txt
 
@@ -136,32 +145,6 @@ def generate_heightmap(obj: bpy.types.Object, size:tuple[int,int]|None = None, n
 	:return: Generated heightmap.
 	:rtype: :class:`moderngl.Texture`"""
 	print("Preparing heightmap generation.")
-	
-	data = common.data
-	ctx = data.context
-	mesh = model.evaluate_mesh(obj)
-
-	prog = data.programs["polar"] if equirect else data.programs["heightmap"]
-
-	if common.get_preferences().skip_indexing:
-		print("Skipping vertex indexing.")
-		verts = np.empty((len(mesh.vertices), 3), 'f')
-		
-		mesh.vertices.foreach_get(
-			"co", np.reshape(verts, len(mesh.vertices) * 3))
-
-		verts = [verts[i] for face in mesh.loop_triangles for i in face.vertices]
-		vao = model.create_vao(ctx, prog, vertices=verts)
-	else:
-		verts = np.empty((len(mesh.vertices), 3), 'f')
-		inds = np.empty((len(mesh.loop_triangles), 3), 'i')
-
-		mesh.vertices.foreach_get(
-			"co", np.reshape(verts, len(mesh.vertices) * 3))
-		mesh.loop_triangles.foreach_get(
-			"vertices", np.reshape(inds, len(mesh.loop_triangles) * 3))
-
-		vao = model.create_vao(ctx, prog, vertices=verts, indices=inds)
 
 	if size is None:
 		size = obj.hydra_erosion.get_size()
@@ -169,9 +152,9 @@ def generate_heightmap(obj: bpy.types.Object, size:tuple[int,int]|None = None, n
 	model.recalculate_scales(obj)
 
 	if equirect:
-		txt = _generate_heightmap_equirect(obj, vao, size, normalized, world_scale, local_scale)
+		txt = _generate_heightmap_equirect(obj, size, normalized, world_scale, local_scale)
 	else:
-		txt = _generate_heightmap_flat(obj, vao, size, normalized, world_scale, local_scale)
+		txt = _generate_heightmap_flat(obj, size, normalized, world_scale, local_scale)
 
 	print("Generation finished.")
 	return txt

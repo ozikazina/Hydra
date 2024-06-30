@@ -10,24 +10,26 @@ uniform bool flip_y = false;
 
 uniform vec2 tile_mult = vec2(1, 1);
 
-#define CAMERA_DIST -1
 #define PI 3.14159265
 
 void main(void) {
 	vec2 pos = gl_GlobalInvocationID.xy * tile_mult * vec2(2 * PI, PI);
+    float strength;
+
     if (flip_y) {
-        pos.y = 0.5 * PI - pos.y;
+        pos.y = 0.25 * PI - pos.y;
+        pos.x += 0.5 * PI;
+        pos.x += pos.x < 0 ? 2 * PI : 0;
     }
     else {
-        pos.x = PI - pos.x;
+        pos.x = 0.5 * PI - pos.x;
         pos.x += pos.x < 0 ? 2 * PI : 0;
     }
 
-    float mult = sin(pos.y) / (cos(pos.y) - CAMERA_DIST);
+    float mult = tan(pos.y);
     vec2 coords = vec2(cos(pos.x) * mult, sin(pos.x) * mult);
     coords = (coords + vec2(1)) / 2;
 
-    float h = texture(in_height, coords).r;
-
-    imageStore(out_height, ivec2(gl_GlobalInvocationID.xy) + ivec2(0, offset_y), vec4(h));
+    vec4 height = texture(in_height, coords);
+    imageStore(out_height, ivec2(gl_GlobalInvocationID.xy) + ivec2(0, offset_y), height);
 }

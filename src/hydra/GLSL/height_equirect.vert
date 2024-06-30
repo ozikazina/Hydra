@@ -7,15 +7,21 @@ out vec4 pos;
 
 uniform float scale = 1;
 
+uniform float offset_x = 0;
+
+#define PI 3.14159265
+
 void main(void) {
 	vec4 npos = vec4(position, 1.0) * resize_matrix;
 
-    vec3 dif = normalize(npos.xyz);
-    dif /= max(abs(dif.z), 1e-2);
+    vec3 dir = normalize(npos.xyz);
+
+    float x = atan(dir.y, dir.x) / PI;
+    float y = 2 * acos(-dir.z) / PI - 1;
 
     float h = length(npos.xyz);
 
     pos = vec4(h, 0, 0, 0);
 
-	gl_Position = vec4(1 * dif.x, 1 * dif.y, -0.5 + 0.1 * h + (dif.z - 1), 1.0);
+	gl_Position = vec4(x + offset_x, y, h + float(abs(x) > 0.9), 1.0);
 }

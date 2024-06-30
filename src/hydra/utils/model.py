@@ -4,6 +4,7 @@ import numpy as np
 import bpy, bmesh
 import bpy.types
 import moderngl as mgl
+from Hydra import common
 
 # --------------------------------------------------------- Models
 
@@ -36,6 +37,29 @@ def create_vao(ctx: mgl.Context, program: mgl.Program, vertices:list[tuple[float
 			program=program,
 			content=[(vbo, "3f", "position")], index_buffer=ind
 		)
+
+def create_vaos(ctx: mgl.Context, programs: list[mgl.Program], obj: bpy.types.Object)->list[mgl.VertexArray]:
+	mesh = evaluate_mesh(obj)
+
+	if common.get_preferences().skip_indexing:
+		print("Skipping vertex indexing.")
+		verts = np.empty((len(mesh.vertices), 3), 'f')
+		
+		mesh.vertices.foreach_get(
+			"co", np.reshape(verts, len(mesh.vertices) * 3))
+
+		verts = [verts[i] for face in mesh.loop_triangles for i in face.vertices]
+		return [create_vao(ctx, prog, vertices=verts) for prog in programs]
+	else:
+		verts = np.empty((len(mesh.vertices), 3), 'f')
+		inds = np.empty((len(mesh.loop_triangles), 3), 'i')
+
+		mesh.vertices.foreach_get(
+			"co", np.reshape(verts, len(mesh.vertices) * 3))
+		mesh.loop_triangles.foreach_get(
+			"vertices", np.reshape(inds, len(mesh.loop_triangles) * 3))
+
+		return [create_vao(ctx, prog, vertices=verts, indices=inds) for prog in programs]
 
 def evaluate_mesh(obj: bpy.types.Object)->bpy.types.Mesh:
 	"""Evaluates an object as a mesh.
