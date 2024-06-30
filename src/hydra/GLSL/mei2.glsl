@@ -14,6 +14,9 @@ uniform ivec2 size = ivec2(512, 512);
 
 uniform float A = 1;
 
+uniform bool tile_x = false;
+uniform bool tile_y = false;
+
 #define LEFT   (pos + ivec2(-1, 0))
 #define RIGHT  (pos + ivec2(+1, 0))
 #define UP     (pos + ivec2(0, -1))
@@ -24,6 +27,17 @@ uniform float A = 1;
 //  3w +1
 
 float heightAt(ivec2 pos) {
+	if (tile_x) {
+		pos.x += pos.x < 0 ? size.x : 0;
+		pos.x -= pos.x >= size.x ? size.x : 0;
+	}
+	if (tile_y) {
+		pos.y += pos.y < 0 ? size.y : 0;
+		pos.y -= pos.y >= size.y ? size.y : 0;
+	}
+
+	pos = clamp(pos, ivec2(0), size - 1);
+
     return imageLoad(b_map, pos).r + imageLoad(d_map, pos).r;
 }
 
@@ -36,19 +50,15 @@ void main(void) {
 
 	hN = h - heightAt(LEFT);
 	pipe.x = max(0, pipe.x + dt * A * hN * lx);
-	pipe.x *= float(pos.x > 0);
 
 	hN = h - heightAt(RIGHT);
 	pipe.z = max(0, pipe.z + dt * A * hN * lx);
-	pipe.z *= float(pos.x < size.x - 1);
 
 	hN = h - heightAt(UP);
 	pipe.y = max(0, pipe.y + dt * A * hN * ly);
-	pipe.y *= float(pos.y > 0);
 
 	hN = h - heightAt(DOWN);
 	pipe.w = max(0, pipe.w + dt * A * hN * ly);
-	pipe.w *= float(pos.y < size.y - 1);
 
 	float sum = pipe.x + pipe.y + pipe.z + pipe.w;
 	float water = lx * ly * imageLoad(d_map, pos).r;

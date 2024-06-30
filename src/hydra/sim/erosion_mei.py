@@ -62,6 +62,9 @@ def erode(obj: bpy.types.Object | bpy.types.Image)->None:
 	else:
 		water_src = None
 
+	tile_x = hyd.tiling == "x" or hyd.tiling == "xy"
+	tile_y = hyd.tiling == "y" or hyd.tiling == "xy"
+
 	height.bind_to_image(BIND_HEIGHT, read=True, write=True)
 	pipe.bind_to_image(BIND_PIPE, read=True, write=True)
 	velocity.bind_to_image(BIND_VELOCITY, read=True, write=True)
@@ -69,7 +72,7 @@ def erode(obj: bpy.types.Object | bpy.types.Image)->None:
 	sediment.bind_to_image(BIND_SEDIMENT, read=True, write=True)
 	temp.bind_to_image(BIND_TEMP, read=True, write=True)
 
-	sedimentSampler = ctx.sampler(texture=temp, repeat_x=False, repeat_y=False) # sediment will be in temp at stage 6
+	sedimentSampler = ctx.sampler(texture=temp, repeat_x=tile_x, repeat_y=tile_y) # sediment will be in temp at stage 6
 	temp.use(LOC_SEDIMENT)
 	sedimentSampler.use(LOC_SEDIMENT)
 
@@ -101,10 +104,12 @@ def erode(obj: bpy.types.Object | bpy.types.Image)->None:
 	progs[1]["b_map"].value = BIND_HEIGHT
 	progs[1]["pipe_map"].value = BIND_PIPE
 	progs[1]["d_map"].value = BIND_WATER
-	progs[1]["size"] = size
 	progs[1]["lx"] = pipe_len
 	progs[1]["ly"] = pipe_len
 	progs[1]["A"] = 1
+	progs[1]["size"] = size
+	progs[1]["tile_x"] = tile_x
+	progs[1]["tile_y"] = tile_y
 
 	progs[2]["pipe_map"].value = BIND_PIPE
 	progs[2]["d_map"].value = BIND_WATER
@@ -112,6 +117,9 @@ def erode(obj: bpy.types.Object | bpy.types.Image)->None:
 	progs[2]["dt"] = dt
 	progs[2]["lx"] = pipe_len
 	progs[2]["ly"] = pipe_len
+	progs[2]["size"] = size
+	progs[2]["tile_x"] = tile_x
+	progs[2]["tile_y"] = tile_y
 
 	progs[3]["b_map"].value = BIND_HEIGHT
 	progs[3]["pipe_map"].value = BIND_PIPE
@@ -123,6 +131,9 @@ def erode(obj: bpy.types.Object | bpy.types.Image)->None:
 	progs[3]["ly"] = pipe_len
 	progs[3]["scale"] = size[0] / 2
 	progs[3]["depth_scale"] = 1 / (hyd.mei_max_depth * 0.002)
+	progs[3]["size"] = size
+	progs[3]["tile_x"] = tile_x
+	progs[3]["tile_y"] = tile_y
 
 	progs[4]["b_map"].value = BIND_HEIGHT
 	progs[4]["s_map"].value = BIND_SEDIMENT

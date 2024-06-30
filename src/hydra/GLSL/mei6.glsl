@@ -3,7 +3,6 @@
 layout(local_size_x = 32, local_size_y = 32, local_size_z = 1) in;
 
 uniform sampler2D s_sampler;
-uniform sampler2D v_sampler;
 
 layout (rg32f) uniform image2D v_map;
 layout (r32f) uniform image2D out_s_map;

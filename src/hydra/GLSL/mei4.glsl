@@ -14,6 +14,11 @@ uniform float lx = 1;
 uniform float ly = 1;
 uniform float scale = 1;
 
+uniform ivec2 size = ivec2(512, 512);
+
+uniform bool tile_x = false;
+uniform bool tile_y = false;
+
 uniform float depth_scale = 1;
 
 #define LEFT   (pos + ivec2(-1, 0))
@@ -26,8 +31,33 @@ uniform float depth_scale = 1;
 //  3w +1
 
 float heightAt(ivec2 pos) {
+    if (tile_x) {
+		pos.x += pos.x < 0 ? size.x : 0;
+		pos.x -= pos.x >= size.x ? size.x : 0;
+	}
+	if (tile_y) {
+		pos.y += pos.y < 0 ? size.y : 0;
+		pos.y -= pos.y >= size.y ? size.y : 0;
+	}
+
+	pos = clamp(pos, ivec2(0), size - 1);
+
     return imageLoad(b_map, pos).r + imageLoad(d_map, pos).r;
 }
+
+vec4 pipe_at(ivec2 pos) {
+    if (tile_x) {
+		pos.x += pos.x < 0 ? size.x : 0;
+		pos.x -= pos.x >= size.x ? size.x : 0;
+	}
+	if (tile_y) {
+		pos.y += pos.y < 0 ? size.y : 0;
+		pos.y -= pos.y >= size.y ? size.y : 0;
+	}
+
+    return imageLoad(pipe_map, pos);
+}
+
 
 void main(void) {
 	ivec2 pos = ivec2(gl_GlobalInvocationID.xy);
@@ -36,12 +66,12 @@ void main(void) {
     float dmean = imageLoad(dmean_map, pos).r;
     dmean = max(dmean, 1e-5);
 
-    float du = imageLoad(pipe_map, LEFT).z - imageLoad(pipe_map, RIGHT).x
+    float du = pipe_at(LEFT).z - pipe_at(RIGHT).x
                + pipe.z - pipe.x;
 
     float u = 0.5 * du / (dmean * ly);
 
-    float dv = imageLoad(pipe_map, UP).w - imageLoad(pipe_map, DOWN).y
+    float dv = pipe_at(UP).w - pipe_at(DOWN).y
                + pipe.w - pipe.y;
     
     float v = 0.5 * dv / (dmean * lx);
@@ -55,7 +85,6 @@ void main(void) {
     float slope = sqrt(gradient);
     
     float C = slope * length(vec2(u,v)) * Kc * max(1 - depth_scale * dmean, 0);
-    ivec2 size = imageSize(pipe_map);
 
     imageStore(dmean_map, pos, vec4(C));
 }//main
