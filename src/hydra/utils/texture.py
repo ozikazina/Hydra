@@ -5,6 +5,7 @@ import numpy as np
 import moderngl as mgl
 from Hydra.utils import model
 from Hydra import common
+import math
 
 def get_or_make_image(size: 'tuple[int,int]', name: str)->'tuple[bpy.types.Image, bool]':
 	"""Gets or creates an image of the specified name. If sizes are different, then it gets scaled to `size`.
@@ -114,3 +115,54 @@ def clone(txt: mgl.Texture)->mgl.Texture:
 	:return: Created texture.
 	:rtype: :class:`moderngl.Texture`"""
 	return common.data.context.texture(txt.size, txt.components, dtype="f4", data=txt.read())
+
+def get_min_max(txt: mgl.Texture)->'tuple[float,float]':
+	"""Gets minimum and maximum values of a :class:`moderngl.Texture`. Rebinds its image slot to 1.
+	
+	:param txt: Texture to be analyzed.
+	:type txt: :class:`mgl.Texture`
+	:return: Minimum and maximum values.
+	:rtype: :class:`tuple[float,float]`"""
+	ctx = common.data.context
+	size = txt.size
+
+	txt.bind_to_image(1, read=True, write=False)
+
+	buf = ctx.buffer(reserve=2 * 4 * size[0])
+	buf.bind_to_storage_buffer(1)
+
+	prog = common.data.shaders["reduction"]
+	prog["in_image"] = 1
+	prog["out_buffer"] = 1
+	prog["width"] = size[0]
+	prog["height"] = size[1]
+	prog.run(math.ceil(size[0] / 32), 1)
+
+	ctx.finish()
+
+	buf_data = np.frombuffer(buf.read(), dtype='f4', count=2 * size[0])
+	mn = buf_data[:size[0]].min()
+	mx = buf_data[size[0]:].max()
+
+	buf.release()
+	return mn, mx
+
+def scale(txt: mgl.Texture, scale: float, offset: float = 0.0):
+	"""Scales and offsets a :class:`moderngl.Texture`. Rebinds its image slot to 1.
+	
+	`txt = (txt + offset) * scale`
+	
+	:param txt: Texture to be scaled.
+	:type txt: :class:`mgl.Texture`"""
+
+	size = txt.size
+
+	txt.bind_to_image(1, read=True, write=True)
+
+	prog = common.data.shaders["scaling"]
+	prog["A"].value = 1
+	prog["scale"] = scale
+	prog["offset"] = offset
+	prog.run(size[0], size[1])
+
+	common.data.context.finish()

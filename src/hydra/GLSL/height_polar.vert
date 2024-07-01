@@ -5,8 +5,6 @@ uniform mat4 resize_matrix = mat4(1.0);
 
 out vec4 pos;
 
-uniform float scale = 1;
-
 void main(void) {
 	vec4 npos = vec4(position, 1.0) * resize_matrix;
 

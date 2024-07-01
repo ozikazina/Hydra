@@ -109,6 +109,7 @@ def simulate(obj: bpy.types.Image | bpy.types.Object)->bpy.types.Image|None:
 		prog = data.shaders["scaling"]
 		prog["A"].value = 5	# snow
 		prog["scale"] = 1 / (SNOW_SCALE * hyd.snow_add / 100)
+		prog["offset"] = 0
 		prog.run(group_x = size[0], group_y = size[1])
 
 		img_name = f"HYD_{obj.name}_Snow"

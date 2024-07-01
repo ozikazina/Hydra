@@ -43,33 +43,27 @@ def _generate_heightmap_flat(obj: bpy.types.Object, size:tuple[int,int]|None = N
 
 def _generate_heightmap_equirect(obj: bpy.types.Object, size:tuple[int,int]|None = None, normalized: bool=False, world_scale: bool=False, local_scale: bool=False):
 	ctx = common.data.context
-
-	if normalized:
-		scale = 1
-	elif world_scale:
-		scale = obj.hydra_erosion.org_scale * obj.scale.z
-	elif local_scale:
-		scale = obj.hydra_erosion.org_scale
-	else:
-		scale = obj.hydra_erosion.height_scale
 	
 	vao_polar, vao_equirect = model.create_vaos(ctx, [common.data.programs["polar"], common.data.programs["equirect"]], obj)
 
 	equirect_txt = ctx.texture(size, 1, dtype="f4")
-	equirect_txt.bind_to_image(1, read=False, write=True)
+	equirect_txt.bind_to_image(1, read=True, write=True)
 	depth = ctx.depth_texture(size)
-
-	#vao.program["scale"] = scale
 
 	fbo = ctx.framebuffer(color_attachments=(equirect_txt), depth_attachment=depth)
 
+	resize_matrix = model.get_resize_matrix(obj, planet=True)
+
 	with ctx.scope(fbo, mgl.DEPTH_TEST | mgl.CULL_FACE):
 		fbo.clear(depth=256.0)
-		vao_equirect.program["resize_matrix"].value = (-1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1)
+		rmatrix = list(resize_matrix)
+		rmatrix[0] = -rmatrix[0]
+		rmatrix[4 + 1] = -rmatrix[4 + 1] # 180 degree rotation around Z axis
+		vao_equirect.program["resize_matrix"].value = rmatrix
 		vao_equirect.program["offset_x"] = -0.5
 		vao_equirect.render()
 
-		vao_equirect.program["resize_matrix"].value = (1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1)
+		vao_equirect.program["resize_matrix"].value = resize_matrix
 		vao_equirect.program["offset_x"] = 0.5
 		vao_equirect.render()
 		ctx.finish()
@@ -99,11 +93,9 @@ def _generate_heightmap_equirect(obj: bpy.types.Object, size:tuple[int,int]|None
 	with ctx.scope(fbo, mgl.DEPTH_TEST):
 		# Upper polar projection
 		fbo.clear(depth=256.0)
-		vao_polar.program["resize_matrix"].value = (1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1)
+		vao_polar.program["resize_matrix"].value = resize_matrix
 		vao_polar.render()
 		ctx.finish()
-
-		texture.write_image("polar_up.png", polar)
 
 		equi_mapping["offset_y"] = math.ceil(3 * size[1] / 4)
 		equi_mapping["flip_y"] = True
@@ -112,22 +104,35 @@ def _generate_heightmap_equirect(obj: bpy.types.Object, size:tuple[int,int]|None
 
 		# Lower polar projection
 		fbo.clear(depth=256.0)
-		vao_polar.program["resize_matrix"].value = (-1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1)
+		rmatrix = list(resize_matrix)
+		rmatrix[0] = -rmatrix[0]
+		rmatrix[8 + 2] = -rmatrix[8 + 2] # 180 degree rotation around Y axis
+		vao_polar.program["resize_matrix"].value = rmatrix
 		vao_polar.render()
 		ctx.finish()
-
-		texture.write_image("polar_down.png", polar)
 
 		equi_mapping["offset_y"] = 0
 		equi_mapping["flip_y"] = False
 		equi_mapping.run(groups[0], groups[1])
 		ctx.finish()
-		
+	
 	vao_polar.release()
 	fbo.release()
 	depth.release()
 	polar_sampler.release()
 	polar.release()
+
+	offset = 0
+
+	if normalized:
+		# Reduction
+		mn, mx = texture.get_min_max(equirect_txt)
+		scale = 1 / max(mx - mn, 1e-5)
+		offset = -mn
+	else:
+		scale = 1
+
+	texture.scale(equirect_txt, scale, offset)
 
 	return equirect_txt
 

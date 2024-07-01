@@ -5,8 +5,6 @@ uniform mat4 resize_matrix = mat4(1.0);
 
 out vec4 pos;
 
-uniform float scale = 1;
-
 uniform float offset_x = 0;
 
 #define PI 3.14159265
@@ -23,5 +21,5 @@ void main(void) {
 
     pos = vec4(h, 0, 0, 0);
 
-	gl_Position = vec4(x + offset_x, y, h + float(abs(x) > 0.9), 1.0);
+	gl_Position = vec4(x + offset_x, y, 0.5 * h + float(abs(x) > 0.9), 1.0);
 }

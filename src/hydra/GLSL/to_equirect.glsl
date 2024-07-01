@@ -19,17 +19,19 @@ void main(void) {
     if (flip_y) {
         pos.y = 0.25 * PI - pos.y;
         pos.x += 0.5 * PI;
-        pos.x += pos.x < 0 ? 2 * PI : 0;
     }
     else {
         pos.x = 0.5 * PI - pos.x;
-        pos.x += pos.x < 0 ? 2 * PI : 0;
     }
+    pos.x += pos.x < 0 ? 2 * PI : 0;
+
+    strength = clamp(2 * (0.25 * PI - abs(pos.y)), 0, 1);
 
     float mult = tan(pos.y);
     vec2 coords = vec2(cos(pos.x) * mult, sin(pos.x) * mult);
-    coords = (coords + vec2(1)) / 2;
+    coords = (coords + vec2(1)) / 2; // Normalize to [0, 1]
 
-    vec4 height = texture(in_height, coords);
+    vec4 height = imageLoad(out_height, ivec2(gl_GlobalInvocationID.xy) + ivec2(0, offset_y));
+    height = mix(height, texture(in_height, coords), strength);
     imageStore(out_height, ivec2(gl_GlobalInvocationID.xy) + ivec2(0, offset_y), height);
 }
