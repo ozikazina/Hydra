@@ -50,8 +50,8 @@ def simulate(obj: bpy.types.Image | bpy.types.Object)->bpy.types.Image|None:
 	free.bind_to_image(3, read=True, write=True)
 	offset.bind_to_image(4, read=True, write=False)
 
-	tile_x = hyd.tiling == "x" or hyd.tiling == "xy"
-	tile_y = hyd.tiling == "y" or hyd.tiling == "xy"
+	tile_x = hyd.get_tiling_x()
+	tile_y = hyd.get_tiling_y()
 
 	progA["requests"].value = 2
 	progA["Ks"] = 0.5
@@ -63,6 +63,8 @@ def simulate(obj: bpy.types.Image | bpy.types.Object)->bpy.types.Image|None:
 	progA["size"] = size
 	progA["tile_x"] = tile_x
 	progA["tile_y"] = tile_y
+	progA["planet"] = hyd.tiling == "planet"
+	progA["tile_mult_y"] = math.pi / size[1]
 
 	progB["requests"].value = 2
 	progB["size"] = size

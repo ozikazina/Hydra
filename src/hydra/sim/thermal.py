@@ -44,8 +44,8 @@ def erode(obj: bpy.types.Image | bpy.types.Object)->None:
 	if hyd.thermal_stride_grad:
 		next_pass = hyd.thermal_iter_num // 2
 
-	tile_x = hyd.tiling == "x" or hyd.tiling == "xy"
-	tile_y = hyd.tiling == "y" or hyd.tiling == "xy"
+	tile_x = hyd.get_tiling_x()
+	tile_y = hyd.get_tiling_y()
 
 	progA["requests"].value = 2
 	progA["Ks"] = (hyd.thermal_strength / 100) * 0.5	#0-1 -> 0-0.5, higher is unstable
@@ -55,6 +55,8 @@ def erode(obj: bpy.types.Image | bpy.types.Object)->None:
 	progA["size"] = size
 	progA["tile_x"] = tile_x
 	progA["tile_y"] = tile_y
+	progA["planet"] = hyd.tiling == "planet"
+	progA["tile_mult_y"] = math.pi / size[1]
 
 	progB["requests"].value = 2
 	progB["size"] = size

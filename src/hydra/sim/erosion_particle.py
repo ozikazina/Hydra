@@ -39,8 +39,8 @@ def erode(obj: bpy.types.Object | bpy.types.Image)->None:
 		height = texture.clone(data.get_map(hyd.map_source).texture)
 		height_base = None
 
-	tile_x = hyd.tiling == "x" or hyd.tiling == "xy"
-	tile_y = hyd.tiling == "y" or hyd.tiling == "xy"
+	tile_x = hyd.get_tiling_x()
+	tile_y = hyd.get_tiling_y()
 
 	if hyd.erosion_hardness_src in bpy.data.images:
 		img = bpy.data.images[hyd.erosion_hardness_src]

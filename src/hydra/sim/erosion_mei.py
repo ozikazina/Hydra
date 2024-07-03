@@ -62,8 +62,8 @@ def erode(obj: bpy.types.Object | bpy.types.Image)->None:
 	else:
 		water_src = None
 
-	tile_x = hyd.tiling == "x" or hyd.tiling == "xy"
-	tile_y = hyd.tiling == "y" or hyd.tiling == "xy"
+	tile_x = hyd.get_tiling_x()
+	tile_y = hyd.get_tiling_y()
 
 	height.bind_to_image(BIND_HEIGHT, read=True, write=True)
 	pipe.bind_to_image(BIND_PIPE, read=True, write=True)

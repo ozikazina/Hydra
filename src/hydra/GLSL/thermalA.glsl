@@ -23,6 +23,9 @@ uniform ivec2 size = ivec2(512,512);
 
 uniform bool tile_x = false;
 uniform bool tile_y = false;
+uniform bool planet = false;
+
+uniform float tile_mult_y = 1/512;
 
 #define LEFT   (base + ivec2(-ds, diagonal ? -ds : 0))
 #define RIGHT  (base + ivec2(ds, diagonal ? ds : 0))
@@ -56,7 +59,7 @@ float getH(ivec2 pos) {
 void main(void) {
 	ivec2 base = ivec2(gl_GlobalInvocationID.xy);
 	
-	float lx = (diagonal ? bx * sqrt(2) : bx) * ds;
+	float lx = (diagonal ? bx * sqrt(2) : bx) * ds * (planet ? sin(float(base.y) * tile_mult_y) : 1);
 	float ly = (diagonal ? by * sqrt(2) : by) * ds;
 	
 	float h = getH(base);

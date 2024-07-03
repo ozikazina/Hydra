@@ -127,8 +127,15 @@ class ErosionGroup(bpy.types.PropertyGroup):
 			("x", "X", "Tiling along the X direction (image width)", 1),
 			("y", "Y", "Tiling along the Y direction (image height)", 2),
 			("xy", "XY", "Tiling in both directions", 3),
+			("planet", "Planet", "Planet mode", 4)
 		),
 	)
+
+	def get_tiling_x(self):
+		return self.tiling in ("x", "xy", "planet")
+	
+	def get_tiling_y(self):
+		return self.tiling in ("y", "xy")
 
 	advanced: BoolProperty(
 		default=False,
