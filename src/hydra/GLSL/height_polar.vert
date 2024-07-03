@@ -15,5 +15,5 @@ void main(void) {
 
     pos = vec4(h, 0, 0, 0);
 
-	gl_Position = vec4(1 * dif.x, 1 * dif.y, -0.5 + 0.1 * h + (dif.z - 1), 1.0);
+	gl_Position = vec4(dif.x, dif.y, -0.5 -0.1 * h + (dif.z - 1), 1.0);
 }

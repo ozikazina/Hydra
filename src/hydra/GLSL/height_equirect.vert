@@ -21,5 +21,5 @@ void main(void) {
 
     pos = vec4(h, 0, 0, 0);
 
-	gl_Position = vec4(x + offset_x, y, 0.5 * h + float(abs(x) > 0.9), 1.0);
+	gl_Position = vec4(x + offset_x, y, -0.5 * h - float(abs(x) > 0.9), 1.0);
 }
