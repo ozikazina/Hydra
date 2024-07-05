@@ -527,11 +527,20 @@ class ErosionGroup(bpy.types.PropertyGroup):
 
 	landscape_resolution: IntProperty(
 		default=1024,
+		soft_max=2048,
 		name="Model resolution",
-		min=256,
+		min=32,
 		description="Maximum side length of the generated landscape in vertices"
 	)
 	"""Model resolution for landscape generation"""
+
+	planet_resolution: IntProperty(
+		default=256,
+		soft_max=512,
+		name="Planet resolution",
+		min=8,
+		description="Maximum side length of the generated planet in vertices (will have 6*value^2 vertices in total)"
+	)
 
 	heightmap_equirect: BoolProperty(
 		default=False,

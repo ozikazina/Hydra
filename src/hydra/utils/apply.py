@@ -1,6 +1,7 @@
 """Module responsible for applying heightmaps, previews and modifiers."""
 
 import bpy
+import bmesh
 import numpy as np
 from Hydra import common
 from Hydra.sim import heightmap
@@ -46,7 +47,7 @@ def add_preview(target: bpy.types.Object|bpy.types.Image)->None:
 		if prefs.image_preview == "image":
 			nav.goto_image(img)
 		else:
-			add_landscape(img, max_verts_per_side=prefs.image_preview_resolution, name=PREVIEW_IMG_NAME, detach=False)
+			add_landscape(img, max_verts_per_side=prefs.image_preview_resolution, name=PREVIEW_IMG_NAME, detach=False, tile=hyd.tiling!="none")
 	else:
 		if data.lastPreview and data.lastPreview in bpy.data.objects:
 			last = bpy.data.objects[data.lastPreview]
@@ -67,7 +68,7 @@ def add_preview(target: bpy.types.Object|bpy.types.Image)->None:
 			common.data.add_message("Created preview modifier.")
 		
 		img = heightmap.get_displacement(target, PREVIEW_DISP_NAME)
-		mod.node_group = nodes.get_or_make_displace_group(PREVIEW_GEO_NAME, img)
+		mod.node_group = nodes.make_or_update_displace_group(PREVIEW_GEO_NAME, img)
 
 		common.data.lastPreview = target.name
 
@@ -299,7 +300,7 @@ def add_modifier(obj: bpy.types.Object, img: bpy.types.Image)->None:
 
 # -------------------------------------------------- Landscape
 
-def add_landscape(img: bpy.types.Image, max_verts_per_side: int = 1024, name: str|None = None, detach: bool = False)->None:
+def add_landscape(img: bpy.types.Image, max_verts_per_side: int = 1024, name: str|None = None, detach: bool = False, tile: bool = False)->None:
 	"""Generates a landscape from the specified image. Does not free image.
 	
 	:param img: Image to generate from.
@@ -320,24 +321,28 @@ def add_landscape(img: bpy.types.Image, max_verts_per_side: int = 1024, name: st
 			name = img.name
 		name = f"HYD_Gen_{name}"
 
+	if max_verts_per_side == 0:
+		resX = img.size[0]
+		resY = img.size[1]
+	else:
+		if img.size[0] > img.size[1]:
+			resX = min(max_verts_per_side, img.size[0])
+			resY = math.ceil(img.size[1] / img.size[0] * resX)
+		else:
+			resY = min(max_verts_per_side, img.size[1])
+			resX = math.ceil(img.size[0] / img.size[1] * resY)
+
+	resX = max(2, resX)
+	resY = max(2, resY)
+
 	if not detach and name in bpy.data.objects:
 		act = bpy.data.objects[name]
-		common.data.add_message("Object already exists (delete it or subdivide it to change resolution).")
-	else:
-		if max_verts_per_side == 0:
-			resX = img.size[0]
-			resY = img.size[1]
+		_ = nodes.make_or_update_displace_group(act.name, image=displacement, tiling=tile)
+		if act.data and len(act.data.vertices) == (resX + 1) * (resY + 1):
+			common.data.add_message("Updated existing object.")
 		else:
-			if img.size[0] > img.size[1]:
-				resX = min(max_verts_per_side, img.size[0])
-				resY = math.ceil(img.size[1] / img.size[0] * resX)
-			else:
-				resY = min(max_verts_per_side, img.size[1])
-				resX = math.ceil(img.size[0] / img.size[1] * resY)
-
-		resX = max(2, resX)
-		resY = max(2, resY)
-
+			common.data.add_message("Object already exists, delete it or subdivide it to change resolution.")
+	else:
 		bpy.ops.mesh.primitive_grid_add(x_subdivisions=resX, y_subdivisions=resY, location=bpy.context.scene.cursor.location)
 		act = bpy.context.active_object
 
@@ -354,11 +359,62 @@ def add_landscape(img: bpy.types.Image, max_verts_per_side: int = 1024, name: st
 		
 		group_name = PREVIEW_MOD_NAME if detach else act.name
 
-		mod.node_group = nodes.get_or_make_displace_group(group_name, image=displacement)
+		mod.node_group = nodes.make_or_update_displace_group(group_name, image=displacement, tiling=tile)
 
 		bpy.ops.object.mode_set(mode="OBJECT")	# modifiers can't be applied in EDIT mode
 
 		bpy.ops.object.transform_apply(scale=True, location=False, rotation=False, properties=False, isolate_users=False)
+
+		if detach:
+			bpy.ops.object.modifier_apply(modifier=PREVIEW_MOD_NAME)
+
+			bpy.data.node_groups.remove(bpy.data.node_groups[group_name])
+
+	nav.goto_object(act)
+
+def add_planet(img, max_verts_per_side=512, name: str|None = None, detach: bool = False):
+	hyd = img.hydra_erosion
+	displacement = img
+
+	if name is None:
+		if "." in img.name:
+			name = img.name[:img.name.rfind(".")]
+		else:
+			name = img.name
+		name = f"HYD_Gen_{name}"
+
+	if max_verts_per_side == 0:
+		res = math.ceil(img.size[0] / 4)
+	else:
+		res = min(max_verts_per_side, math.ceil(img.size[0] / 4))
+
+	res = max(2, res)
+
+	if not detach and name in bpy.data.objects:
+		act = bpy.data.objects[name]
+		_ = nodes.make_or_update_planet_group(act.name, image=displacement, sub_cube=True)
+	else:
+		bpy.ops.mesh.primitive_cube_add(location=bpy.context.scene.cursor.location)
+		act = bpy.context.active_object
+
+		act.name = name
+		for k in hyd.keys():
+			act.hydra_erosion[k] = hyd[k]
+		act.hydra_erosion.is_generated = True
+
+		bm = bmesh.new()
+		bm.from_mesh(act.data)
+		bmesh.ops.subdivide_edges(bm, edges=bm.edges, cuts=res, use_grid_fill=True)
+		bm.to_mesh(act.data)
+		act.data.update()
+
+		mod = act.modifiers.new(PREVIEW_MOD_NAME, "NODES")
+		
+		group_name = act.name
+
+		mod.node_group = nodes.make_or_update_planet_group(group_name, image=displacement, sub_cube=True)
+
+		bpy.ops.object.mode_set(mode="OBJECT")	# modifiers can't be applied in EDIT mode
 
 		if detach:
 			bpy.ops.object.modifier_apply(modifier=PREVIEW_MOD_NAME)
@@ -388,7 +444,7 @@ def add_geometry_nodes(obj: bpy.types.Object, img: bpy.types.Image)->None:
 	else:
 		mod = obj.modifiers[-1]
 	
-	mod.node_group = nodes.get_or_make_displace_group(f"HYD_{obj.name}", img)
+	mod.node_group = nodes.make_or_update_displace_group(f"HYD_{obj.name}", img)
 
 def add_into_geometry_nodes(obj: bpy.types.Object, img: bpy.types.Image)->None:
 	"""Adds the image into an existing Geometry Nodes modifier.
@@ -417,7 +473,7 @@ def add_into_geometry_nodes(obj: bpy.types.Object, img: bpy.types.Image)->None:
 	else:
 		output = outputs[0]
 
-	displace_group = nodes.get_or_make_displace_group("HYD_Displace")
+	displace_group = nodes.make_or_update_displace_group("HYD_Displace")
 
 	connected = None
 	if output.inputs[0].is_linked:

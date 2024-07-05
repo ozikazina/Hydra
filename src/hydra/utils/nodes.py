@@ -1,10 +1,12 @@
 import bpy
 from Hydra import common
+import math
 
 # -------------------------------------------------- Constants
 
 COLOR_DISPLACE = (0.1,0.393,0.324)
 COLOR_VECTOR = (0.172,0.172,0.376)
+COLOR_INPUT = (0.406, 0.152, 0.229)
 
 # -------------------------------------------------- Node Utils
 
@@ -56,8 +58,168 @@ def stagger_nodes(baseNode:bpy.types.ShaderNode, *args, forwards:bool=False)->No
 				y -= node.height + 40
 			x -= maxwidth + 20
 
+class Node:
+	def __init__(self, name, type, label=None, operation=None, link=None, minimize=False, **kwargs):
+		self.name = name
+		self.type = type
+		self.link = link
+		self.label = label
+		self.operation = operation
+		self.other = kwargs
+		self.minimize = minimize
+
+	def __repr__(self):
+		return f"{self.name}: {self.x}/{self.y} [{self.parent}]"
+
+class Frame:
+	def __init__(self, label=None, color:tuple[int,int,int]=None, nodes=None):
+		self.label = label
+		self.color = color
+		self.nodes = nodes
+
+	def __repr__(self):
+		return f"{self.title}"
+
+def extract(node, node_dict, nodes, frame):
+	if node is None:
+		return
+	tp = type(node)
+	if tp is Node:
+		n = nodes.new(node.type)
+		n.name = node.name
+		n.parent = frame
+		if node.label is not None:
+			n.label = node.label
+		if node.operation:
+			n.operation = node.operation
+		for k,v in node.other.items():
+			if hasattr(n, k):
+				setattr(n, k, v)
+
+		if node.minimize:
+			minimize_node(n, collapse_node=False)
+
+		node_dict[node.name] = (n, node.link)
+	elif tp is tuple or tp is list:
+		for i in node:
+			extract(i, node_dict, nodes, frame)
+	elif tp is Frame:
+		f = nodes.new("NodeFrame")
+		f.label = node.label
+		f.parent = frame
+		if node.color is not None:
+			f.color = node.color
+			f.use_custom_color = True
+
+		extract(node.nodes, node_dict, nodes, f)
+	else:
+		raise ValueError(f"Invalid node type {type(node)}")
+
+def stagger(node, pos, node_dict:dict[str, Node]):
+	if node is None:
+		return pos
+	tp = type(node)
+	if tp is Node:
+		n = node_dict[node.name][0]
+		height = 20
+		for i in n.inputs:
+			if hasattr(i, "default_value") and hasattr(i.default_value, "__len__"):
+				height += 10 + 15 * len(i.default_value)
+			else:
+				height += 15
+
+		node_dict[node.name] = (n, node.link)
+		n.location[0] = pos[0]
+		n.location[1] = pos[1]
+		return (pos[0] + n.width + 20, pos[1] - height - 20)
+	elif tp is tuple:
+		npos = pos
+		width = 0
+		height = 0
+		for i in node:
+			next_pos = stagger(i, npos, node_dict)
+			width = max(width, next_pos[0])
+			height = min(height, next_pos[1])
+			npos = (npos[0], next_pos[1])
+		return (width, height)
+	elif tp is list:
+		npos = pos
+		width = 0
+		height = 0
+		for i in node:
+			next_pos = stagger(i, npos, node_dict)
+			width = max(width, next_pos[0])
+			height = min(height, next_pos[1])
+			npos = (next_pos[0], npos[1])
+		return (width, height)
+	elif tp is Frame:
+		ret = stagger(node.nodes, (pos[0] + 20, pos[1]), node_dict)
+		return (ret[0] + 25, ret[1] - 35)
+	else:
+		raise ValueError(f"Invalid node type {type(node)}")
+
+def link_nodes(links, a, b, a_out, b_in):
+	if len(a.outputs) == 0 or len(b.inputs) == 0:
+		return
+	if a_out is None:
+		outs = [o for o in a.outputs if o.enabled]
+		a_out = outs[0].name
+	if b_in is None:
+		ins = [i for i in b.inputs if i.enabled]
+		b_in = ins[0].name
+	links.new(a.outputs[a_out], b.inputs[b_in])
+
+def set_value(node, at, value):
+	print(node)
+	print(at)
+	if at is None:
+		at = 0
+	node.inputs[at].default_value = value
+
+def create_tree(nodes, links, node_definition):
+	node_dict = {}
+	extract(node_definition, node_dict, nodes, None)
+
+	last_item = None
+	for v, link in node_dict.values():
+		print(v, link)
+		if link is None:
+			if last_item is None:
+				last_item = v
+				continue
+			else:
+				link = last_item
+		
+		if type(link) is list:
+			values = enumerate(link)
+		elif type(link) is dict:
+			values = link.items()
+		else:
+			values = [(None, link)]
+
+		for i,val in values:
+			tp = type(val)
+			if tp is tuple:
+				ntp = type(val[0])
+				if ntp is str:	# output selection
+					link_nodes(links, node_dict[val[0]][0], v, val[1], i)
+				elif isinstance(ntp, bpy.types.Node):
+					link_nodes(links, val[0], v, val[1], i)
+				else: #direct input
+					set_value(v, i, val)
+			elif tp is str: # from node_dict
+				link_nodes(links, node_dict[val][0], v, None, i)
+			elif isinstance(val, bpy.types.Node):	# object
+				link_nodes(links, val, v, None, i)
+			else: # value
+				set_value(v, i, val)
+		
+		last_item = v
+
+	stagger(node_definition, (0,0), node_dict)
+
 def space_nodes(*args, forwards:bool=False)->None:
-	"""Spaces specified nodes.
+	"""Spaces specified nodes apart.
 	
 	:param args: Node arguments to be spaced.
 	:type args: :class:`bpy.types.ShaderNode`
@@ -69,7 +231,7 @@ def space_nodes(*args, forwards:bool=False)->None:
 			n.location.x += offset
 		else:
 			n.location.x -= offset
-		offset += 50
+		offset += 50 # spacing stacks
 
 def frame_nodes(nodes, *args, label:str|None = None, color:tuple[float,float,float]|None=None)->bpy.types.ShaderNode:
 	"""Creates a frame node and parents specified nodes to it.
@@ -165,7 +327,7 @@ def get_or_make_output_node(nodes)->bpy.types.ShaderNode:
 	
 	return out
 
-def get_or_make_displace_group(name, image: bpy.types.Image=None, tiling: bool = False)->bpy.types.NodeGroup:
+def make_or_update_displace_group(name, image: bpy.types.Image=None, tiling: bool = False)->bpy.types.NodeGroup:
 	"""Finds or creates a displacement node group.
 
 	:param name: Node group name.
@@ -193,6 +355,7 @@ def get_or_make_displace_group(name, image: bpy.types.Image=None, tiling: bool =
 			# Update image
 			n_image = next(i for i in g.nodes if i.type == "IMAGE_TEXTURE" and i.name == "HYD_Displacement")
 			n_image.inputs[0].default_value = image
+			n_image.extension = "REPEAT" if tiling else "EXTEND"
 			common.data.add_message(f"Updated existing group {name}.")
 		return g
 	else:
@@ -225,18 +388,18 @@ def get_or_make_displace_group(name, image: bpy.types.Image=None, tiling: bool =
 
 		n_subbound = nodes.new("ShaderNodeVectorMath")
 		n_subbound.label = "Width and Height"
-		n_subpos.name = "HYD_Get_Dimensions"
+		n_subbound.name = "HYD_Get_Dimensions"
 		n_subbound.operation = "SUBTRACT"
 
 		n_normalize = nodes.new("ShaderNodeVectorMath")
 		n_normalize.label = "Normalize"
-		n_subpos.name = "HYD_Normalize"
+		n_normalize.name = "HYD_Normalize"
 		n_normalize.operation = "DIVIDE"
 
 		n_image = nodes.new("GeometryNodeImageTexture")
 		n_image.label = "Displacement"
 		n_image.name = "HYD_Displacement"
-		n_image.extension = "EXTEND"
+		n_image.extension = "REPEAT" if tiling else "EXTEND"
 		n_image.interpolation = "Cubic"
 		n_image.inputs[0].default_value = image
 
@@ -283,6 +446,99 @@ def get_or_make_displace_group(name, image: bpy.types.Image=None, tiling: bool =
 		f_displace = frame_nodes(nodes, n_image, n_scale, n_combine, n_displace, label="Displacement", color=COLOR_DISPLACE)
 
 		space_nodes(f_displace, f_coords, n_input, forwards=False)
+
+		return g
+
+def make_or_update_planet_group(name, image: bpy.types.Image=None, sub_cube: bool = False)->bpy.types.NodeGroup:
+	if name in bpy.data.node_groups:
+		g = bpy.data.node_groups[name]
+		sockets = g.interface.items_tree
+
+		if not any(i for i in g.nodes if i.type == "IMAGE_TEXTURE" and i.name == "HYD_Displacement"):
+			n_image = g.nodes.new("GeometryNodeImageTexture")
+			n_image.label = "Displacement"
+			n_image.name = "HYD_Displacement"
+			n_image.extension = "EXTEND"
+			n_image.interpolation = "Cubic"
+			n_image.inputs[0].default_value = image
+			common.data.add_message(f"Existing group {name} was missing HYD_Displacement image node. It has been added, but hasn't been connected.", error=True)
+		elif not any(i for i in sockets if i.in_out == "OUTPUT" and i.socket_type == "NodeSocketGeometry") or\
+			not any(i for i in sockets if i.in_out == "INPUT" and i.socket_type == "NodeSocketGeometry"):
+			common.data.add_message(f"Updated existing group {name}, but it doesn't have Geometry input/output!", error=True)
+		else:
+			# Update image
+			n_image = next(i for i in g.nodes if i.type == "IMAGE_TEXTURE" and i.name == "HYD_Displacement")
+			n_image.inputs[0].default_value = image
+			common.data.add_message(f"Updated existing group {name}.")
+		return g
+	else:
+		g = bpy.data.node_groups.new(name, type='GeometryNodeTree')
+		g.is_modifier = True
+		g.interface.new_socket("Geometry", in_out="INPUT", socket_type="NodeSocketGeometry")
+		i_scale = g.interface.new_socket("Scale", in_out="INPUT", socket_type="NodeSocketFloat")
+		i_scale.default_value = 1
+		i_scale.min_value = 0
+		i_scale.max_value = 2
+		i_scale.force_non_field = False
+		g.interface.new_socket("Displaced", in_out="OUTPUT", socket_type="NodeSocketGeometry")
+
+		nodes = g.nodes
+		links = g.links
+
+		create_tree(nodes, links, [
+			Node("Group Input", "NodeGroupInput"),
+			(
+				Frame("Texture Coordinates", color=COLOR_VECTOR, nodes=[
+					Node("HYD_Position", "GeometryNodeInputPosition"),
+					Node("HYD_Get_Normalized", "ShaderNodeVectorMath", label="Normalize", operation="NORMALIZE"),
+					Node("HYD_Rotate", "FunctionNodeRotateVector", label="Rotate to -Y", link=[
+						"HYD_Get_Normalized",
+						# slightly misaligned to avoid floating point errors
+						(0, 0, math.pi / 2 + 1e-5)
+					]),
+					Node("HYD_Get_Components", "ShaderNodeSeparateXYZ", label="Spherical Components"),
+					(
+						Node("HYD_Get_X", "ShaderNodeMath", operation="ARCTAN2", label="X Coordinate",
+							link=[("HYD_Get_Components", 1), ("HYD_Get_Components", 0)]),
+						Node("HYD_Get_Y", "ShaderNodeMath", operation="ARCSINE", label="Y Coordinate",
+							link=("HYD_Get_Components", 2)),
+					),
+					Node("HYD_Equirect", "ShaderNodeCombineXYZ", label="Equirectangular XY", link=["HYD_Get_X", "HYD_Get_Y"]),
+					Node("HYD_Texture_Coords", "ShaderNodeMapRange", label="UV Coordinates", link={
+							6: "HYD_Equirect",
+							7: (-math.pi, -math.pi/2, 0),
+							8: (math.pi, math.pi / 2, 1),
+						}, data_type="FLOAT_VECTOR", minimize=True),
+				]),
+				# ---------------------- Sub cube
+				Frame("Cube Subtraction", color=COLOR_INPUT, nodes=[
+					Node("HYD_Absolute", "ShaderNodeVectorMath", operation="ABSOLUTE", link="HYD_Get_Normalized"),
+					Node("HYD_Abs_Components", "ShaderNodeSeparateXYZ", label="Absolute Components"),
+					Node("HYD_Max_XY", "ShaderNodeMath", operation="MAXIMUM", label="Max X/Y", link=[
+						("HYD_Abs_Components", 0), ("HYD_Abs_Components", 1)
+					]),
+					Node("HYD_Max_XYZ", "ShaderNodeMath", operation="MAXIMUM", label="Max X/Y/Z", link=[
+						"HYD_Max_XY", ("HYD_Abs_Components", 2)
+					]),
+					Node("HYD_Divide", "ShaderNodeMath", operation="DIVIDE", label="Distance to Cube", link={0: 1.0, 1: "HYD_Max_XYZ"}),
+				]) if sub_cube else None
+				# ----------------------
+			),
+			Frame("Displacement", color=COLOR_DISPLACE, nodes=[
+				Node("HYD_Displacement", "GeometryNodeImageTexture", label="Displacement", link={
+					0: image,
+					"Vector": "HYD_Texture_Coords"
+				}, extension="EXTEND"), # REPEAT creates seams at the poles
+				Node("HYD_Scale", "ShaderNodeMath", label="Scale", operation="MULTIPLY", link=["HYD_Displacement", ("Group Input", "Scale")]),
+				Node("HYD_Subtract_Cube", "ShaderNodeMath", label="Subtract Cube", operation="SUBTRACT", link=["HYD_Scale", "HYD_Divide"])
+					if sub_cube else None,
+				Node("HYD_Offset", "ShaderNodeVectorMath", label="Offset Vector", operation="SCALE", link={
+					0: "HYD_Get_Normalized", 3: "HYD_Subtract_Cube" if sub_cube else "HYD_Scale"
+				}),
+				Node("HYD_Displace", "GeometryNodeSetPosition", label="Displace", link={0: "Group Input", 3: "HYD_Offset"}),
+			]),
+			Node("Group Output", "NodeGroupOutput", link="HYD_Displace")
+		])
 
 		return g
 

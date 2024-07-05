@@ -1,7 +1,7 @@
 """Module responsible for image operators."""
 
 from Hydra import common
-from Hydra.utils import apply, texture
+from Hydra.utils import apply, texture, nodes
 from Hydra.addon import ops_common
 from Hydra.sim import heightmap
 
@@ -20,8 +20,13 @@ class LandscapeOperator(ops_common.ImageOperator):
 	)
 
 	def invoke(self, ctx, event):
-		hyd = self.get_target(ctx).hydra_erosion
-		apply.add_landscape(self.get_target(ctx), max_verts_per_side=hyd.landscape_resolution, detach=self.detach)
+		target = self.get_target(ctx)
+		hyd = target.hydra_erosion
+
+		if hyd.tiling == "planet":
+			apply.add_planet(target, max_verts_per_side=hyd.planet_resolution)
+		else:
+			apply.add_landscape(target, max_verts_per_side=hyd.landscape_resolution, detach=self.detach, tile=hyd.tiling!="none")
 
 		common.data.report(self, "Landscape")
 		return {'FINISHED'}

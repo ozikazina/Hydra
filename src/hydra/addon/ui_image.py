@@ -15,7 +15,11 @@ class LandscapePanel(ui_common.ImagePanel):
 		col = self.layout.grid_flow(columns=1, align=True)
 		col.operator('hydra.landscape', text="Generate", icon="RNDCURVE").detach = False
 		col.operator('hydra.landscape', text="Generate & Detach", icon="UNLINKED").detach = True
-		self.layout.prop(hyd, "landscape_resolution")
+		if hyd.tiling == "planet":
+			self.layout.prop(hyd, "planet_resolution")
+		else:
+			self.layout.prop(hyd, "landscape_resolution")
+		self.layout.prop(hyd, "tiling")
 
 #-------------------------------------------- Erosion
 
