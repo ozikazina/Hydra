@@ -131,3 +131,188 @@ def recalculate_scales(obj: bpy.types.Object)->None:
 	obj.hydra_erosion.height_scale = dz / dx if dx > 1e-3 else 1
 	obj.hydra_erosion.org_scale = abs(obj.dimensions.z / obj.scale.z) if abs(obj.scale.z) > 1e-3 else 1
 	obj.hydra_erosion.org_width = abs(obj.dimensions.x / obj.scale.x) if abs(obj.scale.x) > 1e-3 else 1
+
+def create_cube_mesh(side_length, name):
+	res = side_length
+
+	vert_count = 6 * res ** 2 - 12 * res + 8
+	face_count = 6 * (res-1) ** 2
+
+	verts = np.empty((vert_count * 3), dtype=np.float32)
+	edges = []
+	faces = np.zeros((face_count, 4), dtype=np.int32)
+
+	tile_size = 2/(res-1)
+
+	def add_verts(off, dest_a, dest_b, dest_c, c, size_a, size_b, count_a, count_b):
+		end = off + 3 * count_a * count_b
+		verts[off + dest_a:end + dest_a:3], verts[off+dest_b:end+dest_b:3] = \
+			np.mgrid[-size_a:size_a:complex(count_a),-size_b:size_b:complex(count_b)].reshape((2,count_a * count_b))
+		if c is not None:
+			verts[off + dest_c:end + dest_c:3] = c
+		return end
+	
+	def add_faces(off, width, height, flip):
+		# Creates starting indices for vertical edge, repeats them width-times, adds increasing series to each row
+		end = off[0] + (width - 1) * (height - 1)
+		start = np.array(range(off[1], off[1] + width * (height - 1), width), dtype=np.int32).repeat(width-1).reshape((height-1,width-1)) + np.array([range(width-1)], dtype=np.int32)
+		# Repeats each vertex 4 times, adds 0,1 (bottom edge), res+1,res (top edge) to make a face
+		adjust = np.array([width, width+1, 1, 0] if flip else [0,1,width+1,width], dtype=np.int32)
+		faces[off[0]:end] = start.reshape(-1).repeat(4).reshape(((width - 1) * (height - 1), 4)) + adjust
+		return (end, off[1] + width * height)
+	
+	def add_face_strip(off, length, width1, width2, off1, off2, flip):
+		end = off[0] + length - 1
+		if flip:
+			(width1, width2, off1, off2) = (width2, width1, off2, off1)
+		faces[off[0]:end] = [[
+			x * width1 + off1,
+			(x + 1) * width1 + off1,
+			(x + 1) * width2 + off2,
+			x * width2 + off2
+		] for x in range(0, length - 1)]
+		return (end, off[1])
+
+	verts.fill(-1)
+
+	# +Z
+	offset = end = add_verts(0, 1, 0, 2, 1, 1, 1, res, res)
+	# -Z
+	offset = end = add_verts(offset, 1, 0, 2, None, 1, 1, res, res)
+	# -Y
+	offset = end = add_verts(offset, 2, 0, 1, None, 1-tile_size, 1, res-2, res)
+	# +Y
+	offset = end = add_verts(offset, 2, 0, 1, 1, 1-tile_size, 1, res-2, res)
+	# -X
+	offset = end = add_verts(offset, 2, 1, 0, None, 1-tile_size, 1-tile_size, res-2, res-2)
+	# +X
+	offset = end = add_verts(offset, 2, 1, 0, 1, 1-tile_size, 1-tile_size, res-2, res-2)
+	
+	# Faces
+	# +Z
+	(end, vert_offset) = add_faces((0,0), res, res, False)
+	# -Z
+	(end, vert_offset) = add_faces((end,vert_offset), res, res, True)
+	# -Y
+	(end, vert_offset) = add_faces((end,vert_offset), res, res-2, False)
+	vert_offset -= res * (res - 2)
+
+	end, vert_offset = add_face_strip((end, vert_offset), res, 1, 1,
+								vert_offset + res * (res - 3),
+								0, False)
+	end, vert_offset = add_face_strip((end, vert_offset), res, 1, 1,
+								vert_offset,
+								0 + res ** 2, True)
+	vert_offset += res * (res - 2)
+	# +Y
+	(end, vert_offset) = add_faces((end,vert_offset), res, res-2, True)
+	vert_offset -= res * (res - 2)
+
+	end, vert_offset = add_face_strip((end, vert_offset), res, 1, 1,
+								vert_offset + res * (res - 3),
+								0 + res * (res - 1), True)
+	end, vert_offset = add_face_strip((end, vert_offset), res, 1, 1,
+								vert_offset,
+								res ** 2 + res * (res - 1), False)
+	offset = end
+	vert_offset += res * (res - 2)
+	# -X
+	(end, vert_offset) = add_faces((end,vert_offset), res-2, res-2, True)
+	vert_offset -= (res - 2)**2
+
+	#flipped
+	end, vert_offset = add_face_strip((end, vert_offset), res - 2, res - 2, res,
+								vert_offset,
+								vert_offset - 2 * res * (res - 2), True)
+	end, vert_offset = add_face_strip((end, vert_offset), res - 2, res - 2, res,
+								vert_offset + res - 3,
+								vert_offset - res * (res - 2), False)
+	end, vert_offset = add_face_strip((end, vert_offset), res - 2, res, 1,
+								res,
+								vert_offset + (res - 2) * (res - 3), False)
+	end, vert_offset = add_face_strip((end, vert_offset), res - 2, res, 1,
+								res ** 2 + res,
+								vert_offset, True)
+	offset = end
+
+	end += 4
+	faces[offset:end] = [
+		[
+			res ** 2 + res,
+			res ** 2,
+			vert_offset - 2 * res * (res - 2),
+			vert_offset,
+		],
+		[
+			res ** 2 + res + res * (res-2),
+			res ** 2 + res * (res-2),
+			vert_offset + res - 3,
+			vert_offset - 2 * res * (res - 2) + res * (res - 2),
+		],
+		[
+			0,
+			res,
+			vert_offset + (res - 2) * (res - 3),
+			vert_offset - 2 * res * (res - 2) + res * (res - 3),
+		],
+		[
+			0 + res * (res - 2),
+			res + res * (res - 2),
+			vert_offset - res,
+			vert_offset + (res - 2) * (res - 3) + res - 3,
+		]
+	]
+	offset = end
+	vert_offset += (res - 2)**2
+
+	# +X
+	(end, vert_offset) = add_faces((end,vert_offset), res-2, res-2, False)
+	vert_offset -= (res - 2)**2
+
+	end, vert_offset = add_face_strip((end, vert_offset), res - 2, res - 2, res,
+								vert_offset,
+								vert_offset - 2 * res * (res - 2) + 2 * res - res * (res - 3) - 5, False)
+	end, vert_offset = add_face_strip((end, vert_offset), res - 2, res - 2, res,
+								vert_offset + res - 3,
+								vert_offset - res * (res - 2) + 2 * res - res * (res - 3) - 5, True)
+	end, vert_offset = add_face_strip((end, vert_offset), res - 2, res, 1,
+								res + res - 1,
+								vert_offset + (res - 2) * (res - 3), True)
+	end, vert_offset = add_face_strip((end, vert_offset), res - 2, res, 1,
+								res ** 2 + res + res - 1,
+								vert_offset, False)
+	offset = end
+
+	end += 4
+	faces[offset:end] = [
+		[
+			vert_offset,
+			vert_offset - 2 * res * (res - 2) - res * (res - 5) - 5,
+			res ** 2 + res-1,
+			res ** 2 + res + res-1
+		],
+		[
+			res ** 2 + res * (res-2) + res - 1,
+			res ** 2 + res * (res-1) + res - 1,
+			vert_offset - res * (res - 2) - res * (res - 5) - 5,
+			vert_offset + res - 3,
+		],
+		[
+			res + res-1,
+			res-1,
+			vert_offset - 2 * res * (res - 2) + res * (res - 3) - res * (res - 5) - 5,
+			vert_offset + (res - 2) * (res - 3),
+		],
+		[
+			vert_offset + (res - 2) * (res - 3) + res - 3,
+			vert_offset - res - res * (res - 5) - 5,
+			res * (res - 1) + res-1,
+			res * (res - 2) + res-1
+		]
+	]
+
+	mesh = bpy.data.meshes.new(name)
+
+	mesh.from_pydata(verts.reshape((vert_count, 3)), edges, faces)
+
+	return mesh

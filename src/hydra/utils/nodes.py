@@ -170,8 +170,6 @@ def link_nodes(links, a, b, a_out, b_in):
 	links.new(a.outputs[a_out], b.inputs[b_in])
 
 def set_value(node, at, value):
-	print(node)
-	print(at)
 	if at is None:
 		at = 0
 	node.inputs[at].default_value = value
@@ -182,7 +180,6 @@ def create_tree(nodes, links, node_definition):
 
 	last_item = None
 	for v, link in node_dict.values():
-		print(v, link)
 		if link is None:
 			if last_item is None:
 				last_item = v
