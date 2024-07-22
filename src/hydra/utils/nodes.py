@@ -171,7 +171,10 @@ def link_nodes(links, a, b, a_out, b_in):
 def set_value(node, at, value):
 	if at is None:
 		at = 0
-	node.inputs[at].default_value = value
+	try:
+		node.inputs[at].default_value = value
+	except Exception as e:
+		print(f"Failed to set value for: {node.name}[{node.type}] due to {e}")
 
 def create_tree(nodes, links, node_definition):
 	node_dict = {}
@@ -374,80 +377,40 @@ def make_or_update_displace_group(name, image: bpy.types.Image=None, tiling: boo
 		g.interface.new_socket("Displaced", in_out="OUTPUT", socket_type="NodeSocketGeometry")
 
 		nodes = g.nodes
-
-		n_input = nodes.new("NodeGroupInput")
-		n_output = nodes.new("NodeGroupOutput")
-
-		n_bounds = nodes.new("GeometryNodeBoundBox")
-		n_bounds.name = "HYD_Bounds"
-		n_pos = nodes.new("GeometryNodeInputPosition")
-		n_pos.name = "HYD_Position"
-
-		n_subpos = nodes.new("ShaderNodeVectorMath")
-		n_subpos.label = "Remove Offset"
-		n_subpos.name = "HYD_Get_Offset"
-		n_subpos.operation = "SUBTRACT"
-
-		n_subbound = nodes.new("ShaderNodeVectorMath")
-		n_subbound.label = "Width and Height"
-		n_subbound.name = "HYD_Get_Dimensions"
-		n_subbound.operation = "SUBTRACT"
-
-		n_normalize = nodes.new("ShaderNodeVectorMath")
-		n_normalize.label = "Normalize"
-		n_normalize.name = "HYD_Normalize"
-		n_normalize.operation = "DIVIDE"
-
-		n_image = nodes.new("GeometryNodeImageTexture")
-		n_image.label = "Displacement"
-		n_image.name = "HYD_Displacement"
-		n_image.extension = "REPEAT" if tiling else "EXTEND"
-		n_image.interpolation = "Cubic"
-		n_image.inputs[0].default_value = image
-
-		n_scale = nodes.new("ShaderNodeMath")
-		n_scale.label = "Scale"
-		n_scale.name = "HYD_Scale"
-		n_scale.operation = "MULTIPLY"
-		n_scale.inputs[1].default_value = 1
-
-		n_combine = nodes.new("ShaderNodeCombineXYZ")
-		n_combine.label = "Z Only"
-		n_combine.name = "HYD_Z_Only"
-		n_displace = nodes.new("GeometryNodeSetPosition")
-		n_displace.label = "Displace"
-
 		links = g.links
 
-		links.new(n_input.outputs["Geometry"], n_bounds.inputs[0])
-
-		links.new(n_pos.outputs[0], n_subpos.inputs[0])
-		links.new(n_bounds.outputs["Min"], n_subpos.inputs[1])
-
-		links.new(n_bounds.outputs["Max"], n_subbound.inputs[0])
-		links.new(n_bounds.outputs["Min"], n_subbound.inputs[1])
-
-		links.new(n_subpos.outputs[0], n_normalize.inputs[0])
-		links.new(n_subbound.outputs[0], n_normalize.inputs[1])
-
-		links.new(n_normalize.outputs[0], n_image.inputs["Vector"])
-
-		links.new(n_image.outputs["Color"], n_scale.inputs[0])
-		links.new(n_input.outputs["Scale"], n_scale.inputs[1])
-
-		links.new(n_scale.outputs[0], n_combine.inputs["Z"])
-
-		links.new(n_input.outputs["Geometry"], n_displace.inputs["Geometry"])
-		links.new(n_combine.outputs[0], n_displace.inputs["Offset"])
-
-		links.new(n_displace.outputs["Geometry"], n_output.inputs["Displaced"])
-
-		stagger_nodes(n_output, [n_displace], [n_combine], [n_scale], [n_image], [n_normalize], [n_subpos, n_subbound], [n_pos, n_bounds], [n_input], forwards=False)
-
-		f_coords = frame_nodes(nodes, n_bounds, n_pos, n_subpos, n_subbound, n_normalize, label="Texture Coordinates", color=COLOR_VECTOR)
-		f_displace = frame_nodes(nodes, n_image, n_scale, n_combine, n_displace, label="Displacement", color=COLOR_DISPLACE)
-
-		space_nodes(f_displace, f_coords, n_input, forwards=False)
+		create_tree(nodes, links, [
+			Node("Group Input", "NodeGroupInput"),
+			Frame("Texture Coordinates", color=COLOR_VECTOR, nodes=[
+				(
+					[
+						Node("HYD_Position", "GeometryNodeInputPosition"),
+						Node("HYD_Relative_Coords", "ShaderNodeVectorMath", label="Remove Offset", operation="SUBTRACT", link=[
+							"HYD_Position", ("HYD_Bounds", 1)
+						]),
+					],
+					[
+						Node("HYD_Bounds", "GeometryNodeBoundBox", link="Group Input"),
+						Node("HYD_Sizes", "ShaderNodeVectorMath", label="Width and Height", operation="SUBTRACT", link=[
+							("HYD_Bounds", 2), ("HYD_Bounds", 1)
+						]),
+					],
+				),
+				Node("HYD_Texture_Coords", "ShaderNodeVectorMath", label="Normalize", operation="DIVIDE", link=[
+					"HYD_Relative_Coords", "HYD_Sizes"
+				]),
+			]),
+			Frame("Displacement", color=COLOR_DISPLACE, nodes=[
+				Node("HYD_Displacement", "GeometryNodeImageTexture", label="Displacement", link={
+					0: image,
+					"Vector": "HYD_Texture_Coords"
+				}, extension="REPEAT" if tiling else "EXTEND", interpolation="Cubic"),
+				Node("HYD_Scale", "ShaderNodeMath", label="Scale", operation="MULTIPLY", link=["HYD_Displacement", ("Group Input", "Scale")]),
+				Node("HYD_Z_Only", "ShaderNodeCombineXYZ", label="Z Only", link={2: "HYD_Scale"}),
+				Node("HYD_Displace", "GeometryNodeSetPosition", label="Displace", link={0: "Group Input", 3: "HYD_Z_Only"}),
+			]),
+			Node("Group Output", "NodeGroupOutput", link="HYD_Displace")
+		])
 
 		return g
 
