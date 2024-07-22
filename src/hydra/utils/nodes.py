@@ -21,8 +21,10 @@ def minimize_node(node, collapse_node:bool=True)->None:
 	
 	for n in node.inputs:
 		n.hide = True
-	for n in node.outputs:
-		n.hide = True
+	# Only hide outputs if at least one is connected
+	if any((len(x.links) != 0 for x in node.outputs)):
+		for n in node.outputs:
+			n.hide = True
 
 def stagger_nodes(baseNode:bpy.types.ShaderNode, *args, forwards:bool=False)->None:
 	"""Spaces and shifts specified nodes around.
@@ -96,10 +98,7 @@ def extract(node, node_dict, nodes, frame):
 			if hasattr(n, k):
 				setattr(n, k, v)
 
-		if node.minimize:
-			minimize_node(n, collapse_node=False)
-
-		node_dict[node.name] = (n, node.link)
+		node_dict[node.name] = (n, node)
 	elif tp is tuple or tp is list:
 		for i in node:
 			extract(i, node_dict, nodes, frame)
@@ -128,7 +127,7 @@ def stagger(node, pos, node_dict:dict[str, Node]):
 			else:
 				height += 15
 
-		node_dict[node.name] = (n, node.link)
+		node_dict[node.name] = (n, node)
 		n.location[0] = pos[0]
 		n.location[1] = pos[1]
 		return (pos[0] + n.width + 20, pos[1] - height - 20)
@@ -179,7 +178,8 @@ def create_tree(nodes, links, node_definition):
 	extract(node_definition, node_dict, nodes, None)
 
 	last_item = None
-	for v, link in node_dict.values():
+	for v, node_def in node_dict.values():
+		link = node_def.link
 		if link is None:
 			if last_item is None:
 				last_item = v
@@ -212,6 +212,11 @@ def create_tree(nodes, links, node_definition):
 				set_value(v, i, val)
 		
 		last_item = v
+
+	# Only minimize after all links are created
+	for v, node_def in node_dict.values():
+		if node_def.minimize:
+			minimize_node(v, collapse_node=False)
 
 	stagger(node_definition, (0,0), node_dict)
 
@@ -553,3 +558,34 @@ def make_snow_nodes(tree: bpy.types.ShaderNodeTree, image: bpy.types.Image):
 
 	tree.links.new(img.outputs["Color"], ramp.inputs["Fac"])
 	stagger_nodes(ramp, [img], [coords], forwards=False)
+
+def add_planet_shader_uv_nodes(nodes, links):
+	create_tree(nodes, links, [
+		Frame("UV Coordinates", color=COLOR_VECTOR, nodes=[
+			(
+				Node("HYD_Geometry", "ShaderNodeNewGeometry", minimize=True),
+				Node("HYD_Object_Info", "ShaderNodeObjectInfo", minimize=True),
+			),
+			Node("HYD_Relative_Coords", "ShaderNodeVectorMath", operation="SUBTRACT", link=[
+				"HYD_Geometry", "HYD_Object_Info"
+			]),
+			Node("HYD_Normalized_Coords", "ShaderNodeVectorMath", operation="NORMALIZE"),
+			Node("HYD_Rotate", "ShaderNodeVectorRotate", link={
+				0: "HYD_Normalized_Coords",
+				3: math.pi/2 + 1e-5
+			}, minimize=True),
+			Node("HYD_Spherical_Comps", "ShaderNodeSeparateXYZ", label="Spherical Components"),
+			(
+				Node("HYD_Get_X", "ShaderNodeMath", operation="ARCTAN2", label="X Coordinate",
+					link=[("HYD_Spherical_Comps", 1), ("HYD_Spherical_Comps", 0)]),
+				Node("HYD_Get_Y", "ShaderNodeMath", operation="ARCSINE", label="Y Coordinate",
+					link=("HYD_Spherical_Comps", 2)),
+			),
+			Node("HYD_Equirect", "ShaderNodeCombineXYZ", label="Equirectangular XY", link=["HYD_Get_X", "HYD_Get_Y"]),
+				Node("HYD_Texture_Coords", "ShaderNodeMapRange", label="UV Coordinates", link={
+						6: "HYD_Equirect",
+						7: (-math.pi, -math.pi/2, 0),
+						8: (math.pi, math.pi / 2, 1),
+					}, data_type="FLOAT_VECTOR", minimize=True),
+		])
+	])
