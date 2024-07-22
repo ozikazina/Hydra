@@ -196,7 +196,7 @@ def prepare_heightmap(obj: bpy.types.Image | bpy.types.Object)->None:
 		hyd.img_size = obj.size
 		txt = generate_heightmap_from_image(obj)
 	else:
-		txt = generate_heightmap(obj)
+		txt = generate_heightmap(obj, equirect = hyd.tiling=="planet")
 
 	hmid = data.create_map("Base map", txt)
 	hyd.map_base = hmid
@@ -225,7 +225,7 @@ def subtract(modified: mgl.Texture, base: mgl.Texture, factor: float = 1.0, scal
 	return add(modified, base, -factor, scale)
 
 def add(A: mgl.Texture, B: mgl.Texture, factor: float = 1.0, scale: float = 1.0, )->mgl.Texture:
-	"""Adds given textures and returns the result.
+	"""Adds given textures and returns the result as a new texture.
 	
 	:param A: First texture.
 	:type A: :class:`moderngl.Texture`

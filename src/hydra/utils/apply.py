@@ -70,7 +70,10 @@ def add_preview(target: bpy.types.Object|bpy.types.Image)->None:
 			common.data.add_message("Created preview modifier.")
 		
 		img = heightmap.get_displacement(target, PREVIEW_DISP_NAME)
-		mod.node_group = nodes.make_or_update_displace_group(PREVIEW_GEO_NAME, img)
+		if hyd.tiling == "planet":
+			mod.node_group = nodes.make_or_update_planet_group(PREVIEW_GEO_NAME, img, False)
+		else:
+			mod.node_group = nodes.make_or_update_displace_group(PREVIEW_GEO_NAME, img)
 
 		common.data.lastPreview = target.name
 
