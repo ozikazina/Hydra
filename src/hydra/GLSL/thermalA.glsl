@@ -58,9 +58,26 @@ float getH(ivec2 pos) {
 
 void main(void) {
 	ivec2 base = ivec2(gl_GlobalInvocationID.xy);
-	
-	float lx = (diagonal ? bx * sqrt(2) : bx) * ds * (planet ? sin(float(base.y) * tile_mult_y) : 1);
-	float ly = (diagonal ? by * sqrt(2) : by) * ds;
+
+	float lx = bx;
+	float ly = by;
+
+	if (diagonal) {
+		if (planet) {
+			float mult = sin(float(base.y) * tile_mult_y);
+			ly = sqrt(ly * ly + mult * mult);
+		}
+		else {
+			ly = sqrt(ly * ly + 1);
+		}
+		lx = ly;
+	}
+	else if (planet) {
+		lx *= sin(float(base.y) * tile_mult_y);
+	}
+
+	lx *= ds;
+	ly *= ds;
 	
 	float h = getH(base);
 
