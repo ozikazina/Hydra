@@ -83,14 +83,14 @@ def get_resize_matrix(obj: bpy.types.Object, planet: bool = False)->tuple[float]
 	:return: Created resizing matrix.
 	:rtype: :class:`tuple[float]`
 	"""
+	# bounding box is relative to object center
 	ar = np.array(obj.bound_box)
 
 	if planet:
-		loc = obj.location
 		scale = max([
-			abs(ar[4][0] - loc[0]), abs(ar[0][0] - loc[0]),
-			abs(ar[2][1] - loc[1]), abs(ar[0][1] - loc[1]),
-			abs(ar[1][2] - loc[2]), abs(ar[0][2] - loc[2])
+			ar[4][0], ar[0][0],
+			ar[2][1], ar[0][1],
+			ar[1][2], ar[0][2]
 		])
 		scale = 1.0 / scale
 
