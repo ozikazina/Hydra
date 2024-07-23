@@ -49,9 +49,9 @@ def add_preview(target: bpy.types.Object|bpy.types.Image)->None:
 		if prefs.image_preview == "image":
 			nav.goto_image(img)
 		elif hyd.tiling == "planet":
-			add_planet(img, max_verts_per_side=prefs.image_planet_preview_resolution, name=PREVIEW_IMG_NAME, detach=False)
+			add_planet(img, max_verts_per_side=prefs.image_planet_preview_resolution, name=PREVIEW_IMG_NAME, detach=False, settings_override=hyd)
 		else:
-			add_landscape(img, max_verts_per_side=prefs.image_preview_resolution, name=PREVIEW_IMG_NAME, detach=False, tile=hyd.tiling!="none")
+			add_landscape(img, max_verts_per_side=prefs.image_preview_resolution, name=PREVIEW_IMG_NAME, detach=False, tile=hyd.tiling!="none", settings_override=hyd)
 	else:
 		if data.lastPreview and data.lastPreview in bpy.data.objects:
 			last = bpy.data.objects[data.lastPreview]
@@ -75,7 +75,7 @@ def add_preview(target: bpy.types.Object|bpy.types.Image)->None:
 		if hyd.tiling == "planet":
 			mod.node_group = nodes.make_or_update_planet_group(PREVIEW_GEO_NAME, img, False)
 		else:
-			mod.node_group = nodes.make_or_update_displace_group(PREVIEW_GEO_NAME, img)
+			mod.node_group = nodes.make_or_update_displace_group(PREVIEW_GEO_NAME, img, tiling=hyd.tiling!="none")
 
 		common.data.lastPreview = target.name
 
@@ -307,7 +307,7 @@ def add_modifier(obj: bpy.types.Object, img: bpy.types.Image)->None:
 
 # -------------------------------------------------- Landscape
 
-def add_landscape(img: bpy.types.Image, max_verts_per_side: int = 1024, name: str|None = None, detach: bool = False, tile: bool = False)->None:
+def add_landscape(img: bpy.types.Image, max_verts_per_side: int = 1024, name: str|None = None, detach: bool = False, tile: bool = False, settings_override = None)->None:
 	"""Generates a landscape from the specified image. Does not free image.
 	
 	:param img: Image to generate from.
@@ -354,8 +354,9 @@ def add_landscape(img: bpy.types.Image, max_verts_per_side: int = 1024, name: st
 		act = bpy.context.active_object
 
 		act.name = name
-		for k in hyd.keys():
-			act.hydra_erosion[k] = hyd[k]
+		settings = hyd if settings_override is None else settings_override
+		for k in settings.keys():
+			act.hydra_erosion[k] = settings[k]
 		act.hydra_erosion.is_generated = True
 		act.scale[1] = img.size[1] / img.size[0]
 
@@ -379,7 +380,7 @@ def add_landscape(img: bpy.types.Image, max_verts_per_side: int = 1024, name: st
 
 	nav.goto_object(act)
 
-def add_planet(img, max_verts_per_side=512, name: str|None = None, detach: bool = False):
+def add_planet(img, max_verts_per_side=512, name: str|None = None, detach: bool = False, settings_override = None):
 	hyd = img.hydra_erosion
 	displacement = img
 
@@ -408,8 +409,9 @@ def add_planet(img, max_verts_per_side=512, name: str|None = None, detach: bool 
 		bpy.context.view_layer.objects.active = act
 
 		act.name = name
-		for k in hyd.keys():
-			act.hydra_erosion[k] = hyd[k]
+		settings = hyd if settings_override is None else settings_override
+		for k in settings.keys():
+			act.hydra_erosion[k] = settings[k]
 		act.hydra_erosion.is_generated = True
 
 		mod = act.modifiers.new(PREVIEW_MOD_NAME, "NODES")
