@@ -48,6 +48,8 @@ def add_preview(target: bpy.types.Object|bpy.types.Image)->None:
 		prefs = common.get_preferences()
 		if prefs.image_preview == "image":
 			nav.goto_image(img)
+		elif hyd.tiling == "planet":
+			add_planet(img, max_verts_per_side=prefs.image_planet_preview_resolution, name=PREVIEW_IMG_NAME, detach=False)
 		else:
 			add_landscape(img, max_verts_per_side=prefs.image_preview_resolution, name=PREVIEW_IMG_NAME, detach=False, tile=hyd.tiling!="none")
 	else:

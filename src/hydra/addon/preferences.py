@@ -46,7 +46,16 @@ class AddonPanel(bpy.types.AddonPreferences):
 		name="3D preview resolution",
 		description="Maximum side length of preview landscape in vertices",
 		default=1024,
-		min=2
+		soft_max=2048,
+		min=16
+	)
+
+	image_planet_preview_resolution: IntProperty(
+		name="3D planet preview resolution",
+		description="Maximum side length of preview landscape in vertices",
+		default=128,
+		soft_max=512,
+		min=16
 	)
 
 	def draw(self, context):
@@ -59,6 +68,7 @@ class AddonPanel(bpy.types.AddonPreferences):
 
 		if self.image_preview == "landscape":
 			box.prop(self, "image_preview_resolution")
+			box.prop(self, "image_planet_preview_resolution")
 
 		split = box.split(factor=0.33)
 		split.label(text="Preview split direction: ")
