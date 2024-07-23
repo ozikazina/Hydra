@@ -345,167 +345,173 @@ def make_or_update_displace_group(name, image: bpy.types.Image=None, tiling: boo
 		g = bpy.data.node_groups[name]
 		sockets = g.interface.items_tree
 
-		if not any(i for i in g.nodes if i.type == "IMAGE_TEXTURE" and i.name == "HYD_Displacement"):
-			n_image = g.nodes.new("GeometryNodeImageTexture")
-			n_image.label = "Displacement"
-			n_image.name = "HYD_Displacement"
-			n_image.extension = "REPEAT" if tiling else "EXTEND"
-			n_image.interpolation = "Cubic"
-			n_image.inputs[0].default_value = image
-			common.data.add_message(f"Existing group {name} was missing HYD_Displacement image node. It has been added, but hasn't been connected.", error=True)
-		elif not any(i for i in sockets if i.in_out == "OUTPUT" and i.socket_type == "NodeSocketGeometry") or\
-			not any(i for i in sockets if i.in_out == "INPUT" and i.socket_type == "NodeSocketGeometry"):
-			common.data.add_message(f"Updated existing group {name}, but it doesn't have Geometry input/output!", error=True)
+		if g.users == 0:
+			bpy.data.node_groups.remove(g)
 		else:
-			# Update image
-			n_image = next(i for i in g.nodes if i.type == "IMAGE_TEXTURE" and i.name == "HYD_Displacement")
-			n_image.inputs[0].default_value = image
-			n_image.extension = "REPEAT" if tiling else "EXTEND"
-			common.data.add_message(f"Updated existing group {name}.")
-		return g
-	else:
-		g = bpy.data.node_groups.new(name, type='GeometryNodeTree')
-		common.data.add_message(f"Created new group {name}.")
+			if not any(i for i in g.nodes if i.type == "IMAGE_TEXTURE" and i.name == "HYD_Displacement"):
+				n_image = g.nodes.new("GeometryNodeImageTexture")
+				n_image.label = "Displacement"
+				n_image.name = "HYD_Displacement"
+				n_image.extension = "REPEAT" if tiling else "EXTEND"
+				n_image.interpolation = "Cubic"
+				n_image.inputs[0].default_value = image
+				common.data.add_message(f"Existing group {name} was missing HYD_Displacement image node. It has been added, but hasn't been connected.", error=True)
+			elif not any(i for i in sockets if i.in_out == "OUTPUT" and i.socket_type == "NodeSocketGeometry") or\
+				not any(i for i in sockets if i.in_out == "INPUT" and i.socket_type == "NodeSocketGeometry"):
+				common.data.add_message(f"Updated existing group {name}, but it doesn't have Geometry input/output!", error=True)
+			else:
+				# Update image
+				n_image = next(i for i in g.nodes if i.type == "IMAGE_TEXTURE" and i.name == "HYD_Displacement")
+				n_image.inputs[0].default_value = image
+				n_image.extension = "REPEAT" if tiling else "EXTEND"
+				common.data.add_message(f"Updated existing group {name}.")
+			return g
 
-		g.is_modifier = True
-		g.interface.new_socket("Geometry", in_out="INPUT", socket_type="NodeSocketGeometry")
-		i_scale = g.interface.new_socket("Scale", in_out="INPUT", socket_type="NodeSocketFloat")
-		i_scale.default_value = 1
-		i_scale.min_value = 0
-		i_scale.max_value = 2
-		i_scale.force_non_field = False
-		g.interface.new_socket("Displaced", in_out="OUTPUT", socket_type="NodeSocketGeometry")
+	g = bpy.data.node_groups.new(name, type='GeometryNodeTree')
+	common.data.add_message(f"Created new group {name}.")
 
-		nodes = g.nodes
-		links = g.links
+	g.is_modifier = True
+	g.interface.new_socket("Geometry", in_out="INPUT", socket_type="NodeSocketGeometry")
+	i_scale = g.interface.new_socket("Scale", in_out="INPUT", socket_type="NodeSocketFloat")
+	i_scale.default_value = 1
+	i_scale.min_value = 0
+	i_scale.max_value = 2
+	i_scale.force_non_field = False
+	g.interface.new_socket("Displaced", in_out="OUTPUT", socket_type="NodeSocketGeometry")
 
-		create_tree(nodes, links, [
-			Node("Group Input", "NodeGroupInput"),
-			Frame("Texture Coordinates", color=COLOR_VECTOR, nodes=[
-				(
-					[
-						Node("HYD_Position", "GeometryNodeInputPosition"),
-						Node("HYD_Relative_Coords", "ShaderNodeVectorMath", label="Remove Offset", operation="SUBTRACT", link=[
-							"HYD_Position", ("HYD_Bounds", 1)
-						]),
-					],
-					[
-						Node("HYD_Bounds", "GeometryNodeBoundBox", link="Group Input"),
-						Node("HYD_Sizes", "ShaderNodeVectorMath", label="Width and Height", operation="SUBTRACT", link=[
-							("HYD_Bounds", 2), ("HYD_Bounds", 1)
-						]),
-					],
-				),
-				Node("HYD_Texture_Coords", "ShaderNodeVectorMath", label="Normalize", operation="DIVIDE", link=[
-					"HYD_Relative_Coords", "HYD_Sizes"
-				]),
+	nodes = g.nodes
+	links = g.links
+
+	create_tree(nodes, links, [
+		Node("Group Input", "NodeGroupInput"),
+		Frame("Texture Coordinates", color=COLOR_VECTOR, nodes=[
+			(
+				[
+					Node("HYD_Position", "GeometryNodeInputPosition"),
+					Node("HYD_Relative_Coords", "ShaderNodeVectorMath", label="Remove Offset", operation="SUBTRACT", link=[
+						"HYD_Position", ("HYD_Bounds", 1)
+					]),
+				],
+				[
+					Node("HYD_Bounds", "GeometryNodeBoundBox", link="Group Input"),
+					Node("HYD_Sizes", "ShaderNodeVectorMath", label="Width and Height", operation="SUBTRACT", link=[
+						("HYD_Bounds", 2), ("HYD_Bounds", 1)
+					]),
+				],
+			),
+			Node("HYD_Texture_Coords", "ShaderNodeVectorMath", label="Normalize", operation="DIVIDE", link=[
+				"HYD_Relative_Coords", "HYD_Sizes"
 			]),
-			Frame("Displacement", color=COLOR_DISPLACE, nodes=[
-				Node("HYD_Displacement", "GeometryNodeImageTexture", label="Displacement", link={
-					0: image,
-					"Vector": "HYD_Texture_Coords"
-				}, extension="REPEAT" if tiling else "EXTEND", interpolation="Cubic"),
-				Node("HYD_Scale", "ShaderNodeMath", label="Scale", operation="MULTIPLY", link=["HYD_Displacement", ("Group Input", "Scale")]),
-				Node("HYD_Z_Only", "ShaderNodeCombineXYZ", label="Z Only", link={2: "HYD_Scale"}),
-				Node("HYD_Displace", "GeometryNodeSetPosition", label="Displace", link={0: "Group Input", 3: "HYD_Z_Only"}),
-			]),
-			Node("Group Output", "NodeGroupOutput", link="HYD_Displace")
-		])
+		]),
+		Frame("Displacement", color=COLOR_DISPLACE, nodes=[
+			Node("HYD_Displacement", "GeometryNodeImageTexture", label="Displacement", link={
+				0: image,
+				"Vector": "HYD_Texture_Coords"
+			}, extension="REPEAT" if tiling else "EXTEND", interpolation="Cubic"),
+			Node("HYD_Scale", "ShaderNodeMath", label="Scale", operation="MULTIPLY", link=["HYD_Displacement", ("Group Input", "Scale")]),
+			Node("HYD_Z_Only", "ShaderNodeCombineXYZ", label="Z Only", link={2: "HYD_Scale"}),
+			Node("HYD_Displace", "GeometryNodeSetPosition", label="Displace", link={0: "Group Input", 3: "HYD_Z_Only"}),
+		]),
+		Node("Group Output", "NodeGroupOutput", link="HYD_Displace")
+	])
 
-		return g
+	return g
 
 def make_or_update_planet_group(name, image: bpy.types.Image=None, sub_cube: bool = False)->bpy.types.NodeGroup:
 	if name in bpy.data.node_groups:
 		g = bpy.data.node_groups[name]
 		sockets = g.interface.items_tree
 
-		if not any(i for i in g.nodes if i.type == "IMAGE_TEXTURE" and i.name == "HYD_Displacement"):
-			n_image = g.nodes.new("GeometryNodeImageTexture")
-			n_image.label = "Displacement"
-			n_image.name = "HYD_Displacement"
-			n_image.extension = "EXTEND"
-			n_image.interpolation = "Cubic"
-			n_image.inputs[0].default_value = image
-			common.data.add_message(f"Existing group {name} was missing HYD_Displacement image node. It has been added, but hasn't been connected.", error=True)
-		elif not any(i for i in sockets if i.in_out == "OUTPUT" and i.socket_type == "NodeSocketGeometry") or\
-			not any(i for i in sockets if i.in_out == "INPUT" and i.socket_type == "NodeSocketGeometry"):
-			common.data.add_message(f"Updated existing group {name}, but it doesn't have Geometry input/output!", error=True)
+		if g.users == 0:
+			bpy.data.node_groups.remove(g)
 		else:
-			# Update image
-			n_image = next(i for i in g.nodes if i.type == "IMAGE_TEXTURE" and i.name == "HYD_Displacement")
-			n_image.inputs[0].default_value = image
-			common.data.add_message(f"Updated existing group {name}.")
-		return g
-	else:
-		g = bpy.data.node_groups.new(name, type='GeometryNodeTree')
-		g.is_modifier = True
-		g.interface.new_socket("Geometry", in_out="INPUT", socket_type="NodeSocketGeometry")
-		i_scale = g.interface.new_socket("Scale", in_out="INPUT", socket_type="NodeSocketFloat")
-		i_scale.default_value = 1
-		i_scale.min_value = 0
-		i_scale.max_value = 2
-		i_scale.force_non_field = False
-		g.interface.new_socket("Displaced", in_out="OUTPUT", socket_type="NodeSocketGeometry")
+			if not any(i for i in g.nodes if i.type == "IMAGE_TEXTURE" and i.name == "HYD_Displacement"):
+				n_image = g.nodes.new("GeometryNodeImageTexture")
+				n_image.label = "Displacement"
+				n_image.name = "HYD_Displacement"
+				n_image.extension = "EXTEND"
+				n_image.interpolation = "Cubic"
+				n_image.inputs[0].default_value = image
+				common.data.add_message(f"Existing group {name} was missing HYD_Displacement image node. It has been added, but hasn't been connected.", error=True)
+			elif not any(i for i in sockets if i.in_out == "OUTPUT" and i.socket_type == "NodeSocketGeometry") or\
+				not any(i for i in sockets if i.in_out == "INPUT" and i.socket_type == "NodeSocketGeometry"):
+				common.data.add_message(f"Updated existing group {name}, but it doesn't have Geometry input/output!", error=True)
+			else:
+				# Update image
+				n_image = next(i for i in g.nodes if i.type == "IMAGE_TEXTURE" and i.name == "HYD_Displacement")
+				n_image.inputs[0].default_value = image
+				common.data.add_message(f"Updated existing group {name}.")
+			return g
 
-		nodes = g.nodes
-		links = g.links
+	g = bpy.data.node_groups.new(name, type='GeometryNodeTree')
+	g.is_modifier = True
+	g.interface.new_socket("Geometry", in_out="INPUT", socket_type="NodeSocketGeometry")
+	i_scale = g.interface.new_socket("Scale", in_out="INPUT", socket_type="NodeSocketFloat")
+	i_scale.default_value = 1
+	i_scale.min_value = 0
+	i_scale.max_value = 2
+	i_scale.force_non_field = False
+	g.interface.new_socket("Displaced", in_out="OUTPUT", socket_type="NodeSocketGeometry")
 
-		create_tree(nodes, links, [
-			Node("Group Input", "NodeGroupInput"),
-			(
-				Frame("Texture Coordinates", color=COLOR_VECTOR, nodes=[
-					Node("HYD_Position", "GeometryNodeInputPosition"),
-					Node("HYD_Get_Normalized", "ShaderNodeVectorMath", label="Normalize", operation="NORMALIZE"),
-					Node("HYD_Rotate", "FunctionNodeRotateVector", label="Rotate to -Y", link=[
-						"HYD_Get_Normalized",
-						# slightly misaligned to avoid floating point errors
-						(0, 0, math.pi / 2 + 1e-5)
-					]),
-					Node("HYD_Get_Components", "ShaderNodeSeparateXYZ", label="Spherical Components"),
-					(
-						Node("HYD_Get_X", "ShaderNodeMath", operation="ARCTAN2", label="X Coordinate",
-							link=[("HYD_Get_Components", 1), ("HYD_Get_Components", 0)]),
-						Node("HYD_Get_Y", "ShaderNodeMath", operation="ARCSINE", label="Y Coordinate",
-							link=("HYD_Get_Components", 2)),
-					),
-					Node("HYD_Equirect", "ShaderNodeCombineXYZ", label="Equirectangular XY", link=["HYD_Get_X", "HYD_Get_Y"]),
-					Node("HYD_Texture_Coords", "ShaderNodeMapRange", label="UV Coordinates", link={
-							6: "HYD_Equirect",
-							7: (-math.pi, -math.pi/2, 0),
-							8: (math.pi, math.pi / 2, 1),
-						}, data_type="FLOAT_VECTOR", minimize=True),
+	nodes = g.nodes
+	links = g.links
+
+	create_tree(nodes, links, [
+		Node("Group Input", "NodeGroupInput"),
+		(
+			Frame("Texture Coordinates", color=COLOR_VECTOR, nodes=[
+				Node("HYD_Position", "GeometryNodeInputPosition"),
+				Node("HYD_Get_Normalized", "ShaderNodeVectorMath", label="Normalize", operation="NORMALIZE"),
+				Node("HYD_Rotate", "FunctionNodeRotateVector", label="Rotate to -Y", link=[
+					"HYD_Get_Normalized",
+					# slightly misaligned to avoid floating point errors
+					(0, 0, math.pi / 2 + 1e-5)
 				]),
-				# ---------------------- Sub cube
-				Frame("Cube Subtraction", color=COLOR_INPUT, nodes=[
-					Node("HYD_Absolute", "ShaderNodeVectorMath", operation="ABSOLUTE", link="HYD_Get_Normalized"),
-					Node("HYD_Abs_Components", "ShaderNodeSeparateXYZ", label="Absolute Components"),
-					Node("HYD_Max_XY", "ShaderNodeMath", operation="MAXIMUM", label="Max X/Y", link=[
-						("HYD_Abs_Components", 0), ("HYD_Abs_Components", 1)
-					]),
-					Node("HYD_Max_XYZ", "ShaderNodeMath", operation="MAXIMUM", label="Max X/Y/Z", link=[
-						"HYD_Max_XY", ("HYD_Abs_Components", 2)
-					]),
-					Node("HYD_Divide", "ShaderNodeMath", operation="DIVIDE", label="Distance to Cube", link={0: 1.0, 1: "HYD_Max_XYZ"}),
-				]) if sub_cube else None
-				# ----------------------
-			),
-			Frame("Displacement", color=COLOR_DISPLACE, nodes=[
-				Node("HYD_Displacement", "GeometryNodeImageTexture", label="Displacement", link={
-					0: image,
-					"Vector": "HYD_Texture_Coords"
-				}, extension="EXTEND"), # REPEAT creates seams at the poles
-				Node("HYD_Scale", "ShaderNodeMath", label="Scale", operation="MULTIPLY", link=["HYD_Displacement", ("Group Input", "Scale")]),
-				Node("HYD_Subtract_Cube", "ShaderNodeMath", label="Subtract Cube", operation="SUBTRACT", link=["HYD_Scale", "HYD_Divide"])
-					if sub_cube else None,
-				Node("HYD_Offset", "ShaderNodeVectorMath", label="Offset Vector", operation="SCALE", link={
-					0: "HYD_Get_Normalized", 3: "HYD_Subtract_Cube" if sub_cube else "HYD_Scale"
-				}),
-				Node("HYD_Displace", "GeometryNodeSetPosition", label="Displace", link={0: "Group Input", 3: "HYD_Offset"}),
+				Node("HYD_Get_Components", "ShaderNodeSeparateXYZ", label="Spherical Components"),
+				(
+					Node("HYD_Get_X", "ShaderNodeMath", operation="ARCTAN2", label="X Coordinate",
+						link=[("HYD_Get_Components", 1), ("HYD_Get_Components", 0)]),
+					Node("HYD_Get_Y", "ShaderNodeMath", operation="ARCSINE", label="Y Coordinate",
+						link=("HYD_Get_Components", 2)),
+				),
+				Node("HYD_Equirect", "ShaderNodeCombineXYZ", label="Equirectangular XY", link=["HYD_Get_X", "HYD_Get_Y"]),
+				Node("HYD_Texture_Coords", "ShaderNodeMapRange", label="UV Coordinates", link={
+						6: "HYD_Equirect",
+						7: (-math.pi, -math.pi/2, 0),
+						8: (math.pi, math.pi / 2, 1),
+					}, data_type="FLOAT_VECTOR", minimize=True),
 			]),
-			Node("Group Output", "NodeGroupOutput", link="HYD_Displace")
-		])
+			# ---------------------- Sub cube
+			Frame("Cube Subtraction", color=COLOR_INPUT, nodes=[
+				Node("HYD_Absolute", "ShaderNodeVectorMath", operation="ABSOLUTE", link="HYD_Get_Normalized"),
+				Node("HYD_Abs_Components", "ShaderNodeSeparateXYZ", label="Absolute Components"),
+				Node("HYD_Max_XY", "ShaderNodeMath", operation="MAXIMUM", label="Max X/Y", link=[
+					("HYD_Abs_Components", 0), ("HYD_Abs_Components", 1)
+				]),
+				Node("HYD_Max_XYZ", "ShaderNodeMath", operation="MAXIMUM", label="Max X/Y/Z", link=[
+					"HYD_Max_XY", ("HYD_Abs_Components", 2)
+				]),
+				Node("HYD_Divide", "ShaderNodeMath", operation="DIVIDE", label="Distance to Cube", link={0: 1.0, 1: "HYD_Max_XYZ"}),
+			]) if sub_cube else None
+			# ----------------------
+		),
+		Frame("Displacement", color=COLOR_DISPLACE, nodes=[
+			Node("HYD_Displacement", "GeometryNodeImageTexture", label="Displacement", link={
+				0: image,
+				"Vector": "HYD_Texture_Coords"
+			}, extension="EXTEND"), # REPEAT creates seams at the poles
+			Node("HYD_Scale", "ShaderNodeMath", label="Scale", operation="MULTIPLY", link=["HYD_Displacement", ("Group Input", "Scale")]),
+			Node("HYD_Subtract_Cube", "ShaderNodeMath", label="Subtract Cube", operation="SUBTRACT", link=["HYD_Scale", "HYD_Divide"])
+				if sub_cube else None,
+			Node("HYD_Offset", "ShaderNodeVectorMath", label="Offset Vector", operation="SCALE", link={
+				0: "HYD_Get_Normalized", 3: "HYD_Subtract_Cube" if sub_cube else "HYD_Scale"
+			}),
+			Node("HYD_Displace", "GeometryNodeSetPosition", label="Displace", link={0: "Group Input", 3: "HYD_Offset"}),
+		]),
+		Node("Group Output", "NodeGroupOutput", link="HYD_Displace")
+	])
 
-		return g
+	return g
 
 def make_snow_nodes(tree: bpy.types.ShaderNodeTree, image: bpy.types.Image):
 	nodes = tree.nodes
