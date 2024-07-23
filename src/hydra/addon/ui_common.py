@@ -29,6 +29,15 @@ class HydraPanel(bpy.types.Panel):
 			split.label(text=label)
 			split.operator('hydra.nav_img', text="", icon="TRIA_RIGHT_BAR").target = name
 
+	def draw_tiling_fragment(self, container, hyd):
+		if hyd.advanced:
+			if common.data.has_map(hyd.map_base):
+				container = container.row()
+				container.enabled = False
+
+			container.prop(hyd, "tiling")
+
+
 class ImagePanel(HydraPanel):
 	bl_space_type = 'IMAGE_EDITOR'
 
@@ -134,8 +143,7 @@ class ErosionPanel():
 		col.prop(hyd, "erosion_solver", text="Solver")
 		col.prop(hyd, "advanced")
 
-		if hyd.advanced:
-			col.prop(hyd, "tiling")
+		self.draw_tiling_fragment(col, hyd)
 
 
 #-------------------------------------------- Thermal
@@ -158,8 +166,7 @@ class ThermalPanel():
 
 		col.prop(hyd, "advanced")
 
-		if hyd.advanced:
-			col.prop(hyd, "tiling")
+		self.draw_tiling_fragment(col, hyd)
 
 
 #-------------------------------------------- Snow
@@ -187,8 +194,7 @@ class SnowPanel():
 
 		col.prop(hyd, "advanced")
 
-		if hyd.advanced:
-			col.prop(hyd, "tiling")
+		self.draw_tiling_fragment(col, hyd)
 
 		col.separator()
 		col.label(text="Erosion settings")
