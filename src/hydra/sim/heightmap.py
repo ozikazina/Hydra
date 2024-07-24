@@ -52,7 +52,7 @@ def _generate_heightmap_equirect(obj: bpy.types.Object, size:tuple[int,int]|None
 
 	fbo = ctx.framebuffer(color_attachments=(equirect_txt), depth_attachment=depth)
 
-	resize_matrix = model.get_resize_matrix(obj, planet=True)
+	resize_matrix = model.get_resize_matrix(obj, planet=True, with_scale=world_scale)
 
 	with ctx.scope(fbo, mgl.DEPTH_TEST | mgl.CULL_FACE):
 		fbo.clear(depth=256.0)
@@ -122,17 +122,21 @@ def _generate_heightmap_equirect(obj: bpy.types.Object, size:tuple[int,int]|None
 	polar_sampler.release()
 	polar.release()
 
-	offset = 0
-
 	if normalized:
 		# Reduction
 		mn, mx = texture.get_min_max(equirect_txt)
 		scale = 1 / max(mx - mn, 1e-5)
 		offset = -mn
+		texture.scale(equirect_txt, scale, offset)
+	elif world_scale:
+		scale = 1 / min([resize_matrix[0], resize_matrix[4 + 1], resize_matrix[8 + 2]])
+		texture.scale(equirect_txt, scale)
+	elif local_scale:
+		scale = 1 / resize_matrix[0]
+		texture.scale(equirect_txt, scale)
 	else:
 		scale = 1
 
-	texture.scale(equirect_txt, scale, offset)
 
 	return equirect_txt
 

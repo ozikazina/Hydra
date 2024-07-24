@@ -22,7 +22,7 @@ class HeightmapOperator(ops_common.ObjectOperator):
 
 		normalized = gen_type == "normalized"
 		world_scale = gen_type == "world"
-		local_scale = gen_type == "object"
+		local_scale = gen_type == "local"
 		txt = heightmap.generate_heightmap(act,
 			size=hyd.heightmap_gen_size,
 			normalized=normalized,
@@ -32,6 +32,9 @@ class HeightmapOperator(ops_common.ObjectOperator):
 
 		img, _ = texture.write_image(f"HYD_{act.name}_Heightmap", txt)
 		txt.release()
+
+		if hyd.heightmap_equirect:
+			img.hydra_erosion.tiling = "planet"
 
 		nav.goto_image(img)
 		self.report({'INFO'}, f"Successfuly created heightmap: {img.name}")

@@ -74,7 +74,7 @@ def evaluate_mesh(obj: bpy.types.Object)->bpy.types.Mesh:
 	mesh.calc_loop_triangles()
 	return mesh
 
-def get_resize_matrix(obj: bpy.types.Object, planet: bool = False)->tuple[float]:
+def get_resize_matrix(obj: bpy.types.Object, planet: bool = False, with_scale: bool = False)->tuple[float]:
 	"""
 	Creates a resizing matrix that scales the input object into normalized device coordinates, so that 1-Z is the normalized surface height.
 
@@ -87,19 +87,34 @@ def get_resize_matrix(obj: bpy.types.Object, planet: bool = False)->tuple[float]
 	ar = np.array(obj.bound_box)
 
 	if planet:
-		scale = max([
-			ar[4][0], ar[0][0],
-			ar[2][1], ar[0][1],
-			ar[1][2], ar[0][2]
-		])
-		scale = 1.0 / scale
+		if with_scale:
+			scale = max([
+				ar[4][0] * obj.scale[0], ar[0][0] * obj.scale[0],
+				ar[2][1] * obj.scale[1], ar[0][1] * obj.scale[1],
+				ar[1][2] * obj.scale[2], ar[0][2] * obj.scale[2]
+			])
+			scale = 1.0 / scale
 
-		return [
-			scale,0,0,0,
-			0,scale,0,0,
-			0,0,scale,0,
-			0,0,0,1
-		]
+			return [
+				scale * obj.scale[0],0,0,0,
+				0,scale * obj.scale[1],0,0,
+				0,0,scale * obj.scale[2],0,
+				0,0,0,1
+			]
+		else:
+			scale = max([
+				ar[4][0], ar[0][0],
+				ar[2][1], ar[0][1],
+				ar[1][2], ar[0][2]
+			])
+			scale = 1.0 / scale
+
+			return [
+				scale,0,0,0,
+				0,scale,0,0,
+				0,0,scale,0,
+				0,0,0,1
+			]
 	else:
 		cx = (ar[4][0] + ar[0][0]) * 0.5
 		cy = (ar[2][1] + ar[0][1]) * 0.5
