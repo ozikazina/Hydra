@@ -22,7 +22,7 @@ def minimize_node(node, collapse_node:bool=True)->None:
 	for n in node.inputs:
 		n.hide = True
 	# Only hide outputs if at least one is connected
-	if any((len(x.links) != 0 for x in node.outputs)):
+	if any((x.is_linked for x in node.outputs)):
 		for n in node.outputs:
 			n.hide = True
 
@@ -69,6 +69,8 @@ class Node:
 		self.operation = operation
 		self.other = kwargs
 		self.minimize = minimize
+		self.width = 0
+		self.height = 0
 
 	def __repr__(self):
 		return f"{self.name}: {self.x}/{self.y} [{self.parent}]"
@@ -78,6 +80,8 @@ class Frame:
 		self.label = label
 		self.color = color
 		self.nodes = nodes
+		self.width = 0
+		self.height = 0
 
 	def __repr__(self):
 		return f"{self.title}"
@@ -120,17 +124,9 @@ def stagger(node, pos, node_dict:dict[str, Node]):
 	tp = type(node)
 	if tp is Node:
 		n = node_dict[node.name][0]
-		height = 20
-		for i in n.inputs:
-			if hasattr(i, "default_value") and hasattr(i.default_value, "__len__"):
-				height += 10 + 15 * len(i.default_value)
-			else:
-				height += 15
-
-		node_dict[node.name] = (n, node)
 		n.location[0] = pos[0]
 		n.location[1] = pos[1]
-		return (pos[0] + n.width + 20, pos[1] - height - 20)
+		return (pos[0] + node.width + 20, pos[1] - node.height - 10)
 	elif tp is tuple:
 		npos = pos
 		width = 0
@@ -152,8 +148,8 @@ def stagger(node, pos, node_dict:dict[str, Node]):
 			npos = (next_pos[0], npos[1])
 		return (width, height)
 	elif tp is Frame:
-		ret = stagger(node.nodes, (pos[0] + 20, pos[1]), node_dict)
-		return (ret[0] + 25, ret[1] - 35)
+		ret = stagger(node.nodes, (pos[0] + 20, pos[1] - 40), node_dict)
+		return (ret[0] + 40, ret[1] - 40)
 	else:
 		raise ValueError(f"Invalid node type {type(node)}")
 
@@ -175,6 +171,13 @@ def set_value(node, at, value):
 		node.inputs[at].default_value = value
 	except Exception as e:
 		print(f"Failed to set value for: {node.name}[{node.type}] due to {e}")
+
+HEIGHT_DICT = {
+	"ShaderNodeVectorMath": 1,
+	"ShaderNodeMath": 2,
+	"GeometryNodeImageTexture": 2,
+	"ShaderNodeMapRange": 3,
+}
 
 def create_tree(nodes, links, node_definition):
 	node_dict = {}
@@ -220,6 +223,24 @@ def create_tree(nodes, links, node_definition):
 	for v, node_def in node_dict.values():
 		if node_def.minimize:
 			minimize_node(v, collapse_node=False)
+
+		if v.hide:
+			height = 50
+		else:
+			height = 25 + (HEIGHT_DICT[node_def.type] if node_def.type in HEIGHT_DICT else 0) * 20
+			for i in v.inputs:
+				if not i.hide and i.enabled:
+					if i.is_linked or i.hide_value:
+						height += 20
+					elif hasattr(i, "default_value") and hasattr(i.default_value, "__len__"):
+						height += 20 + 20 * len(i.default_value)
+					else:
+						height += 20
+			height += 15
+			height += 20 * len([i for i in v.outputs if not i.hide and i.enabled])
+		
+		node_def.height = height
+		node_def.width = v.width
 
 	stagger(node_definition, (0,0), node_dict)
 
