@@ -156,7 +156,27 @@ def generate_heightmap(obj: bpy.types.Object, size:tuple[int,int]|None = None, n
 	print("Preparing heightmap generation.")
 
 	if size is None:
-		size = obj.hydra_erosion.get_size()
+		if not common.get_preferences().direct_resolution:
+			if equirect:
+				size = obj.hydra_erosion.get_size()
+				size = (2 * size[1], size[1])
+				obj.hydra_erosion.img_size = size
+			else:
+				ar = list(bpy.context.active_object.bound_box)
+				dx = ar[4][0] - ar[0][0]
+				dy = ar[2][1] - ar[0][1]
+				val = obj.hydra_erosion.x_img_res
+
+				try:
+					if dy > dx:
+						size = (val, math.ceil(val * dy / dx))
+					else:
+						size = (math.ceil(val * dx / dy), val)
+				except ZeroDivisionError:
+					size = (16, 16)
+				obj.hydra_erosion.img_size = size
+		else:
+			size = obj.hydra_erosion.get_size()
 
 	model.recalculate_scales(obj)
 

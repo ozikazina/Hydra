@@ -46,11 +46,9 @@ class ErosionGroup(bpy.types.PropertyGroup):
 
 	def _set_size_x(self, val):
 		self.img_size[0] = val
-		self.x_use_img_size = True
 
 	def _set_size_y(self, val):
 		self.img_size[1] = val
-		self.x_use_img_size = True
 
 	def _get_size_x(self):
 		return self.img_size[0]
@@ -60,17 +58,18 @@ class ErosionGroup(bpy.types.PropertyGroup):
 	
 	def _set_size_from_res(self, val):
 		ctx = bpy.context
-		if ctx.area.type == "VIEW_3D" and ctx.active_object:
-			self.x_use_img_size = False
+		if self.tiling == "planet":
+			self.img_size = (2 * val, val)
+		elif ctx.area.type == "VIEW_3D" and ctx.active_object:
 			ar = list(bpy.context.active_object.bound_box)
 			dx = ar[4][0] - ar[0][0]
 			dy = ar[2][1] - ar[0][1]
 
 			try:
 				if dy > dx:
-					val = (val, int(math.ceil(val * dy / dx)))
+					val = (val, math.ceil(val * dy / dx))
 				else:
-					val = (int(math.ceil(val * dx / dy)), val)
+					val = (math.ceil(val * dx / dy), val)
 
 				self.img_size = val
 			except ZeroDivisionError:
@@ -110,12 +109,6 @@ class ErosionGroup(bpy.types.PropertyGroup):
 		subtype="PIXEL",
 		set=_set_size_from_res,
 		get=_get_res
-	)
-
-	x_use_img_size: BoolProperty(
-		default=False,
-		name="Use size directly",
-		description="Internal. Use direct size for heightmap"
 	)
 
 	tiling: EnumProperty(

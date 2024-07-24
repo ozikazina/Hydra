@@ -93,12 +93,16 @@ class ObjectPanel(HydraPanel):
 		else:
 			split = g.split(factor=0.42)
 			split.label(text=f"Resolution:")
-			if settings.advanced:
+			if common.get_preferences().direct_resolution:
 				g.prop(settings, "x_img_size_x", text="X")
 				g.prop(settings, "x_img_size_y", text="Y")
 			else:
 				c = split.row()
-				c.label(text=f"({settings.img_size[0]}, {settings.img_size[1]}) px")
+				if settings.tiling == "planet":
+					c.label(text=f"({2 * settings.img_size[1]}, {settings.img_size[1]}) px")
+				else:
+					c.label(text=f"({settings.img_size[0]}, {settings.img_size[1]}) px")
+
 				c.enabled=False
 				c.alignment = "RIGHT"
 				g.prop(settings, "x_img_res", text="Heightmap")

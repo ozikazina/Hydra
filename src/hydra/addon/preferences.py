@@ -32,6 +32,12 @@ class AddonPanel(bpy.types.AddonPreferences):
 		description="Enables debug mode, giving access to additional operators"
 	)
 
+	direct_resolution: BoolProperty(
+		name="Direct resolution input",
+		default=False,
+		description="Allows you to directly set both width and height of the heightmap resolution. Otherwise the addon has a single input and adjusts the resolution based on the terrain shape"
+	)
+
 	image_preview: EnumProperty(
 		default="landscape",
 		items=(
@@ -62,6 +68,8 @@ class AddonPanel(bpy.types.AddonPreferences):
 		layout = self.layout
 
 		box = layout.box()
+		box.prop(self, "direct_resolution")
+
 		split = box.split(factor=0.33)
 		split.label(text="Image erosion preview: ")
 		split.prop(self, "image_preview", text="")
