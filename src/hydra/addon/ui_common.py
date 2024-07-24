@@ -29,14 +29,6 @@ class HydraPanel(bpy.types.Panel):
 			split.label(text=label)
 			split.operator('hydra.nav_img', text="", icon="TRIA_RIGHT_BAR").target = name
 
-	def draw_tiling_fragment(self, container, hyd):
-		if hyd.advanced:
-			if common.data.has_map(hyd.map_base):
-				container = container.row()
-				container.enabled = False
-
-			container.prop(hyd, "tiling")
-
 
 class ImagePanel(HydraPanel):
 	bl_space_type = 'IMAGE_EDITOR'
@@ -61,12 +53,17 @@ class ImagePanel(HydraPanel):
 		if draw_subres:
 			g.prop(settings, "erosion_subres", text="Simulation")
 
+	def draw_tiling_fragment(self, container, hyd):
+		if hyd.advanced:
+			container.prop(hyd, "tiling")
+
 	@classmethod
 	def poll(cls, ctx):
 		img = ctx.area.spaces.active.image
 		if not img or tuple(img.size) == (0,0):
 			return False
 		return not img.hydra_erosion.is_generated
+
 
 class ObjectPanel(HydraPanel):
 	bl_space_type = 'VIEW_3D'
@@ -108,6 +105,14 @@ class ObjectPanel(HydraPanel):
 
 		if draw_subres:
 			g.prop(settings, "erosion_subres", text="Simulation")
+
+	def draw_tiling_fragment(self, container, hyd):
+		if hyd.advanced:
+			if common.data.has_map(hyd.map_base):
+				container = container.row()
+				container.enabled = False
+
+			container.prop(hyd, "tiling")
 
 	@classmethod
 	def poll(cls, ctx):

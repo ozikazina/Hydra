@@ -407,12 +407,16 @@ def add_planet(img, max_verts_per_side=512, name: str|None = None, detach: bool 
 		act = bpy.data.objects.new(name, mesh)
 		bpy.context.view_layer.active_layer_collection.collection.objects.link(act)
 		bpy.context.view_layer.objects.active = act
+		act.select_set(True)
 
 		act.name = name
 		settings = hyd if settings_override is None else settings_override
 		for k in settings.keys():
 			act.hydra_erosion[k] = settings[k]
 		act.hydra_erosion.is_generated = True
+
+		for polygon in act.data.polygons:
+			polygon.use_smooth = True
 
 		mod = act.modifiers.new(PREVIEW_MOD_NAME, "NODES")
 		

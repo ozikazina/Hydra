@@ -19,7 +19,9 @@ class LandscapePanel(ui_common.ImagePanel):
 			self.layout.prop(hyd, "planet_resolution")
 		else:
 			self.layout.prop(hyd, "landscape_resolution")
-		self.layout.prop(hyd, "tiling")
+		
+		self.layout.prop(hyd, "advanced")
+		self.draw_tiling_fragment(self.layout, hyd)
 
 #-------------------------------------------- Erosion
 
