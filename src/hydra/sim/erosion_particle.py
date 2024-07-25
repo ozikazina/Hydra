@@ -81,6 +81,8 @@ def erode(obj: bpy.types.Object | bpy.types.Image)->None:
 	prog["max_change"] = hyd.part_max_change / (100 * 100) # from percent to 0-0.01
 	prog["drag"] = 1 - (hyd.part_drag / 100)
 
+	prog["planet"] = hyd.tiling == "planet"
+
 	time = datetime.now()
 	prog.run(group_x=1, group_y=1)
 	ctx.finish()
