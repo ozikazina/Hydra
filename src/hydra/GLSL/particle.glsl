@@ -29,6 +29,10 @@ uniform float max_change = 0.01;
 uniform bool use_hardness = false;
 uniform bool invert_hardness = false;
 
+uniform bool planet = false;
+
+#define PI 3.14159265
+
 // pcg3d hashing algorithm from:
 // Author: Mark Jarzynski and Marc Olano
 // Title: Hash Functions for GPU Rendering
@@ -54,6 +58,11 @@ void erode(uvec2 base, int seed) {
 
 	vec2 dir = normalize(vel);
 
+	if (length(vel) < 1e-5) {
+		vel = vec2(0,0);
+		dir = vec2(1,0);
+	}
+
 	float saturation = 0.0;
 	
 	for (int i = 0; i < lifetime; ++i) {
@@ -62,16 +71,31 @@ void erode(uvec2 base, int seed) {
 		float height_vel = texture(height_sampler, tile_mult * (pos + dir)).x;
 		float height_dir = texture(height_sampler, tile_mult * (pos + dir_mult * vec2(-dir.y, dir.x))).x;
 
-		vel += acceleration * (
+		vec2 accel = acceleration * (
 			(height - height_vel) * dir +
 			lateral_acceleration * (height - height_dir) * dir_mult * vec2(-dir.y, dir.x)
 		);
-		
+
+		if (planet) {
+			accel.x *= 1 / max(sin(tile_mult.y * pos.y * PI), 1e-3);
+		}
+
+		vel += accel;
+
 		float len = min(length(vel), max_velocity);
 		dir = normalize(vel);
+
+		float true_len;
+		if (planet) {
+			true_len = min(length(vel * vec2(sin(tile_mult.y * pos.y * PI), 1)), max_velocity);
+		}
+		else {
+			true_len = len;
+		}
+
 		vel = dir * len;
 
-		float capacity = capacity_factor * len * float(height > height_vel);
+		float capacity = capacity_factor * true_len * float(height > height_vel);
 
 		float dif = capacity-saturation;
 
