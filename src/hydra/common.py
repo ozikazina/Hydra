@@ -88,7 +88,7 @@ class HydraData(object):
 	
 	def init_context(self):
 		"""Creates and saves the attached ModernGL :attr:`context`."""
-		self.context = mgl.create_context()	#standalone crashes blender
+		self.context = mgl.get_context()	#standalone crashes blender; create_context doesn't work with wayland
 
 	def has_map(self, id: str | None)->bool:
 		"""Checks if map exists.
