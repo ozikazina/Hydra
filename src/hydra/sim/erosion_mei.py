@@ -237,14 +237,17 @@ def color(obj: bpy.types.Object | bpy.types.Image)->bpy.types.Image:
 	def swap(a, b):
 		return (b, a)
 
+	tile_x = hyd.get_tiling_x()
+	tile_y = hyd.get_tiling_y()
+
 	pipe = texture.create_texture(size, channels=4)
 	velocity = texture.create_texture(size, channels=2)
 	water = texture.create_texture(size)
 	temp = texture.create_texture(size)	# capacity, water and sediment at different stages
 	colorA = texture.create_texture(size, channels=4, image=bpy.data.images[hyd.color_src])
 	colorB = texture.create_texture(size, channels=4)
-	colorSamplerA = ctx.sampler(texture=colorA)
-	colorSamplerB = ctx.sampler(texture=colorB)
+	colorSamplerA = ctx.sampler(texture=colorA, repeat_x=tile_x, repeat_y=tile_y)
+	colorSamplerB = ctx.sampler(texture=colorB, repeat_x=tile_x, repeat_y=tile_y)
 
 	height.bind_to_image(BIND_HEIGHT, read=True, write=False)
 	pipe.bind_to_image(BIND_PIPE, read=True, write=True)
@@ -252,7 +255,7 @@ def color(obj: bpy.types.Object | bpy.types.Image)->bpy.types.Image:
 	water.bind_to_image(BIND_WATER, read=True, write=True)
 	temp.bind_to_image(BIND_TEMP, read=True, write=True)
 
-	velocity_sampler = ctx.sampler(texture=velocity, repeat_x=False, repeat_y=False)
+	velocity_sampler = ctx.sampler(texture=velocity, repeat_x=tile_x, repeat_y=tile_y)
 	velocity_sampler.use(LOC_VELOCITY)
 	velocity.use(LOC_VELOCITY)
 
