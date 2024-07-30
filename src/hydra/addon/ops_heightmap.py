@@ -185,6 +185,11 @@ class ModifierOp(ops_common.HydraOperator):
 	bl_label = "As Displacement Modifier"
 	bl_description = "Apply texture as a displacement modifier"
 
+	@classmethod
+	def poll(cls, ctx):
+		target = cls.get_target(ctx)
+		return target.hydra_erosion.tiling != "planet"
+
 	def invoke(self, ctx, event):
 		target = self.get_target(ctx)
 

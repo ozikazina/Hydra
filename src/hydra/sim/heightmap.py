@@ -57,13 +57,14 @@ def _generate_heightmap_equirect(obj: bpy.types.Object, size:tuple[int,int]|None
 	with ctx.scope(fbo, mgl.DEPTH_TEST | mgl.CULL_FACE):
 		fbo.clear(depth=256.0)
 		rmatrix = list(resize_matrix)
-		rmatrix[0] = -rmatrix[0]
-		rmatrix[4 + 1] = -rmatrix[4 + 1] # 180 degree rotation around Z axis
 		vao_equirect.program["resize_matrix"].value = rmatrix
 		vao_equirect.program["offset_x"] = -0.5
 		vao_equirect.render()
 
-		vao_equirect.program["resize_matrix"].value = resize_matrix
+		rmatrix = list(resize_matrix)
+		rmatrix[0] = -rmatrix[0]
+		rmatrix[4 + 1] = -rmatrix[4 + 1] # 180 degree rotation around Z axis
+		vao_equirect.program["resize_matrix"].value = rmatrix
 		vao_equirect.program["offset_x"] = 0.5
 		vao_equirect.render()
 		ctx.finish()
@@ -93,6 +94,9 @@ def _generate_heightmap_equirect(obj: bpy.types.Object, size:tuple[int,int]|None
 	with ctx.scope(fbo, mgl.DEPTH_TEST):
 		# Upper polar projection
 		fbo.clear(depth=256.0)
+		rmatrix = list(resize_matrix)
+		rmatrix[0] = -rmatrix[0]
+		rmatrix[4 + 1] = -rmatrix[4 + 1] # 180 degree rotation around Z axis
 		vao_polar.program["resize_matrix"].value = resize_matrix
 		vao_polar.render()
 		ctx.finish()
@@ -105,7 +109,7 @@ def _generate_heightmap_equirect(obj: bpy.types.Object, size:tuple[int,int]|None
 		# Lower polar projection
 		fbo.clear(depth=256.0)
 		rmatrix = list(resize_matrix)
-		rmatrix[0] = -rmatrix[0]
+		rmatrix[4 + 1] = -rmatrix[4 + 1] # 180 degree rotation around Z axis
 		rmatrix[8 + 2] = -rmatrix[8 + 2] # 180 degree rotation around Y axis
 		vao_polar.program["resize_matrix"].value = rmatrix
 		vao_polar.render()
@@ -134,9 +138,6 @@ def _generate_heightmap_equirect(obj: bpy.types.Object, size:tuple[int,int]|None
 	elif local_scale:
 		scale = 1 / resize_matrix[0]
 		texture.scale(equirect_txt, scale)
-	else:
-		scale = 1
-
 
 	return equirect_txt
 

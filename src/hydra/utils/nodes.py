@@ -283,7 +283,7 @@ def frame_nodes(nodes, *args, label:str|None = None, color:tuple[float,float,flo
 
 # -------------------------------------------------- Node Setup
 
-def setup_vector_node(nodes, node: bpy.types.ShaderNode)->bpy.types.ShaderNode:
+def setup_vector_node(nodes, node: bpy.types.ShaderNode, planet: bool = False)->bpy.types.ShaderNode:
 	"""Creates a Z Normal node and connects it to the specified node.
 	
 	:param nodes: Node graph.
@@ -291,14 +291,22 @@ def setup_vector_node(nodes, node: bpy.types.ShaderNode)->bpy.types.ShaderNode:
 	:type node: :class:`bpy.types.ShaderNode`
 	:return: Created node.
 	:rtype: :class:`bpy.types.ShaderNode`"""
-	norm = nodes.nodes.new("ShaderNodeNormal")
-	norm.name = "HYD_norm"
-	norm.label = "Z Normal"
-	nodes.links.new(node.inputs["Normal"], norm.outputs["Normal"])
-	minimize_node(norm)
+	if planet:
+		norm = nodes.nodes.new("ShaderNodeTexCoord")
+		norm.name = "HYD_norm"
+		norm.label = "Sphere Normal"
+		nodes.links.new(node.inputs["Normal"], norm.outputs["Object"])
+		minimize_node(norm, collapse_node=False)
+	else:
+		norm = nodes.nodes.new("ShaderNodeNormal")
+		norm.name = "HYD_norm"
+		norm.label = "Z Normal"
+		nodes.links.new(node.inputs["Normal"], norm.outputs["Normal"])
+		minimize_node(norm)
 	return norm
 	
-def setup_image_node(tree:bpy.types.NodeTree, name:str, imageSrc:str)->tuple[bpy.types.ShaderNode, bpy.types.ShaderNode]:
+def setup_image_node(tree:bpy.types.NodeTree, name:str, imageSrc:str, planet: bool = False)->\
+		tuple[bpy.types.ShaderNode, bpy.types.ShaderNode]|tuple[bpy.types.ShaderNode, bpy.types.ShaderNode, bpy.types.ShaderNode]:
 	"""Creates an Image Texture node and connects it to generated coordinates.
 	
 	:param nodes: Node graph.
@@ -314,10 +322,21 @@ def setup_image_node(tree:bpy.types.NodeTree, name:str, imageSrc:str)->tuple[bpy
 	img.image = imageSrc
 	img.extension = 'EXTEND'
 	img.interpolation = 'Cubic'
+	img.projection = "SPHERE" if planet else "FLAT"
 	coords = tree.nodes.new("ShaderNodeTexCoord")
-	tree.links.new(img.inputs["Vector"], coords.outputs["Generated"])
-	minimize_node(coords, collapse_node=False)
-	return (img, coords)
+
+	if planet:
+		sub = tree.nodes.new("ShaderNodeVectorMath")
+		sub.operation = "ADD"
+		sub.inputs[1].default_value = (0.5, 0.5, 0.5)
+		tree.links.new(sub.inputs[0], coords.outputs["Object"])
+		tree.links.new(img.inputs["Vector"], sub.outputs[0])
+		minimize_node(coords, collapse_node=False)
+		return (img, sub, coords)
+	else:
+		tree.links.new(img.inputs["Vector"], coords.outputs["Generated"])
+		minimize_node(coords, collapse_node=False)
+		return (img, coords)
 
 def make_bsdf(nodes)->bpy.types.ShaderNode:
 	"""Creates a Principled BSDF node.

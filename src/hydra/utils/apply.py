@@ -135,6 +135,7 @@ def add_bump(obj: bpy.types.Object, img: bpy.types.Image)->None:
 	:param img: Bump image to add.
 	:type img: :class:`bpy.types.Image`"""
 	data = common.data
+	planet = obj.hydra_erosion.tiling == "planet"
 
 	mats = obj.material_slots
 	if len(mats) == 0:
@@ -181,11 +182,17 @@ def add_bump(obj: bpy.types.Object, img: bpy.types.Image)->None:
 	
 	bump.inputs["Distance"].default_value = 0.2
 	
-	imgNode,coords = nodes.setup_image_node(tree, "Bumpmap", img)
+	if planet:
+		imgNode,offset,coords = nodes.setup_image_node(tree, "Bumpmap", img, True)
+		nodes.stagger_nodes(shader, [bump], [imgNode], [offset], [coords])
+		nodes.frame_nodes(tree.nodes, coords, offset, imgNode, bump, label="Hydra Bump", color=nodes.COLOR_VECTOR)
+	else:
+		imgNode,coords = nodes.setup_image_node(tree, "Bumpmap", img, False)
+		nodes.stagger_nodes(shader, [bump], [imgNode], [coords])
+		nodes.frame_nodes(tree.nodes, coords, imgNode, bump, label="Hydra Bump", color=nodes.COLOR_VECTOR)
+		
 	tree.links.new(bump.inputs["Height"], imgNode.outputs["Color"])
 	nodes.minimize_node(imgNode)
-	nodes.stagger_nodes(shader, [bump], [imgNode], [coords])
-	nodes.frame_nodes(tree.nodes, coords, imgNode, bump, label="Hydra Bump", color=nodes.COLOR_VECTOR)
 
 H_NAME_DISP = "Hydra Displacement"
 """Displacement map node name."""
@@ -199,6 +206,7 @@ def add_displacement(obj: bpy.types.Object, img: bpy.types.Image)->None:
 	:param img: Displacement image to add.
 	:type img: :class:`bpy.types.Image`"""
 	data = common.data
+	planet = obj.hydra_erosion.tiling == "planet"
 
 	mats = obj.material_slots
 	if len(mats) == 0:
@@ -228,7 +236,7 @@ def add_displacement(obj: bpy.types.Object, img: bpy.types.Image)->None:
 		disp.inputs["Midlevel"].hide = True
 		disp.inputs["Scale"].default_value = 1
 		tree.links.new(out.inputs["Displacement"], disp.outputs["Displacement"])
-		norm = nodes.setup_vector_node(tree, disp)
+		norm = nodes.setup_vector_node(tree, disp, planet)
 	else:
 		disp = out.inputs["Displacement"].links[0].from_node
 		if disp.bl_idname != "ShaderNodeDisplacement":
@@ -239,12 +247,18 @@ def add_displacement(obj: bpy.types.Object, img: bpy.types.Image)->None:
 		data.error += ["Material already implements a different displacement map."]
 		return
 	
-	imgNode, coords = nodes.setup_image_node(tree, H_NAME_DISP, img)
+	if planet:
+		imgNode, offset, coords = nodes.setup_image_node(tree, H_NAME_DISP, img, True)
+		nodes.stagger_nodes(out, [disp], [imgNode, norm], [offset], [coords], forwards=True)
+		nodes.frame_nodes(tree.nodes, coords, offset, imgNode, norm, disp, label="Hydra Displacement", color=nodes.COLOR_VECTOR)
+	else:
+		imgNode, coords = nodes.setup_image_node(tree, H_NAME_DISP, img, False)
+		nodes.stagger_nodes(out, [disp], [imgNode, norm], [coords], forwards=True)
+		nodes.frame_nodes(tree.nodes, coords, imgNode, norm, disp, label="Hydra Displacement", color=nodes.COLOR_VECTOR)
+
 	tree.links.new(disp.inputs["Height"], imgNode.outputs["Color"])
 	nodes.minimize_node(imgNode)
 	
-	nodes.stagger_nodes(out, [disp], [imgNode, norm], [coords], forwards=True)
-	nodes.frame_nodes(tree.nodes, coords, imgNode, norm, disp, label="Hydra Displacement", color=nodes.COLOR_VECTOR)
 
 # -------------------------------------------------- Modifier
 
