@@ -11,7 +11,7 @@ This project requires external dependencies (~5 MB), which can be downloaded wit
 
 The add-on page will indicate whether the dependencies are installed.
 
-If you have the Fedora operating system, this add-on might not work because of this dependency.
+If you are on Linux and get a `Failed to initialize OpenGL context` exception, try to switch to X11.
 
 Manual dependency installation or update
 ----------------------------
@@ -22,11 +22,13 @@ Go to your Blender installation directory and to the version you want to use. Th
 
 Once there, open this folder in the command line and install ModernGL through the Python executable:
 
-`python.exe -m pip install --upgrade moderngl`
+`python.exe -m pip install --upgrade moderngl>=5.10.0`
 
 or
 
-`./python -m pip install --upgrade moderngl`
+`./python -m pip install --upgrade moderngl>=5.10.0`
+
+ModernGL **version 5.10 or higher is required to work with Wayland**.
 
 Uninstallation
 ------------
