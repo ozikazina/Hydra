@@ -82,6 +82,8 @@ def erode(obj: bpy.types.Object | bpy.types.Image)->None:
 	prog["drag"] = 1 - (hyd.part_drag / 100)
 
 	prog["planet"] = hyd.tiling == "planet"
+	prog["tile_x"] = tile_x
+	prog["tile_y"] = tile_y
 
 	time = datetime.now()
 	prog.run(group_x=1, group_y=1)
@@ -127,10 +129,13 @@ def color(obj: bpy.types.Object | bpy.types.Image)->bpy.types.Image:
 	else:
 		height = data.get_map(hyd.map_source).texture
 	
+	tile_x = hyd.get_tiling_x()
+	tile_y = hyd.get_tiling_y()
+
 	height = texture.clone(height)
 	height.bind_to_image(1, read=True, write=True)
 	height.use(1)
-	height_sampler = ctx.sampler(texture=height, repeat_x=False, repeat_y=False)
+	height_sampler = ctx.sampler(texture=height, repeat_x=tile_x, repeat_y=tile_y)
 	height_sampler.use(1)
 
 	color = texture.create_texture(size, channels=4, image=bpy.data.images[hyd.color_src])
@@ -142,6 +147,7 @@ def color(obj: bpy.types.Object | bpy.types.Image)->bpy.types.Image:
 	prog["height_sampler"] = 1
 	prog["color_map"].value = 2
 
+	prog["size"] = size
 	prog["tile_size"] = (math.ceil(size[0] / 32), math.ceil(size[1] / 32))
 	prog["tile_mult"] = (1 / size[0], 1 / size[1])
 
@@ -157,6 +163,9 @@ def color(obj: bpy.types.Object | bpy.types.Image)->bpy.types.Image:
 	prog["drag"] = max(1 - (hyd.color_detail / 100), 0.01)
 
 	prog["color_strength"] = hyd.color_mixing / 100
+
+	prog["tile_x"] = tile_x
+	prog["tile_y"] = tile_y
 
 	time = datetime.now()
 	prog.run(group_x=1,group_y=1)

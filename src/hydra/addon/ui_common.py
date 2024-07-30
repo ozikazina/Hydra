@@ -249,8 +249,10 @@ class ExtrasPanel():
 			g.prop(hyd, "part_drag", slider=True)
 		elif hyd.extras_type == "color":
 			p.prop(hyd, "color_solver")
-
 			p.prop_search(hyd, "color_src", bpy.data, "images")
+			
+			p.prop(hyd, "advanced")
+			self.draw_tiling_fragment(p, hyd)
 
 			p.label(text="Settings:")
 			p.prop(hyd, "color_mixing", slider=True)

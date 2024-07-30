@@ -30,6 +30,8 @@ uniform bool use_hardness = false;
 uniform bool invert_hardness = false;
 
 uniform bool planet = false;
+uniform bool tile_x = false;
+uniform bool tile_y = false;
 
 #define PI 3.14159265
 
@@ -46,7 +48,7 @@ uvec3 hash(uvec3 v) {
 }
 
 void erode(uvec2 base, int seed) {
-	vec2 pos = (hash(uvec3(base.x, base.y, seed)).xy & (16384u - 1u)) / 8192.0;
+	vec2 pos = (hash(uvec3(base.x, base.y, seed)).xy & (8192u - 1u)) / 8192.0;
 	pos = (pos + base) * tile_size;
 
 	float height = texture(height_sampler, tile_mult * pos).x;
@@ -117,8 +119,12 @@ void erode(uvec2 base, int seed) {
 
 		pos += dir;
 
-		pos.x += pos.x < 0 ? size.x : pos.x >= size.x ? -size.x : 0;
-		pos.y += pos.y < 0 ? size.y : pos.y >= size.y ? -size.y : 0;
+		if (tile_x) {
+			pos.x += pos.x < 0 ? size.x : pos.x >= size.x ? -size.x : 0;
+		}
+		if (tile_y) {
+			pos.y += pos.y < 0 ? size.y : pos.y >= size.y ? -size.y : 0;
+		}
 		
 		vel *= drag;
 	}//i loop

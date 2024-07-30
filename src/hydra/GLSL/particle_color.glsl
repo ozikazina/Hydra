@@ -7,6 +7,7 @@ uniform sampler2D height_sampler;
 layout (r32f) uniform image2D height_map;
 layout (rgba32f) uniform image2D color_map;
 
+uniform ivec2 size = ivec2(512,512);
 uniform ivec2 tile_size = ivec2(32, 32);
 uniform vec2 tile_mult = vec2(1.0/512.0,1.0/512.0);
 
@@ -24,7 +25,20 @@ uniform float drag = 0.8;
 uniform float capacity_factor = 0.8;
 uniform float color_strength = 0.5;
 
+uniform bool tile_x = false;
+uniform bool tile_y = false;
+
 uniform int seed = 1;
+
+ivec2 pos_at(ivec2 org) {
+	if (tile_x) {
+		org.x += org.x >= size.x ? -size.x : 0;
+	}
+	if (tile_y) {
+		org.y += org.y >= size.y ? -size.y : 0;
+	}
+	return org;
+}
 
 void colorize(vec2 pos, vec4 col, float strength) {
 	pos -= vec2(0.5,0.5);
@@ -39,21 +53,24 @@ void colorize(vec2 pos, vec4 col, float strength) {
 
 	//X+1 Y
 	f = strength * factor.x * (1-factor.y);
-	surf_color = imageLoad(color_map, corner + ivec2(1,0));
+	ivec2 coords = pos_at(corner + ivec2(1,0));
+	surf_color = imageLoad(color_map, coords);
 	surf_color = mix(surf_color, col, f);
-	imageStore(color_map, corner + ivec2(1,0), surf_color);
+	imageStore(color_map, coords, surf_color);
 	
 	//X Y+1
 	f = strength * (1-factor.x) * factor.y;
-	surf_color = imageLoad(color_map, corner + ivec2(0,1));
+	coords = pos_at(corner + ivec2(0,1));
+	surf_color = imageLoad(color_map, coords);
 	surf_color = mix(surf_color, col, f);
-	imageStore(color_map, corner + ivec2(0,1), surf_color);
+	imageStore(color_map, coords, surf_color);
 	
 	//X+1 Y+1
 	f = strength * factor.x * factor.y;
-	surf_color = imageLoad(color_map, corner + ivec2(1,1));
+	coords = pos_at(corner + ivec2(1,1));
+	surf_color = imageLoad(color_map, coords);
 	surf_color = mix(surf_color, col, f);
-	imageStore(color_map, corner + ivec2(1,1), surf_color);
+	imageStore(color_map, coords, surf_color);
 }
 
 // pcg3d hashing algorithm from:
@@ -68,9 +85,8 @@ uvec3 hash(uvec3 v) {
 	return v;
 }
 
-
 void erode(ivec2 base, int seed) {
-	vec2 pos = (hash(uvec3(base.x, base.y, seed)).xy & (16384u - 1u)) / 8192.0;
+	vec2 pos = (hash(uvec3(base.x, base.y, seed)).xy & (8192u - 1u)) / 8192.0;
 	pos = (pos + base) * tile_size;
 
 	float h = texture(height_sampler, tile_mult * pos).x;
@@ -81,6 +97,11 @@ void erode(ivec2 base, int seed) {
 	);
 
 	vec2 dir = normalize(vel);
+
+	if (length(vel) < 1e-5) {
+		vel = vec2(0,0);
+		dir = vec2(1,0);
+	}
 
 	float saturation = 0;
 
@@ -119,6 +140,14 @@ void erode(ivec2 base, int seed) {
 		}
 
 		pos += dir;
+
+		if (tile_x) {
+			pos.x += pos.x < 0 ? size.x : pos.x >= size.x ? -size.x : 0;
+		}
+		if (tile_y) {
+			pos.y += pos.y < 0 ? size.y : pos.y >= size.y ? -size.y : 0;
+		}
+
 		vel *= drag;
 	}//i loop
 }
