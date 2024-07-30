@@ -97,7 +97,7 @@ def _generate_heightmap_equirect(obj: bpy.types.Object, size:tuple[int,int]|None
 		rmatrix = list(resize_matrix)
 		rmatrix[0] = -rmatrix[0]
 		rmatrix[4 + 1] = -rmatrix[4 + 1] # 180 degree rotation around Z axis
-		vao_polar.program["resize_matrix"].value = resize_matrix
+		vao_polar.program["resize_matrix"].value = rmatrix
 		vao_polar.render()
 		ctx.finish()
 
