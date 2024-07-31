@@ -4,7 +4,7 @@ from Hydra.utils import nodes
 class AddUVOperator(bpy.types.Operator):
 	bl_idname = "hydra.planet_uv"
 	bl_label = "Planet UVs"
-	bl_description = "Add planet UV-coordinate calculation used in Hydra"
+	bl_description = "Add texture coordinates for Image textures with Sphere projection. This matches mapping used in Hydra"
 
 	@classmethod
 	def poll(cls, ctx):

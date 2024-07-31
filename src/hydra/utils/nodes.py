@@ -570,31 +570,10 @@ def make_snow_nodes(tree: bpy.types.ShaderNodeTree, image: bpy.types.Image):
 
 def add_planet_shader_uv_nodes(nodes, links):
 	create_tree(nodes, links, [
-		Frame("UV Coordinates", color=COLOR_VECTOR, nodes=[
-			(
-				Node("HYD_Geometry", "ShaderNodeNewGeometry", minimize=True),
-				Node("HYD_Object_Info", "ShaderNodeObjectInfo", minimize=True),
-			),
-			Node("HYD_Relative_Coords", "ShaderNodeVectorMath", operation="SUBTRACT", link=[
-				"HYD_Geometry", "HYD_Object_Info"
+		Frame("Sphere Coordinates", color=COLOR_VECTOR, nodes=[
+			Node("HYD_Obj_Coords", "ShaderNodeTexCoord", minimize=True),
+			Node("HYD_Relative_Coords", "ShaderNodeVectorMath", operation="ADD", link=[
+				("HYD_Obj_Coords", "Object"), (0.5,0.5,0.5)
 			]),
-			Node("HYD_Normalized_Coords", "ShaderNodeVectorMath", operation="NORMALIZE"),
-			Node("HYD_Rotate", "ShaderNodeVectorRotate", link={
-				0: "HYD_Normalized_Coords",
-				3: math.pi/2 + 1e-5
-			}, minimize=True),
-			Node("HYD_Spherical_Comps", "ShaderNodeSeparateXYZ", label="Spherical Components"),
-			(
-				Node("HYD_Get_X", "ShaderNodeMath", operation="ARCTAN2", label="X Coordinate",
-					link=[("HYD_Spherical_Comps", 1), ("HYD_Spherical_Comps", 0)]),
-				Node("HYD_Get_Y", "ShaderNodeMath", operation="ARCSINE", label="Y Coordinate",
-					link=("HYD_Spherical_Comps", 2)),
-			),
-			Node("HYD_Equirect", "ShaderNodeCombineXYZ", label="Equirectangular XY", link=["HYD_Get_X", "HYD_Get_Y"]),
-				Node("HYD_Texture_Coords", "ShaderNodeMapRange", label="UV Coordinates", link={
-						6: "HYD_Equirect",
-						7: (-math.pi, -math.pi/2, 0),
-						8: (math.pi, math.pi / 2, 1),
-					}, data_type="FLOAT_VECTOR", minimize=True),
 		])
 	])
