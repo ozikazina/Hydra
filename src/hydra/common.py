@@ -78,7 +78,7 @@ class HydraData(object):
 		self._shaders_: dict[str, mgl.ComputeShader] = {}
 		"""Compiled ModernGL compute shader list."""
 		
-		self.lastPreview: str | None = None
+		self.last_preview: str | None = None
 		"""Name of last previewed object."""
 
 		self._info_: list[str] = []

@@ -325,7 +325,7 @@ class HeightmapSystemPanel():
 				split.label(text="Result:")
 				split.label(text=name)
 				cols = box.column_flow(columns=3, align=True)
-				if common.data.lastPreview == target.name:
+				if common.data.last_preview == target.name:
 					cols.operator('hydra.hm_remove_preview', text="", icon="HIDE_ON")
 				else:
 					cols.operator('hydra.hm_preview', text="", icon="HIDE_OFF")

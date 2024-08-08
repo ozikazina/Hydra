@@ -53,12 +53,14 @@ def add_preview(target: bpy.types.Object|bpy.types.Image)->None:
 		else:
 			add_landscape(img, max_verts_per_side=prefs.image_preview_resolution, name=PREVIEW_IMG_NAME, detach=False, tile=hyd.tiling!="none", settings_override=hyd)
 	else:
-		if data.lastPreview and data.lastPreview in bpy.data.objects:
-			last = bpy.data.objects[data.lastPreview]
+		# Remove previous preview if it exists
+		if data.last_preview and data.last_preview in bpy.data.objects:
+			last = bpy.data.objects[data.last_preview]
 			if last != target and PREVIEW_MOD_NAME in last.modifiers:
 				last.modifiers.remove(last.modifiers[PREVIEW_MOD_NAME])
 
-		if data.lastPreview != target.name and PREVIEW_GEO_NAME in bpy.data.node_groups:
+		# Remove preview Nodes if they belong to a different object
+		if data.last_preview != target.name and PREVIEW_GEO_NAME in bpy.data.node_groups:
 			g = bpy.data.node_groups[PREVIEW_GEO_NAME]
 			bpy.data.node_groups.remove(g)
 
@@ -77,19 +79,19 @@ def add_preview(target: bpy.types.Object|bpy.types.Image)->None:
 		else:
 			mod.node_group = nodes.make_or_update_displace_group(PREVIEW_GEO_NAME, img, tiling=hyd.tiling!="none")
 
-		common.data.lastPreview = target.name
+		common.data.last_preview = target.name
 
 		nav.goto_modifier()
 
 def remove_preview()->None:
 	"""Removes the preview modifier from the last previewed object and deletes last preview image."""
 	data = common.data
-	if str(data.lastPreview) in bpy.data.objects:
-		last = bpy.data.objects[data.lastPreview]
+	if str(data.last_preview) in bpy.data.objects:
+		last = bpy.data.objects[data.last_preview]
 		if PREVIEW_MOD_NAME in last.modifiers:
 			last.modifiers.remove(last.modifiers[PREVIEW_MOD_NAME])
 		show_gen_modifier(last, True)
-	elif data.lastPreview: #invalid data
+	elif data.last_preview: #invalid data
 		previewed = [i for i in bpy.data.objects if PREVIEW_MOD_NAME in i.modifiers]
 		for i in previewed:
 			i.modifiers.remove(i.modifiers[PREVIEW_MOD_NAME])
@@ -119,7 +121,7 @@ def remove_preview()->None:
 		g = bpy.data.node_groups[PREVIEW_GEO_NAME]
 		bpy.data.node_groups.remove(g)
 
-	data.lastPreview = ""
+	data.last_preview = ""
 
 # -------------------------------------------------- Shaders
 
@@ -468,55 +470,7 @@ def add_geometry_nodes(obj: bpy.types.Object, img: bpy.types.Image)->None:
 	else:
 		mod = obj.modifiers[-1]
 	
-	mod.node_group = nodes.make_or_update_displace_group(f"HYD_{obj.name}", img)
-
-def add_into_geometry_nodes(obj: bpy.types.Object, img: bpy.types.Image)->None:
-	"""Adds the image into an existing Geometry Nodes modifier.
-
-	:param obj: Object to add to.
-	:type obj: :class:`bpy.types.Object`
-	:param img: Displacement image to add.
-	:type img: :class:`bpy.types.Image`"""
-	data = common.data
-
-	mod = None
-	for m in obj.modifiers:
-		if m.type == "NODES":
-			mod = m
-
-	if mod is None or not mod.node_group:
-		data.error += ["No Geometry Nodes found."]
-		return
-	
-	links = mod.node_group.links
-	nodes = mod.node_group.nodes
-	outputs = [node for node in nodes if node.type == "GROUP_OUTPUT"]
-	outputs.sort(key=lambda x: x.name)
-	if len(outputs) == 0:
-		output = nodes.new("NodeGroupOutput")
+	if obj.hydra_erosion.tiling == "planet":
+		mod.node_group = nodes.make_or_update_planet_group(f"HYD_{obj.name}", img, sub_cube=False)
 	else:
-		output = outputs[0]
-
-	displace_group = nodes.make_or_update_displace_group("HYD_Displace")
-
-	connected = None
-	if output.inputs[0].is_linked:
-		connected = output.inputs[0].links[0].from_node
-
-		if connected.type == "GROUP" and connected.node_tree == displace_group:
-			connected.inputs[1].default_value = img
-			connected.inputs[2].default_value = 1
-			data.add_message("Updated existing displacement.")
-			return
-	
-	g = nodes.new("GeometryNodeGroup")
-	g.node_tree = displace_group
-	g.inputs[1].default_value = img
-	g.inputs[2].default_value = 1
-
-	links.new(g.outputs[0], output.inputs[0])
-
-	if connected:
-		links.new(connected.outputs[0], g.inputs[0])
-
-	nodes.stagger_nodes(output, [g], forwards=True)
+		mod.node_group = nodes.make_or_update_displace_group(f"HYD_{obj.name}", img)

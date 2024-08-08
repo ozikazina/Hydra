@@ -502,10 +502,10 @@ def make_or_update_planet_group(name, image: bpy.types.Image=None, sub_cube: boo
 			Frame("Texture Coordinates", color=COLOR_VECTOR, nodes=[
 				Node("HYD_Position", "GeometryNodeInputPosition"),
 				Node("HYD_Get_Normalized", "ShaderNodeVectorMath", label="Normalize", operation="NORMALIZE"),
-				Node("HYD_Rotate", "FunctionNodeRotateVector", label="Rotate to -Y", link=[
+				Node("HYD_Rotate", "FunctionNodeRotateVector", label="Rotate to +Y", link=[
 					"HYD_Get_Normalized",
 					# slightly misaligned to avoid floating point errors
-					(0, 0, math.pi / 2 + 1e-5)
+					(0, 0, -math.pi / 2 + 1e-5)
 				]),
 				Node("HYD_Get_Components", "ShaderNodeSeparateXYZ", label="Spherical Components"),
 				(
