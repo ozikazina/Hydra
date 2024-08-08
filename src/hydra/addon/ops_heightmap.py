@@ -43,7 +43,7 @@ class MergeOp(ops_common.HydraOperator):
 	"""Modifier apply to mesh operator."""
 	bl_idname = "hydra.hm_merge"
 	bl_label = "Apply"
-	bl_description = "Applies the preview or modifier directly to the mesh (applies entire stack up to the modifier!)"
+	bl_description = "Applies the preview or modifier directly to the mesh. Also applies all visible modifiers up to it"
 	bl_options = {'REGISTER'}
 
 	@classmethod
@@ -51,10 +51,11 @@ class MergeOp(ops_common.HydraOperator):
 		return not ctx.object.data.shape_keys or len(ctx.object.data.shape_keys.key_blocks) == 0
 
 	def invoke(self, ctx, event):
-		lst = [x for x in ctx.object.modifiers]
-		for mod in lst:
+		for mod in ctx.object.modifiers:
 			name = mod.name
-			bpy.ops.object.modifier_apply(modifier=mod.name)
+			if mod.show_viewport:
+				bpy.ops.object.modifier_apply(modifier=mod.name)
+
 			if name.startswith("HYD_"):
 				break
 		

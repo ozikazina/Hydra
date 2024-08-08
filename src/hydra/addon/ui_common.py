@@ -341,8 +341,7 @@ class HeightmapSystemPanel():
 
 				cols.operator('hydra.hm_apply_geo', text="", icon="GEOMETRY_NODES")
 
-				cols = grid.column_flow(columns=3, align=True)
-				cols.operator('hydra.hm_apply_mod', text="", icon="MOD_DISPLACE")
+				cols = grid.column_flow(columns=2, align=True)
 				cols.operator('hydra.hm_apply_disp', text="", icon="RNDCURVE")
 				cols.operator('hydra.hm_apply_bump', text="", icon="MOD_NOISE")
 				

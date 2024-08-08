@@ -29,7 +29,7 @@ def show_gen_modifier(obj: bpy.types.Object, visible: bool)->None:
 	:param visible: Modifier visibility.
 	:type visible: :class:`bool`"""
 	mod = next((x for x in obj.modifiers if x.name.startswith("HYD_")), None)
-	if mod and mod.name != PREVIEW_MOD_NAME:
+	if mod is not None and mod.name != PREVIEW_MOD_NAME:
 		mod.show_viewport = visible
 
 def add_preview(target: bpy.types.Object|bpy.types.Image)->None:
@@ -64,12 +64,16 @@ def add_preview(target: bpy.types.Object|bpy.types.Image)->None:
 			g = bpy.data.node_groups[PREVIEW_GEO_NAME]
 			bpy.data.node_groups.remove(g)
 
-		show_gen_modifier(target, False)
+		index = None
 
 		if PREVIEW_MOD_NAME in target.modifiers:
 			mod = target.modifiers[PREVIEW_MOD_NAME]
 			common.data.add_message("Updated existing preview.")
 		else:
+			if any(m.name.startswith("HYD_") for m in target.modifiers):
+				index,mod = next((i,m) for i,m in enumerate(target.modifiers) if m.name.startswith("HYD_"))
+				mod.show_viewport = False
+				
 			mod = target.modifiers.new(PREVIEW_MOD_NAME, "NODES")
 			common.data.add_message("Created preview modifier.")
 		
@@ -79,6 +83,10 @@ def add_preview(target: bpy.types.Object|bpy.types.Image)->None:
 		else:
 			mod.node_group = nodes.make_or_update_displace_group(PREVIEW_GEO_NAME, img, tiling=hyd.tiling!="none")
 
+		if index is not None:
+			# move to index of existing hydra modifier
+			target.modifiers.move(len(target.modifiers) - 1, index)
+
 		common.data.last_preview = target.name
 
 		nav.goto_modifier()
@@ -86,7 +94,7 @@ def add_preview(target: bpy.types.Object|bpy.types.Image)->None:
 def remove_preview()->None:
 	"""Removes the preview modifier from the last previewed object and deletes last preview image."""
 	data = common.data
-	if str(data.last_preview) in bpy.data.objects:
+	if data.last_preview in bpy.data.objects:
 		last = bpy.data.objects[data.last_preview]
 		if PREVIEW_MOD_NAME in last.modifiers:
 			last.modifiers.remove(last.modifiers[PREVIEW_MOD_NAME])
@@ -459,18 +467,26 @@ def add_geometry_nodes(obj: bpy.types.Object, img: bpy.types.Image)->None:
 	:param img: Displacement image to add.
 	:type img: :class:`bpy.types.Image`"""
 
-	if len(obj.modifiers) == 0:
-		mod = obj.modifiers.new("HYD_" + obj.name, "NODES")
-	elif obj.modifiers[-1].name.startswith("HYD_"):
-		if obj.modifiers[-1].type == "NODES":
-			mod = obj.modifiers[-1]
+	mod_name = f"HYD_{obj.name}"
+
+	if any(m.name.startswith("HYD_") for m in obj.modifiers):
+		i,mod = next((i,m) for i,m in enumerate(obj.modifiers) if m.name.startswith("HYD_"))
+		if mod.type == "NODES":
+			# image update is done by the nodes module
+			mod.name = mod_name	# in case object was renamed
 		else:
-			obj.modifiers.remove(obj.modifiers[-1])
-			mod = obj.modifiers.new("HYD_" + obj.name, "NODES")
+			# remove and replace
+			obj.modifiers.remove(mod)
+			mod = obj.modifiers.new(mod_name, "NODES")
+			if i < len(obj.modifiers):
+				# move to index of previous modifier
+				obj.modifiers.move(len(obj.modifiers) - 1, i)
 	else:
-		mod = obj.modifiers[-1]
+		mod = obj.modifiers.new(mod_name, "NODES")
+
+	obj.modifiers.active = mod
 	
 	if obj.hydra_erosion.tiling == "planet":
-		mod.node_group = nodes.make_or_update_planet_group(f"HYD_{obj.name}", img, sub_cube=False)
+		mod.node_group = nodes.make_or_update_planet_group(mod_name, img, sub_cube=False)
 	else:
-		mod.node_group = nodes.make_or_update_displace_group(f"HYD_{obj.name}", img)
+		mod.node_group = nodes.make_or_update_displace_group(mod_name, img)
