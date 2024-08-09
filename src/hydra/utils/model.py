@@ -76,10 +76,13 @@ def evaluate_mesh(obj: bpy.types.Object)->bpy.types.Mesh:
 
 def get_resize_matrix(obj: bpy.types.Object, planet: bool = False, with_scale: bool = False)->tuple[float]:
 	"""
-	Creates a resizing matrix that scales the input object into normalized device coordinates, so that 1-Z is the normalized surface height.
+	Creates a resizing matrix for heightmap generation.
 
 	:param obj: Object to be evaluated.
 	:type obj: :class:`bpy.types.Object`
+	:param planet: Uniformly scales object to NDC.
+	:type planet: :class:`bool`
+	:param with_scale: Normalizes planets as if scale was applied. Only affects planet generation. 
 	:return: Created resizing matrix.
 	:rtype: :class:`tuple[float]`
 	"""
@@ -137,15 +140,23 @@ def recalculate_scales(obj: bpy.types.Object)->None:
 	:param obj: Object to be evaluated.
 	:type obj: :class:`bpy.types.Object`
 	"""
-	ar = np.array(obj.bound_box)
+	
+	ar = obj.bound_box
 	dx = (ar[4][0] - ar[0][0]) / 2
 	dy = (ar[2][1] - ar[0][1]) / 2
 	dz = (ar[1][2] - ar[0][2])
 
 	obj.hydra_erosion.scale_ratio = dy / dx if dx > 1e-3 else 1
 	obj.hydra_erosion.height_scale = dz / dx if dx > 1e-3 else 1
-	obj.hydra_erosion.org_scale = abs(obj.dimensions.z / obj.scale.z) if abs(obj.scale.z) > 1e-3 else 1
-	obj.hydra_erosion.org_width = abs(obj.dimensions.x / obj.scale.x) if abs(obj.scale.x) > 1e-3 else 1
+	obj.hydra_erosion.org_scale = dz
+	if obj.hydra_erosion.tiling == "planet":
+		obj.hydra_erosion.org_width = max([
+			ar[4][0], ar[0][0],
+			ar[2][1], ar[0][1],
+			ar[1][2], ar[0][2]
+		])
+	else:
+		obj.hydra_erosion.org_width = dx
 
 def create_cube_mesh(side_length, name):
 	res = side_length

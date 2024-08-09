@@ -94,7 +94,7 @@ def add_preview(target: bpy.types.Object|bpy.types.Image)->None:
 def remove_preview()->None:
 	"""Removes the preview modifier from the last previewed object and deletes last preview image."""
 	data = common.data
-	if data.last_preview in bpy.data.objects:
+	if data.last_preview and data.last_preview in bpy.data.objects:
 		last = bpy.data.objects[data.last_preview]
 		if PREVIEW_MOD_NAME in last.modifiers:
 			last.modifiers.remove(last.modifiers[PREVIEW_MOD_NAME])

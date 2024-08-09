@@ -223,16 +223,14 @@ def prepare_heightmap(obj: bpy.types.Image | bpy.types.Object)->None:
 	else:
 		txt = generate_heightmap(obj, equirect = hyd.tiling=="planet")
 
-	hmid = data.create_map("Base map", txt)
-	hyd.map_base = hmid
+	hyd.map_base = data.create_map("Base map", txt)
 
 	if reload:	#source is invalid too
 		data.try_release_map(hyd.map_source)
 	
 	if not data.has_map(hyd.map_source):	#freed or not defined in the first place
 		txt = texture.clone(txt)
-		hmid = data.create_map("Base map", txt)
-		hyd.map_source = hmid
+		hyd.map_source = data.create_map("Base map", txt)
 
 def subtract(modified: mgl.Texture, base: mgl.Texture, factor: float = 1.0, scale: float = 1.0)->mgl.Texture:
 	"""Subtracts given textures and returns difference relative to `base` as a result. Also scales result if needed.
@@ -249,7 +247,7 @@ def subtract(modified: mgl.Texture, base: mgl.Texture, factor: float = 1.0, scal
 	:rtype: :class:`moderngl.Texture`"""
 	return add(modified, base, -factor, scale)
 
-def add(A: mgl.Texture, B: mgl.Texture, factor: float = 1.0, scale: float = 1.0, )->mgl.Texture:
+def add(A: mgl.Texture, B: mgl.Texture, factor: float = 1.0, scale: float = 1.0)->mgl.Texture:
 	"""Adds given textures and returns the result as a new texture.
 	
 	:param A: First texture.
@@ -288,10 +286,8 @@ def get_displacement(obj: bpy.types.Object, name:str)->bpy.types.Image:
 	data = common.data
 	hyd = obj.hydra_erosion
 
-	if obj.hydra_erosion.height_scale != 0:
-		scale = obj.hydra_erosion.org_scale / obj.hydra_erosion.height_scale
-	else:
-		scale = 1.0
+	# height gets scaled down by object width back during generation
+	scale = hyd.org_width
 
 	target = subtract(data.get_map(hyd.map_result).texture,
 		data.get_map(hyd.map_base).texture,
