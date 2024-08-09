@@ -50,7 +50,7 @@ def erode(obj: bpy.types.Image | bpy.types.Object)->None:
 	progA["requests"].value = 2
 	progA["Ks"] = (hyd.thermal_strength / 100) * 0.5	#0-1 -> 0-0.5, higher is unstable
 	progA["alpha"] = math.tan(hyd.thermal_angle) * 2 / size[0] # images are scaled to 2 z/x -> angle depends only on image width
-	progA["by"] = hyd.scale_ratio
+	progA["by"] = hyd.scale_ratio * size[0] / size[1] # (model y/x) / (texture y/x)
 	progA["useOffset"] = False
 	progA["size"] = size
 	progA["tile_x"] = tile_x

@@ -56,7 +56,7 @@ def simulate(obj: bpy.types.Image | bpy.types.Object)->bpy.types.Image|None:
 	progA["requests"].value = 2
 	progA["Ks"] = 0.5
 	progA["alpha"] = math.tan(hyd.snow_angle) * 2 / size[0] # images are scaled to 2 z/x -> angle depends only on image width
-	progA["by"] = hyd.scale_ratio
+	progA["by"] = hyd.scale_ratio * size[0] / size[1] # (model y/x) / (texture y/x)
 	progA["offset"].value = 4
 	progA["useOffset"] = True
 	progA["ds"] = 1
