@@ -128,7 +128,7 @@ def simulate(obj: bpy.types.Image | bpy.types.Object)->bpy.types.Image|None:
 
 		data.try_release_map(hyd.map_result)
 		name = common.increment_layer(data.get_map(hyd.map_source).name, "Snow 1")
-		hmid = data.create_map(name, snow)
+		hmid = data.create_map(name, snow, base=data.get_map(hyd.map_source))
 		hyd.map_result = hmid
 
 	request.release()

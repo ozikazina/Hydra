@@ -8,7 +8,7 @@ import uuid, re
 
 class Heightmap:
 	"""A wrapper around ModernGL textures."""
-	def __init__(self, name: str, txt: mgl.Texture):
+	def __init__(self, name: str, txt: mgl.Texture, logarithmic: bool=False):
 		"""Constructor method.
 
 		:param name: Display name of the stored texture.
@@ -17,6 +17,7 @@ class Heightmap:
 		:type txt: :class:`moderngl.Texture:`"""
 		self.name = name
 		self.texture = txt
+		self.logarithmic = logarithmic
 	
 	def release(self)->None:
 		"""Releases the stored texture."""
@@ -111,7 +112,7 @@ class HydraData(object):
 			self._maps_[id].release()
 			del self._maps_[id]
 	
-	def create_map(self, name: str, txt: mgl.Texture)->str:
+	def create_map(self, name: str, txt: mgl.Texture, logarithmic: bool=False, base: Heightmap|None=None)->str:
 		"""Creates and adds a heightmap into maps. Returns map ID.
 
 		:param name: Name of created map.
@@ -121,7 +122,8 @@ class HydraData(object):
 		:return: New map UUID string.
 		:rtype: :class:`str`"""
 		id = str(uuid.uuid4())
-		self._maps_[id] = Heightmap(name, txt)
+		logarithmic = base.logarithmic if base is not None else logarithmic
+		self._maps_[id] = Heightmap(name, txt, logarithmic)
 		return id
 	
 	def report(self, caller, callerName:str="Hydra")->None:

@@ -41,10 +41,14 @@ def _generate_heightmap_flat(obj: bpy.types.Object, size:tuple[int,int]|None = N
 
 	return txt
 
-def _generate_heightmap_equirect(obj: bpy.types.Object, size:tuple[int,int]|None = None, normalized: bool=False, world_scale: bool=False, local_scale: bool=False):
+def _generate_heightmap_equirect(obj: bpy.types.Object, size:tuple[int,int]|None = None, normalized: bool=False, world_scale: bool=False, local_scale: bool=False, internal: bool=False):
 	ctx = common.data.context
 	
 	vao_polar, vao_equirect = model.create_vaos(ctx, [common.data.programs["polar"], common.data.programs["equirect"]], obj)
+
+	# internal has to preserve vertical angles -> transformed into log domain after flattening
+	vao_polar.program["logarithmic"] = internal
+	vao_equirect.program["logarithmic"] = internal
 
 	equirect_txt = ctx.texture(size, 1, dtype="f4")
 	equirect_txt.bind_to_image(1, read=True, write=True)
@@ -141,7 +145,7 @@ def _generate_heightmap_equirect(obj: bpy.types.Object, size:tuple[int,int]|None
 
 	return equirect_txt
 
-def generate_heightmap(obj: bpy.types.Object, size:tuple[int,int]|None = None, normalized: bool=False, world_scale: bool=False, local_scale: bool=False, equirect: bool=False)->mgl.Texture:
+def generate_heightmap(obj: bpy.types.Object, size:tuple[int,int]|None = None, normalized: bool=False, world_scale: bool=False, local_scale: bool=False, equirect: bool=False, internal: bool=True)->mgl.Texture:
 	"""Creates a heightmap for the specified object and returns it.
 	
 	:param obj: Object to generate from.
@@ -182,7 +186,7 @@ def generate_heightmap(obj: bpy.types.Object, size:tuple[int,int]|None = None, n
 	model.recalculate_scales(obj)
 
 	if equirect:
-		txt = _generate_heightmap_equirect(obj, size, normalized, world_scale, local_scale)
+		txt = _generate_heightmap_equirect(obj, size, normalized, world_scale, local_scale, internal)
 	else:
 		txt = _generate_heightmap_flat(obj, size, normalized, world_scale, local_scale)
 
@@ -203,6 +207,15 @@ def generate_heightmap_from_image(img:bpy.types.Image)->mgl.Texture:
 		txt.bind_to_image(1, read=True, write=True)
 		prog["map"].value = 1
 		prog.run(txt.width, txt.height)	# txt = linearize(txt)
+	
+	if img.hydra_erosion.tiling == "planet":
+		prog = common.data.shaders["exp_convert"]
+		txt.bind_to_image(1, read=True, write=True)
+		prog["map"].value = 1
+		prog["to_log"] = True
+		prog.run(txt.width, txt.height)
+	
+	common.data.context.finish()
 	return txt
 
 def prepare_heightmap(obj: bpy.types.Image | bpy.types.Object)->None:
@@ -217,20 +230,22 @@ def prepare_heightmap(obj: bpy.types.Image | bpy.types.Object)->None:
 
 	data.try_release_map(hyd.map_base)
 
+	is_planet = hyd.tiling=="planet"
+
 	if type(obj) == bpy.types.Image:
 		hyd.img_size = obj.size
 		txt = generate_heightmap_from_image(obj)
 	else:
-		txt = generate_heightmap(obj, equirect = hyd.tiling=="planet")
+		txt = generate_heightmap(obj, equirect = is_planet, internal=True)
 
-	hyd.map_base = data.create_map("Base map", txt)
+	hyd.map_base = data.create_map("Base map", txt, is_planet)
 
 	if reload:	#source is invalid too
 		data.try_release_map(hyd.map_source)
 	
 	if not data.has_map(hyd.map_source):	#freed or not defined in the first place
 		txt = texture.clone(txt)
-		hyd.map_source = data.create_map("Base map", txt)
+		hyd.map_source = data.create_map("Base map", txt, is_planet)
 
 def subtract(modified: mgl.Texture, base: mgl.Texture, factor: float = 1.0, scale: float = 1.0)->mgl.Texture:
 	"""Subtracts given textures and returns difference relative to `base` as a result. Also scales result if needed.
@@ -247,7 +262,7 @@ def subtract(modified: mgl.Texture, base: mgl.Texture, factor: float = 1.0, scal
 	:rtype: :class:`moderngl.Texture`"""
 	return add(modified, base, -factor, scale)
 
-def add(A: mgl.Texture, B: mgl.Texture, factor: float = 1.0, scale: float = 1.0)->mgl.Texture:
+def add(A: mgl.Texture, B: mgl.Texture, factor: float = 1.0, scale: float = 1.0, exp: bool=False)->mgl.Texture:
 	"""Adds given textures and returns the result as a new texture.
 	
 	:param A: First texture.
@@ -258,10 +273,12 @@ def add(A: mgl.Texture, B: mgl.Texture, factor: float = 1.0, scale: float = 1.0)
 	:type scale: :class:`float`
 	:param factor: Multiplication factor for the second texture.
 	:type factor: :class:`float`
+	:param exp: Exponentiate textures to convert from Hydra's internal planet representation.
+	:type exp: :class:`bool`
 	:return: A texture equal to (scale * (A + factor * B)).
 	:rtype: :class:`moderngl.Texture`"""
 	txt = texture.clone(A)
-	prog: mgl.ComputeShader = common.data.shaders["scaled_add"]
+	prog: mgl.ComputeShader = common.data.shaders["exp_add" if exp else "scaled_add"]
 	txt.bind_to_image(1, read=True, write=True)
 	prog["A"].value = 1
 	B.bind_to_image(2, read=True, write=False)
@@ -289,10 +306,13 @@ def get_displacement(obj: bpy.types.Object, name:str)->bpy.types.Image:
 	# height gets scaled down by object width back during generation
 	scale = hyd.org_width
 
-	target = subtract(data.get_map(hyd.map_result).texture,
-		data.get_map(hyd.map_base).texture,
-		scale=scale)
-
+	exp = data.get_map(hyd.map_base).logarithmic
+	target = add(data.get_map(hyd.map_result).texture,
+			data.get_map(hyd.map_base).texture,
+			factor=-1, #subtraction
+			scale=scale,
+			exp=exp)
+		
 	ret, _ = texture.write_image(name, target)
 	target.release()
 
@@ -317,7 +337,7 @@ def set_result_as_source(obj: bpy.types.Object | bpy.types.Image, as_base: bool 
 		common.data.try_release_map(hyd.map_base)
 		src = common.data.get_map(hyd.map_source)
 		target = texture.clone(src.texture)
-		hyd.map_base = common.data.create_map(src.name, target)
+		hyd.map_base = common.data.create_map(src.name, target, base=src)
 
 def resize_texture(texture: mgl.Texture, target_size: tuple[int, int])->mgl.Texture:
 	"""Resizes a texture to the specified size.
@@ -402,8 +422,8 @@ def recover_heightmaps(obj: bpy.types.Object):
 		source = add(base, diff, scale=scale)
 		diff.release()
 		
-		obj.hydra_erosion.map_base = common.data.create_map("Base map", base)
-		obj.hydra_erosion.map_source = common.data.create_map("Recovered", source)
+		obj.hydra_erosion.map_base = common.data.create_map("Base map", base, logarithmic=planet)
+		obj.hydra_erosion.map_source = common.data.create_map("Recovered", source, logarithmic=planet)
 		obj.hydra_erosion.map_result = obj.hydra_erosion.map_source
 
 		for m,visibility in zip(obj.modifiers, visibilities):
@@ -443,8 +463,8 @@ def recover_heightmaps(obj: bpy.types.Object):
 			source = add(base, diff, scale=scale)
 			diff.release()
 			
-			obj.hydra_erosion.map_base = common.data.create_map("Base map", base)
-			obj.hydra_erosion.map_source = common.data.create_map("Recovered", source)
+			obj.hydra_erosion.map_base = common.data.create_map("Base map", base, logarithmic=planet)
+			obj.hydra_erosion.map_source = common.data.create_map("Recovered", source, logarithmic=planet)
 			obj.hydra_erosion.map_result = obj.hydra_erosion.map_source
 		else:
 			common.data.add_message(f"Couldn't find Hydra's heightmap node (HYD_Displacement) in group.", error=True)

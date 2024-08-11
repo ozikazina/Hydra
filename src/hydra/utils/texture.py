@@ -35,8 +35,8 @@ def get_or_make_image(size: 'tuple[int,int]', name: str)->'tuple[bpy.types.Image
 	img.hydra_erosion.is_generated = True
 	return img, updated
 
-def write_image(name: str, texture: mgl.Texture)->'tuple[bpy.types.Image, bool]':
-	"""Writes texture to an `Image` of the specified name.
+def write_image(name: str, texture: mgl.Texture, exp_convert: bool=False)->'tuple[bpy.types.Image, bool]':
+	"""Writes texture to an `Image` of the specified name. Binds cloned texture if converting.
 	
 	:param name: Image name.
 	:type name: :class:`str`
@@ -44,6 +44,16 @@ def write_image(name: str, texture: mgl.Texture)->'tuple[bpy.types.Image, bool]'
 	:type txt: :class:`moderngl.Texture`
 	:return: Created image.
 	:rtype: :class:`bpy.types.Image`"""
+	if exp_convert:
+		print(f"Converting {name} from log domain.")
+		texture = clone(texture)
+		texture.bind_to_image(1, read=True, write=True)
+		prog = common.data.shaders["exp_convert"]
+		prog["map"].value = 1
+		prog["to_log"] = False
+		prog.run(texture.width, texture.height)
+		common.data.context.finish()
+
 	image, updated = get_or_make_image(texture.size, name)
 
 	if texture.components == 1:

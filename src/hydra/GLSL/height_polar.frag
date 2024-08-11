@@ -3,10 +3,8 @@
 out vec4 FragColor;
 in vec4 pos;
 
-uniform float scale = 1.0;
-uniform float offset = 0.0;
+uniform bool logarithmic = true;
 
 void main(void) {
-	float height = (pos.x + offset) * scale;
-	FragColor = vec4(height, 0, 0, 1.0);
+	FragColor = vec4(logarithmic ? log(pos.x) / 3.14159265 + 1 : pos.x, 0, 0, 1.0);
 }

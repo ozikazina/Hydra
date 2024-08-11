@@ -194,7 +194,7 @@ def erode(obj: bpy.types.Object | bpy.types.Image)->None:
 	data.try_release_map(hyd.map_result)
 	
 	name = common.increment_layer(data.get_map(hyd.map_source).name, "Mei 1")
-	hmid = data.create_map(name, height)
+	hmid = data.create_map(name, height, base=data.get_map(hyd.map_source))
 	hyd.map_result = hmid
 
 	print("Erosion finished")

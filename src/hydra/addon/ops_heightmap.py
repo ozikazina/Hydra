@@ -137,7 +137,7 @@ class MoveBackOp(ops_common.HydraOperator):
 		src = data.get_map(hyd.map_source)
 
 		txt = texture.clone(src.texture)
-		hmid = data.create_map(src.name, txt)
+		hmid = data.create_map(src.name, txt, base=src)
 		hyd.map_result = hmid
 
 		apply.add_preview(target)
@@ -278,7 +278,8 @@ class ImageOp(ops_common.HydraOperator):
 
 	def invoke(self, ctx, event):
 		data = common.data
-		img, _ = texture.write_image(self.name, data.get_map(self.save_target).texture)
+		hm = data.get_map(self.save_target)
+		img, _ = texture.write_image(self.name, hm.texture, exp_convert=hm.logarithmic)
 		nav.goto_image(img)
 		self.report({'INFO'}, f"Created texture: {self.name}")
 		return {'FINISHED'}
@@ -301,7 +302,7 @@ class ReloadOp(ops_common.HydraOperator):
 		base = data.get_map(hyd.map_base)
 		txt = texture.clone(base.texture)
 
-		hyd.map_source = data.create_map(base.name, txt)
+		hyd.map_source = data.create_map(base.name, txt, base=base)
 
 		self.report({'INFO'}, "Reloaded base map.")
 		return {'FINISHED'}

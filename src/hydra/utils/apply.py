@@ -44,7 +44,8 @@ def add_preview(target: bpy.types.Object|bpy.types.Image)->None:
 		return
 
 	if isinstance(target, bpy.types.Image):
-		img, _ = texture.write_image(PREVIEW_IMG_NAME, data.get_map(hyd.map_result).texture)
+		hm = data.get_map(hyd.map_result)
+		img, _ = texture.write_image(PREVIEW_IMG_NAME, hm.texture, hm.logarithmic)
 		prefs = common.get_preferences()
 		if prefs.image_preview == "image":
 			nav.goto_image(img)

@@ -100,7 +100,7 @@ def erode(obj: bpy.types.Image | bpy.types.Object)->None:
 	
 	name = common.increment_layer(data.get_map(hyd.map_source).name, "Thermal 1")
 
-	hmid = data.create_map(name, height)
+	hmid = data.create_map(name, height, base=data.get_map(hyd.map_source))
 	hyd.map_result = hmid
 
 	free.release()
