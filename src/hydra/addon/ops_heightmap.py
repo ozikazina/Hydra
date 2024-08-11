@@ -31,7 +31,6 @@ class RemovePreviewOp(ops_common.HydraOperator):
 	bl_idname = "hydra.hm_remove_preview"
 	bl_label = "Remove preview"
 	bl_description = "Remove preview modifier"
-	bl_options = {'REGISTER'}
 
 	def invoke(self, ctx, event):
 		apply.remove_preview()
@@ -44,7 +43,6 @@ class MergeOp(ops_common.HydraOperator):
 	bl_idname = "hydra.hm_merge"
 	bl_label = "Apply Hydra modifier and all modifiers above it?"
 	bl_description = "Applies the preview or modifier directly to the mesh. Also applies all visible modifiers up to it"
-	bl_options = {'REGISTER'}
 
 	@classmethod
 	def poll(cls, ctx):
@@ -80,7 +78,6 @@ class MergeShapeOp(ops_common.HydraOperator):
 	bl_idname = "hydra.hm_merge_shape"
 	bl_label = "Apply as shape"
 	bl_description = "Applies the preview or modifier as a shape key"
-	bl_options = {'REGISTER'}
 
 	@classmethod
 	def poll(cls, ctx):
@@ -115,7 +112,7 @@ class MergeShapeOp(ops_common.HydraOperator):
 class MoveOp(ops_common.HydraOperator):
 	"""Apply Result as Source operator."""
 	bl_idname = "hydra.hm_move"; bl_label = "Set as Source"
-	bl_description = "Sets the Result heightmap as the new Source map"; bl_options = {'REGISTER'}
+	bl_description = "Sets the Result heightmap as the new Source map"
 
 	def invoke(self, ctx, event):
 		heightmap.set_result_as_source(self.get_target(ctx))
@@ -124,7 +121,7 @@ class MoveOp(ops_common.HydraOperator):
 class MoveBackOp(ops_common.HydraOperator):
 	"""Apply Source as Result operator."""
 	bl_idname = "hydra.hm_move_back"; bl_label = "Set as Result"
-	bl_description = "Sets this Source as the Result map and previews it"; bl_options = {'REGISTER'}
+	bl_description = "Sets this Source as the Result map and previews it"
 
 	def invoke(self, ctx, event):
 		target = self.get_target(ctx)

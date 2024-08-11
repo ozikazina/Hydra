@@ -8,7 +8,7 @@ from Hydra.sim import flow, thermal, heightmap, erosion_particle, erosion_mei, s
 from Hydra.utils import nav, apply
 
 class HydraOperator(bpy.types.Operator):
-	bl_options = {'REGISTER'}
+	bl_options = {'REGISTER', 'UNDO'}
 
 	@classmethod
 	def get_target(cls, ctx):
@@ -20,7 +20,7 @@ class HydraOperator(bpy.types.Operator):
 			return ctx.object
 
 class ImageOperator(bpy.types.Operator):
-	bl_options = {'REGISTER'}
+	bl_options = {'REGISTER', 'UNDO'}
 
 	@classmethod
 	def get_target(cls, ctx):
@@ -32,7 +32,7 @@ class ImageOperator(bpy.types.Operator):
 		return name == common._SPACE_IMAGE
 	
 class ObjectOperator(bpy.types.Operator):
-	bl_options = {'REGISTER'}
+	bl_options = {'REGISTER', 'UNDO'}
 
 	@classmethod
 	def get_target(self, ctx):

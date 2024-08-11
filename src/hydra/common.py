@@ -69,6 +69,8 @@ class HydraData(object):
 
 		self._maps_: dict[str, Heightmap] = {}
 		"""Heightmap dictionary. Uses UUID strings as keys."""
+		self._graveyard_: list[tuple[str, Heightmap]] = []
+		"""List of deleted maps for undo support."""
 
 		self.programs: dict[str, mgl.Program] = {}
 		"""Compiled ModernGL program list."""
@@ -96,12 +98,22 @@ class HydraData(object):
 
 		:return: `True` if map exists in the :attr:`maps` list. `False` otherwise.
 		:rtype: :class:`bool`"""
-		return id in self._maps_
+		return id in self._maps_ or any(hmid == id for hmid,_ in self._graveyard_)
 
 	def get_map(self, id: str | None)->Heightmap | None:
 		"""Returns map by ID. Returns `None` if not found."""
 		if id in self._maps_:
 			return self._maps_[id]
+		elif any(hmid == id for hmid,_ in self._graveyard_):
+			for i,(hmid,hm) in enumerate(self._graveyard_):
+				if hmid == id:
+					del self._graveyard_[i]
+					# reinstate map
+					self._maps_[hmid] = hm
+					return hm
+		else:
+			return None
+
 
 	def try_release_map(self, id: str | None):
 		"""Release specified map. Does nothing on invalid `id`.
@@ -109,7 +121,11 @@ class HydraData(object):
 		:param id: Map ID.
 		:type id: :class:`str` or :class:`None`"""
 		if id in self._maps_:
-			self._maps_[id].release()
+			self._graveyard_.append((id, self._maps_[id]))
+			if len(self._graveyard_) > get_preferences().history_length:
+				self._graveyard_[0][1].release()
+				del self._graveyard_[0]
+
 			del self._maps_[id]
 	
 	def create_map(self, name: str, txt: mgl.Texture, logarithmic: bool=False, base: Heightmap|None=None)->str:

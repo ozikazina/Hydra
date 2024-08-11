@@ -64,9 +64,19 @@ class AddonPanel(bpy.types.AddonPreferences):
 		min=16
 	)
 
+	history_length: IntProperty(
+		name="Undo length",
+		description="Number of deleted maps to keep in undo history",
+		default=10,
+		min=0,
+		soft_max=30,
+		max=100
+	)
+
 	def draw(self, context):
 		layout = self.layout
 
+		box.prop(self, "history_length")
 		box = layout.box()
 		box.prop(self, "direct_resolution")
 
