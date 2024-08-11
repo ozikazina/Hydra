@@ -368,6 +368,9 @@ class HeightmapSystemPanel():
 
 		if not has_any:
 			col.label(text="No maps have been cached yet.")
+			if type(target) == bpy.types.Object and hyd.map_base != "" and not common.data.has_map(hyd.map_base):
+				# invalid cache
+				col.operator("hydra.hm_recover")
 
 #-------------------------------------------- Subpanels
 

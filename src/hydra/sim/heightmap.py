@@ -1,7 +1,7 @@
 """Module responsible for heightmap generation."""
 
 import moderngl as mgl
-from Hydra.utils import texture, model
+from Hydra.utils import texture, model, apply
 from Hydra import common
 import bpy
 import bpy.types
@@ -376,3 +376,82 @@ def add_subres(height: mgl.Texture, height_prior: mgl.Texture, height_prior_full
 	height.release()
 
 	return nh
+
+
+def recover_heightmaps(obj: bpy.types.Object):
+	if apply.PREVIEW_MOD_NAME in obj.modifiers and apply.PREVIEW_DISP_NAME in bpy.data.images:
+		print("Recovering heightmap from previous session.")
+		mod = obj.modifiers[apply.PREVIEW_MOD_NAME]
+		visibilities = [m.show_viewport for m in obj.modifiers]
+		found = False
+		for m in obj.modifiers:
+			if m.name.startswith("HYDP_"):
+				found = True
+			if found:
+				m.show_viewport = False
+		
+		planet = obj.hydra_erosion.tiling == "planet"
+
+		model.recalculate_scales(obj)
+		base = generate_heightmap(obj, equirect=planet)
+
+		common.data.add_message("Found preview image to recover from.")
+		diff = texture.create_texture(base.size, image=bpy.data.images[apply.PREVIEW_DISP_NAME], channels=1)
+
+		scale = 1 / obj.hydra_erosion.org_width
+		source = add(base, diff, scale=scale)
+		diff.release()
+		
+		obj.hydra_erosion.map_base = common.data.create_map("Base map", base)
+		obj.hydra_erosion.map_source = common.data.create_map("Recovered", source)
+		obj.hydra_erosion.map_result = obj.hydra_erosion.map_source
+
+		for m,visibility in zip(obj.modifiers, visibilities):
+			m.show_viewport = visibility
+
+	elif any(m.name.startswith("HYD_") for m in obj.modifiers):
+		print("Recovering heightmap from previous session.")
+		mod = next(m for m in obj.modifiers if m.name.startswith("HYD_"))
+		visibilities = [m.show_viewport for m in obj.modifiers]
+		found = False
+		for m in obj.modifiers:
+			if m.name.startswith("HYD_"):
+				found = True
+			if found:
+				m.show_viewport = False
+		
+		planet = obj.hydra_erosion.tiling == "planet"
+
+		model.recalculate_scales(obj)
+		base = generate_heightmap(obj, equirect=planet)
+
+		diff = None
+
+		diff_name = f"HYD_{obj.name}_DISPLACE"
+		if diff_name in bpy.data.images:
+			common.data.add_message("Found default heightmap to recover from.")
+			diff = texture.create_texture(base.size, image=bpy.data.images[diff_name], channels=1)
+		elif mod.type == "NODES" and mod.node_group is not None:
+			if "HYD_Displacement" in m.node_group.nodes:
+				node = m.node_group.nodes["HYD_Displacement"]
+				if node.type == "IMAGE_TEXTURE" and node.inputs['Image'].default_value is not None:
+					common.data.add_message(f"Found texture '{node.inputs['Image'].default_value.name}' to recover from.")
+					diff = texture.create_texture(base.size, image=node.inputs['Image'].default_value, channels=1)
+		
+		if diff is not None:
+			scale = 1 / obj.hydra_erosion.org_width
+			source = add(base, diff, scale=scale)
+			diff.release()
+			
+			obj.hydra_erosion.map_base = common.data.create_map("Base map", base)
+			obj.hydra_erosion.map_source = common.data.create_map("Recovered", source)
+			obj.hydra_erosion.map_result = obj.hydra_erosion.map_source
+		else:
+			common.data.add_message(f"Couldn't find Hydra's heightmap node (HYD_Displacement) in group.", error=True)
+			base.release()
+			
+		for m,visibility in zip(obj.modifiers, visibilities):
+			m.show_viewport = visibility
+
+	else:
+		common.data.add_message("Couldn't find any Hydra modifier on this object.", error=True)
