@@ -3,7 +3,7 @@
 bl_info = {
 	"name": "Hydra",
 	"author": "Ondrej Vlcek",
-	"version": (1, 1, 0),
+	"version": (1, 2, 0),
 	"blender": (4, 0, 0),
 	"location": "View3D > Sidebar > Hydra Tab",
 	"description": "Blender addon for hydraulic erosion using textures.",
@@ -22,9 +22,8 @@ def checkModernGL():
 	global _hydra_invalid
 	try:
 		import moderngl
-		import glcontext
 	except:
-		print("ModernGL or GLContext not found.")
+		print("ModernGL not found.")
 		_hydra_invalid = True
 
 checkModernGL()

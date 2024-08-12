@@ -106,7 +106,7 @@ class AddonPanel(bpy.types.AddonPreferences):
 			box.label(text="ModernGL needs to be installed (~5MB). Launch Blender as administrator and press:")
 			box.operator('hydra.install', text="Install ModernGL (will freeze for a few seconds)", icon="CONSOLE")
 		else:
-			box.label(text="ModernGL and GLContext successfuly found.")
+			box.label(text="ModernGL successfuly found.")
 			box.operator('hydra.install', text="Check ModernGL updates", icon="CONSOLE")
 		
 class ModernGLInstaller(bpy.types.Operator):
