@@ -27,6 +27,7 @@ def simulate(obj: bpy.types.Image | bpy.types.Object)->bpy.types.Image|None:
 	size = hyd.get_size()
 
 	texture_only = hyd.snow_output == "texture"
+	planet = hyd.tiling == "planet"
 
 	if texture_only and data.has_map(hyd.map_result):
 		offset = data.get_map(hyd.map_result).texture
@@ -56,14 +57,17 @@ def simulate(obj: bpy.types.Image | bpy.types.Object)->bpy.types.Image|None:
 	progA["requests"].value = 2
 	progA["Ks"] = 0.5
 	progA["alpha"] = math.tan(hyd.snow_angle) * 2 / size[0] # images are scaled to 2 z/x -> angle depends only on image width
-	progA["by"] = hyd.scale_ratio * size[0] / size[1] # (model y/x) / (texture y/x)
+	if planet:
+		progA["by"] = 1	# image ratio is fixed
+	else:
+		progA["by"] = hyd.scale_ratio * size[0] / size[1] # (model y/x) / (texture y/x)
 	progA["offset"].value = 4
 	progA["useOffset"] = True
 	progA["ds"] = 1
 	progA["size"] = size
 	progA["tile_x"] = tile_x
 	progA["tile_y"] = tile_y
-	progA["planet"] = hyd.tiling == "planet"
+	progA["planet"] = planet
 	progA["tile_mult_y"] = math.pi / size[1]
 
 	progB["requests"].value = 2

@@ -397,6 +397,23 @@ def add_subres(height: mgl.Texture, height_prior: mgl.Texture, height_prior_full
 
 	return nh
 
+def rotate_equirect_to(equirect: mgl.Texture, target: mgl.Texture, bind_target_to: int, sampler_use: int=1, backwards: bool=False)->mgl.Texture:
+	shader = common.data.shaders["rotate_equirect"]
+	ctx = common.data.context
+	eq_sampler = ctx.sampler(repeat_x=True, repeat_y=False, texture=equirect)
+	equirect.use(sampler_use)
+	eq_sampler.use(sampler_use)
+	shader["in_sampler"] = 1
+	target.bind_to_image(bind_target_to, True, True)
+	shader["out_map"].value = bind_target_to
+	shader["tile_mult"] = (1 / target.size[0], 1 / target.size[1])
+	shader["rotate_back"] = backwards
+	groups_x = math.ceil(target.size[0] / 32)
+	groups_y = math.ceil(target.size[1] / 32)
+	shader.run(group_x=groups_x, group_y=groups_y)
+	ctx.finish()
+	
+	eq_sampler.release()
 
 def recover_heightmaps(obj: bpy.types.Object):
 	if apply.PREVIEW_MOD_NAME in obj.modifiers and apply.PREVIEW_DISP_NAME in bpy.data.images:

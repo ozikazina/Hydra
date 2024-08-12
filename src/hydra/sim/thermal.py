@@ -24,6 +24,7 @@ def erode(obj: bpy.types.Image | bpy.types.Object)->None:
 		heightmap.prepare_heightmap(obj)
 
 	size = hyd.get_size()
+	planet = hyd.tiling == "planet"
 
 	height = texture.clone(data.get_map(hyd.map_source).texture)
 	request = texture.create_texture(size, channels=4)
@@ -32,13 +33,17 @@ def erode(obj: bpy.types.Image | bpy.types.Object)->None:
 	progA = data.shaders["thermalA"]
 	progB = data.shaders["thermalB"]
 
-	mapI = 1
-	mapO = 3
-	temp = 3
+	BIND_IN = 1
+	BIND_OUT = 3
 
-	height.bind_to_image(1, read=True, write=True)
+	def swap(a,b):
+		return b,a
+
 	request.bind_to_image(2, read=True, write=True)
-	free.bind_to_image(3, read=True, write=True)
+
+	if planet:
+		heightmap.rotate_equirect_to(height, free, BIND_IN, backwards=False)
+		height, free = swap(height, free)
 
 	stride = hyd.thermal_stride
 	if hyd.thermal_stride_grad:
@@ -47,17 +52,23 @@ def erode(obj: bpy.types.Image | bpy.types.Object)->None:
 	tile_x = hyd.get_tiling_x()
 	tile_y = hyd.get_tiling_y()
 
+	progA["mapH"].value = BIND_IN
 	progA["requests"].value = 2
 	progA["Ks"] = (hyd.thermal_strength / 100) * 0.5	#0-1 -> 0-0.5, higher is unstable
 	progA["alpha"] = math.tan(hyd.thermal_angle) * 2 / size[0] # images are scaled to 2 z/x -> angle depends only on image width
-	progA["by"] = hyd.scale_ratio * size[0] / size[1] # (model y/x) / (texture y/x)
+	if planet:
+		progA["by"] = 1	# image ratio is fixed
+	else:
+		progA["by"] = hyd.scale_ratio * size[0] / size[1] # (model y/x) / (texture y/x)
 	progA["useOffset"] = False
 	progA["size"] = size
 	progA["tile_x"] = tile_x
 	progA["tile_y"] = tile_y
-	progA["planet"] = hyd.tiling == "planet"
+	progA["planet"] = planet
 	progA["tile_mult_y"] = math.pi / size[1]
 
+	progB["mapH"].value = BIND_IN
+	progB["outH"].value = BIND_OUT
 	progB["requests"].value = 2
 	progB["size"] = size
 	progB["tile_x"] = tile_x
@@ -74,20 +85,22 @@ def erode(obj: bpy.types.Image | bpy.types.Object)->None:
 		if alternate:
 			diagonal = (i&1) == 1
 
+		height.bind_to_image(BIND_IN, True, False)
+		free.bind_to_image(BIND_OUT, False, True)
+
 		progA["diagonal"] = diagonal
-		progA["mapH"].value = mapI
 		progA["ds"] = stride
 		progA.run(group_x = group_x, group_y = group_y)
 
 		progB["diagonal"] = diagonal
-		progB["mapH"].value = mapI
-		progB["outH"].value = mapO
 		progB["ds"] = stride
 		progB.run(group_x = group_x, group_y = group_y)
 		
-		temp = mapI
-		mapI = mapO
-		mapO = temp
+		if planet and i == hyd.thermal_iter_num // 2:
+			free.bind_to_image(BIND_OUT, True, True)
+			heightmap.rotate_equirect_to(free, height, BIND_IN, backwards=True)
+		else:
+			height, free = swap(height, free)
 
 		if hyd.thermal_stride_grad and i >= next_pass:
 			stride = math.ceil(stride / 2)
