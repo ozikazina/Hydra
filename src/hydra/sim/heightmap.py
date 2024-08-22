@@ -145,7 +145,7 @@ def _generate_heightmap_equirect(obj: bpy.types.Object, size:tuple[int,int]|None
 
 	return equirect_txt
 
-def generate_heightmap(obj: bpy.types.Object, size:tuple[int,int]|None = None, normalized: bool=False, world_scale: bool=False, local_scale: bool=False, equirect: bool=False, internal: bool=True)->mgl.Texture:
+def generate_heightmap(obj: bpy.types.Object, size:tuple[int,int]|None = None, normalized: bool=False, world_scale: bool=False, local_scale: bool=False, equirect: bool=False, internal: bool=False)->mgl.Texture:
 	"""Creates a heightmap for the specified object and returns it.
 	
 	:param obj: Object to generate from.
@@ -398,12 +398,12 @@ def add_subres(height: mgl.Texture, height_prior: mgl.Texture, height_prior_full
 	return nh
 
 def rotate_equirect_to(equirect: mgl.Texture, target: mgl.Texture, bind_target_to: int, sampler_use: int=1, backwards: bool=False)->mgl.Texture:
-	shader = common.data.shaders["rotate_equirect"]
+	shader = common.data.shaders["rotate_equirect" if equirect.components == 1 else "rotate_equirect_rgba"]
 	ctx = common.data.context
 	eq_sampler = ctx.sampler(repeat_x=True, repeat_y=False, texture=equirect)
 	equirect.use(sampler_use)
 	eq_sampler.use(sampler_use)
-	shader["in_sampler"] = 1
+	shader["in_sampler"] = sampler_use
 	target.bind_to_image(bind_target_to, True, True)
 	shader["out_map"].value = bind_target_to
 	shader["tile_mult"] = (1 / target.size[0], 1 / target.size[1])
@@ -430,7 +430,7 @@ def recover_heightmaps(obj: bpy.types.Object):
 		planet = obj.hydra_erosion.tiling == "planet"
 
 		model.recalculate_scales(obj)
-		base = generate_heightmap(obj, equirect=planet)
+		base = generate_heightmap(obj, equirect=planet, internal=True)
 
 		common.data.add_message("Found preview image to recover from.")
 		diff = texture.create_texture(base.size, image=bpy.data.images[apply.PREVIEW_DISP_NAME], channels=1)
@@ -460,7 +460,7 @@ def recover_heightmaps(obj: bpy.types.Object):
 		planet = obj.hydra_erosion.tiling == "planet"
 
 		model.recalculate_scales(obj)
-		base = generate_heightmap(obj, equirect=planet)
+		base = generate_heightmap(obj, equirect=planet, internal=True)
 
 		diff = None
 
