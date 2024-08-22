@@ -237,6 +237,9 @@ class ExtrasPanel():
 		self.draw_size_fragment(p.box(), ctx, hyd)
 
 		if hyd.extras_type == "flow":
+			p.prop(hyd, "advanced")
+			self.draw_tiling_fragment(p, hyd)
+			
 			p.label(text="Settings:")
 			p.prop(hyd, "flow_brightness", slider=True)
 			

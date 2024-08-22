@@ -39,8 +39,14 @@ def erode(obj: bpy.types.Object | bpy.types.Image)->None:
 		height = texture.clone(data.get_map(hyd.map_source).texture)
 		height_base = None
 
+	planet = hyd.tiling == "planet"
 	tile_x = hyd.get_tiling_x()
 	tile_y = hyd.get_tiling_y()
+
+	if planet:
+		height_alt = height
+		height = texture.create_texture(height_alt.size)
+		heightmap.rotate_equirect_to(height_alt, height, 1, backwards=False)
 
 	if hyd.erosion_hardness_src in bpy.data.images:
 		img = bpy.data.images[hyd.erosion_hardness_src]
@@ -77,7 +83,6 @@ def erode(obj: bpy.types.Object | bpy.types.Image)->None:
 	prog["acceleration"] = hyd.part_acceleration / 100
 	prog["lateral_acceleration"] = hyd.part_lateral_acceleration / 100
 	prog["lifetime"] = hyd.part_lifetime
-	prog["iterations"] = hyd.part_iter_num * PARTICLE_MULTIPLIER
 	prog["max_change"] = hyd.part_max_change / (100 * 100) # from percent to 0-0.01
 	prog["drag"] = 1 - (hyd.part_drag / 100)
 
@@ -86,7 +91,20 @@ def erode(obj: bpy.types.Object | bpy.types.Image)->None:
 	prog["tile_y"] = tile_y
 
 	time = datetime.now()
-	prog.run(group_x=1, group_y=1)
+	if planet:
+		prog["iterations"] = hyd.part_iter_num * PARTICLE_MULTIPLIER // 2
+		prog.run(group_x=1, group_y=1)
+
+		heightmap.rotate_equirect_to(height, height_alt, 1, backwards=True)
+		height.release()
+		height = height_alt
+		height.use(1)
+		height.bind_to_image(1, True, True)
+
+		prog.run(group_x=1, group_y=1)
+	else:
+		prog["iterations"] = hyd.part_iter_num * PARTICLE_MULTIPLIER
+		prog.run(group_x=1, group_y=1)
 	ctx.finish()
 
 	print((datetime.now() - time).total_seconds())
@@ -123,22 +141,33 @@ def color(obj: bpy.types.Object | bpy.types.Image)->bpy.types.Image:
 
 	ctx = data.context
 	size = hyd.get_size()
+		
+	planet = hyd.tiling == "planet"
+	tile_x = hyd.get_tiling_x()
+	tile_y = hyd.get_tiling_y()
 
 	if data.has_map(hyd.map_result):
 		height = data.get_map(hyd.map_result).texture
 	else:
 		height = data.get_map(hyd.map_source).texture
-	
-	tile_x = hyd.get_tiling_x()
-	tile_y = hyd.get_tiling_y()
 
 	height = texture.clone(height)
+	color = texture.create_texture(size, channels=4, image=bpy.data.images[hyd.color_src])
+
+	if planet:
+		height_alt = height
+		height = texture.create_texture(height_alt.size)
+		heightmap.rotate_equirect_to(height_alt, height, 1, backwards=False)
+
+		color_alt = color
+		color = texture.create_texture(color_alt.size, channels=4)
+		heightmap.rotate_equirect_to(color_alt, color, 2, backwards=False)
+	
 	height.bind_to_image(1, read=True, write=True)
 	height.use(1)
 	height_sampler = ctx.sampler(texture=height, repeat_x=tile_x, repeat_y=tile_y)
 	height_sampler.use(1)
 
-	color = texture.create_texture(size, channels=4, image=bpy.data.images[hyd.color_src])
 	color.bind_to_image(2, read=True, write=True)
 
 	prog = data.shaders["particle_color"]
@@ -159,16 +188,35 @@ def color(obj: bpy.types.Object | bpy.types.Image)->bpy.types.Image:
 	prog["acceleration"] = hyd.color_acceleration / 100
 	prog["lateral_acceleration"] = 1
 	prog["lifetime"] = hyd.color_lifetime
-	prog["iterations"] = hyd.color_iter_num * PARTICLE_MULTIPLIER
 	prog["drag"] = max(1 - (hyd.color_detail / 100), 0.01)
 
 	prog["color_strength"] = hyd.color_mixing / 100
 
 	prog["tile_x"] = tile_x
 	prog["tile_y"] = tile_y
+	prog["planet"] = planet
 
 	time = datetime.now()
-	prog.run(group_x=1,group_y=1)
+	if planet:
+		prog["iterations"] = hyd.color_iter_num * PARTICLE_MULTIPLIER // 2
+		prog.run(group_x=1,group_y=1)
+
+		heightmap.rotate_equirect_to(height, height_alt, 1, sampler_use=2, backwards=True)
+		height.release()
+		height = height_alt
+		height.use(1)
+		height.bind_to_image(1, True, True)
+
+		heightmap.rotate_equirect_to(color, color_alt, 2, sampler_use=2, backwards=True)
+		color.release()
+		color = color_alt
+		color.bind_to_image(2, read=True, write=True)
+
+		prog.run(group_x=1,group_y=1)
+	else:
+		prog["iterations"] = hyd.color_iter_num * PARTICLE_MULTIPLIER
+		prog.run(group_x=1,group_y=1)
+
 	ctx.finish()
 
 	print((datetime.now() - time).total_seconds())
@@ -177,8 +225,7 @@ def color(obj: bpy.types.Object | bpy.types.Image)->bpy.types.Image:
 
 	color.release()
 	height_sampler.release()
-	if hyd.color_solver == "particle":
-		height.release()
+	height.release()
 
 	print("Simulation finished")
 	return ret

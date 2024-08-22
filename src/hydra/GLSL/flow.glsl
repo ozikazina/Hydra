@@ -15,7 +15,11 @@ uniform float max_velocity = 2.0;
 uniform float drag = 0.8;
 uniform float strength = 0.10;
 
+uniform bool planet = false;
+
 uniform int seed = 1;
+
+#define PI 3.14159265
 
 void add_flow(vec2 pos, float strength) {
 	pos -= vec2(0.5,0.5);
@@ -73,16 +77,24 @@ void run(ivec2 base, int seed) {
 		float height_vel = texture(height_sampler, tile_mult * (pos + dir)).x;
 		float height_dir = texture(height_sampler, tile_mult * (pos + vec2(-dir.y, dir.x))).x;
 		
-		vel += acceleration * (
+		vec2 accel = acceleration * (
 			(h - height_vel) * dir +
 			(h - height_dir) * vec2(-dir.y, dir.x)
 		);
+
+		float strength_adj = planet ? sin(tile_mult.y * pos.y * PI) : 1;
+
+		if (planet) {
+			accel.x *= 1 / max(strength_adj, 1e-3);
+		}
+
+		vel += accel;
 		
 		float len = min(length(vel), max_velocity);
 		dir = normalize(vel);
 		vel = dir * len;
 
-		add_flow(pos, strength);
+		add_flow(pos, strength * strength_adj);
 		
 		pos += dir;
 		vel *= drag;

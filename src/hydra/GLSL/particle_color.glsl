@@ -27,8 +27,11 @@ uniform float color_strength = 0.5;
 
 uniform bool tile_x = false;
 uniform bool tile_y = false;
+uniform bool planet = false;
 
 uniform int seed = 1;
+
+#define PI 3.14159265
 
 ivec2 pos_at(ivec2 org) {
 	if (tile_x) {
@@ -114,10 +117,16 @@ void erode(ivec2 base, int seed) {
 		float height_vel = texture(height_sampler, tile_mult * (pos + dir)).x;
 		float height_dir = texture(height_sampler, tile_mult * (pos + vec2(-dir.y, dir.x))).x;
 
-		vel += acceleration * (
+		vec2 accel = acceleration * (
 			(h - height_vel) * dir +
 			lateral_acceleration * (h - height_dir) * vec2(-dir.y, dir.x)
 		);
+
+		if (planet) {
+			accel.x *= 1 / max(sin(tile_mult.y * pos.y * PI), 1e-3);
+		}
+
+		vel += accel;
 
 		vel *= float(h >= height_vel);
 		
@@ -133,10 +142,12 @@ void erode(ivec2 base, int seed) {
 		h -= dif;
 		imageStore(height_map, ipos, vec4(h,0,0,1));
 		saturation += dif;
-		col = mix(col, imageLoad(color_map, ipos), (1 - color_strength) * float(dif > 0));
+
+		float color_strength_adj = color_strength * (planet ? sin(tile_mult.y * pos.y * PI) : 1);
+		col = mix(col, imageLoad(color_map, ipos), (1 - color_strength_adj) * float(dif > 0));
 
 		if (dif < 0) {	//deposit
-			colorize(pos, col, color_strength);
+			colorize(pos, col, color_strength_adj);
 		}
 
 		pos += dir;
