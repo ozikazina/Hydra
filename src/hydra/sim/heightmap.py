@@ -137,7 +137,7 @@ def _generate_heightmap_equirect(obj: bpy.types.Object, size:tuple[int,int]|None
 		offset = -mn
 		texture.scale(equirect_txt, scale, offset)
 	elif world_scale:
-		scale = 1 / min([resize_matrix[0], resize_matrix[4 + 1], resize_matrix[8 + 2]])
+		scale = obj.scale[0] / resize_matrix[0]
 		texture.scale(equirect_txt, scale)
 	elif local_scale:
 		scale = 1 / resize_matrix[0]
