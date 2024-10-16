@@ -23,7 +23,7 @@ def get_or_make_image(size: 'tuple[int,int]', name: str)->tuple[bpy.types.Image,
 		img = bpy.data.images[name]
 		updated = True
 	
-	img.colorspace_settings.name = "Non-Color"
+	img.colorspace_settings.is_data = True
 
 	if tuple(img.size) != size:
 		img.scale(size[0], size[1])
