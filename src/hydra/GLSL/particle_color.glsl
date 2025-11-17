@@ -1,6 +1,6 @@
 #version 430
 
-layout(local_size_x = 32, local_size_y = 32, local_size_z = 1) in;
+layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 
 uniform sampler2D height_sampler;
 
@@ -8,7 +8,7 @@ layout (r32f) uniform image2D height_map;
 layout (rgba32f) uniform image2D color_map;
 
 uniform ivec2 size = ivec2(512,512);
-uniform ivec2 tile_size = ivec2(32, 32);
+uniform ivec2 tile_size = ivec2(16, 16);
 uniform vec2 tile_mult = vec2(1.0/512.0,1.0/512.0);
 
 uniform int iterations = 100 * 20;

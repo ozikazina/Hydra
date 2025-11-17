@@ -1,6 +1,6 @@
 #version 430
 
-layout(local_size_x = 32, local_size_y = 1, local_size_z = 1) in;
+layout(local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
 
 layout(r32f) uniform readonly image2D in_image;
 layout(std430) writeonly buffer out_buffer {

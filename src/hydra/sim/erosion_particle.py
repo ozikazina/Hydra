@@ -12,220 +12,254 @@ import bpy, bpy.types
 
 PARTICLE_MULTIPLIER = 20
 
-def erode(obj: bpy.types.Object | bpy.types.Image)->None:
-	"""Erodes the specified entity.
-	
-	:param obj: Object or image to erode.
-	:type obj: :class:`bpy.types.Object` or :class:`bpy.types.Image`"""
 
-	print("Preparing for water erosion")
-	data = common.data
+def erode(obj: bpy.types.Object | bpy.types.Image) -> None:
+    """Erodes the specified entity.
 
-	hyd = obj.hydra_erosion
-	if not data.has_map(hyd.map_base):
-		heightmap.prepare_heightmap(obj)
+    :param obj: Object or image to erode.
+    :type obj: :class:`bpy.types.Object` or :class:`bpy.types.Image`"""
 
-	ctx = data.context
-	size = hyd.get_size()
-	
-	if hyd.erosion_subres != min(size[0], size[1]):
-		if size[0] > size[1]:
-			size = (math.ceil(size[0] * hyd.erosion_subres / size[1]), hyd.erosion_subres)
-		else:
-			size = (hyd.erosion_subres, math.ceil(size[1] * hyd.erosion_subres / size[0]))
-		height = heightmap.resize_texture(data.get_map(hyd.map_source).texture, size)
-		height_base = texture.clone(height)
-	else:
-		height = texture.clone(data.get_map(hyd.map_source).texture)
-		height_base = None
+    print("Preparing for water erosion")
+    data = common.data
 
-	planet = hyd.tiling == "planet"
-	tile_x = hyd.get_tiling_x()
-	tile_y = hyd.get_tiling_y()
+    hyd = obj.hydra_erosion
+    if not data.has_map(hyd.map_base):
+        heightmap.prepare_heightmap(obj)
 
-	if planet:
-		height_alt = height
-		height = texture.create_texture(height_alt.size)
-		heightmap.rotate_equirect_to(height_alt, height, 1, backwards=False)
+    ctx = data.context
+    size = hyd.get_size()
 
-	if hyd.erosion_hardness_src in bpy.data.images:
-		img = bpy.data.images[hyd.erosion_hardness_src]
-		hardness = texture.create_texture(tuple(img.size), channels=1, image=img)
-		hardness_sampler = ctx.sampler(texture=hardness, repeat_x=tile_x, repeat_y=tile_y)
-		hardness.use(2)
-		hardness_sampler.use(2)
-	else:
-		hardness = None
+    if hyd.erosion_subres != min(size[0], size[1]):
+        if size[0] > size[1]:
+            size = (
+                math.ceil(size[0] * hyd.erosion_subres / size[1]),
+                hyd.erosion_subres,
+            )
+        else:
+            size = (
+                hyd.erosion_subres,
+                math.ceil(size[1] * hyd.erosion_subres / size[0]),
+            )
+        height = heightmap.resize_texture(data.get_map(hyd.map_source).texture, size)
+        height_base = texture.clone(height)
+    else:
+        height = texture.clone(data.get_map(hyd.map_source).texture)
+        height_base = None
 
-	prog = data.shaders["particle"]
-	
-	height_sampler = ctx.sampler(texture=height, repeat_x=tile_x, repeat_y=tile_y)
+    planet = hyd.tiling == "planet"
+    tile_x = hyd.get_tiling_x()
+    tile_y = hyd.get_tiling_y()
 
-	height.bind_to_image(1, read=True, write=True)
-	height.use(1)
-	height_sampler.use(1)
-	prog["height_sampler"] = 1
-	prog["height_map"].value = 1
+    if planet:
+        height_alt = height
+        height = texture.create_texture(height_alt.size)
+        heightmap.rotate_equirect_to(height_alt, height, 1, backwards=False)
 
-	prog["hardness_sampler"] = 2
-	prog["use_hardness"] = hardness is not None
-	prog["invert_hardness"] = hyd.erosion_invert_hardness
+    if hyd.erosion_hardness_src in bpy.data.images:
+        img = bpy.data.images[hyd.erosion_hardness_src]
+        hardness = texture.create_texture(tuple(img.size), channels=1, image=img)
+        hardness_sampler = ctx.sampler(
+            texture=hardness, repeat_x=tile_x, repeat_y=tile_y
+        )
+        hardness.use(2)
+        hardness_sampler.use(2)
+    else:
+        hardness = None
 
-	prog["size"] = size
-	prog["tile_size"] = (math.ceil(size[0] / 32), math.ceil(size[1] / 32))
-	prog["tile_mult"] = (1 / size[0], 1 / size[1])
+    prog = data.shaders["particle"]
 
-	prog["erosion_strength"] = hyd.part_fineness / 100
-	prog["deposition_strength"] = hyd.part_deposition / 100
-	prog["capacity_factor"] = hyd.part_capacity / 100
+    height_sampler = ctx.sampler(texture=height, repeat_x=tile_x, repeat_y=tile_y)
 
-	prog["max_velocity"] = 2
-	prog["acceleration"] = hyd.part_acceleration / 100
-	prog["lateral_acceleration"] = hyd.part_lateral_acceleration / 100
-	prog["lifetime"] = hyd.part_lifetime
-	prog["max_change"] = hyd.part_max_change / (100 * 100) # from percent to 0-0.01
-	prog["drag"] = 1 - (hyd.part_drag / 100)
+    height.bind_to_image(1, read=True, write=True)
+    height.use(1)
+    height_sampler.use(1)
+    prog["height_sampler"] = 1
+    prog["height_map"].value = 1
 
-	prog["planet"] = hyd.tiling == "planet"
-	prog["tile_x"] = tile_x
-	prog["tile_y"] = tile_y
+    prog["hardness_sampler"] = 2
+    prog["use_hardness"] = hardness is not None
+    prog["invert_hardness"] = hyd.erosion_invert_hardness
 
-	time = datetime.now()
-	if planet:
-		prog["iterations"] = hyd.part_iter_num * PARTICLE_MULTIPLIER // 2
-		prog.run(group_x=1, group_y=1)
+    TILE_SIZE = 256
+    X_TILES = math.ceil(size[0] / TILE_SIZE)
+    Y_TILES = math.ceil(size[1] / TILE_SIZE)
 
-		heightmap.rotate_equirect_to(height, height_alt, 1, backwards=True)
-		height.release()
-		height = height_alt
-		height.use(1)
-		height.bind_to_image(1, True, True)
+    WORKGROUP_SIZE = 16
 
-		prog.run(group_x=1, group_y=1)
-	else:
-		prog["iterations"] = hyd.part_iter_num * PARTICLE_MULTIPLIER
-		prog.run(group_x=1, group_y=1)
-	ctx.finish()
+    prog["size"] = size
+    prog["tile_size"] = (
+        math.ceil(TILE_SIZE / WORKGROUP_SIZE),
+        math.ceil(TILE_SIZE / WORKGROUP_SIZE),
+    )
+    prog["tile_mult"] = (1 / size[0], 1 / size[1])
 
-	print((datetime.now() - time).total_seconds())
+    prog["erosion_strength"] = hyd.part_fineness / 100
+    prog["deposition_strength"] = hyd.part_deposition / 100
+    prog["capacity_factor"] = hyd.part_capacity / 100
 
-	if hardness is not None:
-		hardness.release()
-		hardness_sampler.release()
+    prog["max_velocity"] = 2
+    prog["acceleration"] = hyd.part_acceleration / 100
+    prog["lateral_acceleration"] = hyd.part_lateral_acceleration / 100
+    prog["lifetime"] = hyd.part_lifetime
+    prog["max_change"] = hyd.part_max_change / (100 * 100)  # from percent to 0-0.01
+    prog["drag"] = 1 - (hyd.part_drag / 100)
 
-	if height_base is not None: # resize back to original size
-		height = heightmap.add_subres(height, height_base, data.get_map(hyd.map_source).texture)
+    prog["planet"] = hyd.tiling == "planet"
+    prog["tile_x"] = tile_x
+    prog["tile_y"] = tile_y
 
-	data.try_release_map(hyd.map_result)
-	
-	name = common.increment_layer(data.get_map(hyd.map_source).name, "Particle 1")
-	hmid = data.create_map(name, height, base=data.get_map(hyd.map_source))
-	hyd.map_result = hmid
+    time = datetime.now()
+    if planet:
+        prog["iterations"] = hyd.part_iter_num * PARTICLE_MULTIPLIER // 2
+        prog.run(group_x=X_TILES, group_y=Y_TILES)
 
-	print("Erosion finished")
+        heightmap.rotate_equirect_to(height, height_alt, 1, backwards=True)
+        height.release()
+        height = height_alt
+        height.use(1)
+        height.bind_to_image(1, True, True)
 
-def color(obj: bpy.types.Object | bpy.types.Image)->bpy.types.Image:
-	"""Simulates color transport on the specified entity.
-	
-	:param obj: Object or image to simulate on.
-	:type obj: :class:`bpy.types.Object` or :class:`bpy.types.Image`
-	:return: Color map.
-	:rtype: :class:`bpy.types.Image`"""
+        prog.run(group_x=X_TILES, group_y=Y_TILES)
+    else:
+        prog["iterations"] = hyd.part_iter_num * PARTICLE_MULTIPLIER
+        prog.run(group_x=X_TILES, group_y=Y_TILES)
+    ctx.finish()
 
-	print("Preparing for color transport")
-	data = common.data
+    print((datetime.now() - time).total_seconds())
 
-	hyd = obj.hydra_erosion
-	if not data.has_map(hyd.map_base):
-		heightmap.prepare_heightmap(obj)
+    if hardness is not None:
+        hardness.release()
+        hardness_sampler.release()
 
-	ctx = data.context
-	size = hyd.get_size()
-		
-	planet = hyd.tiling == "planet"
-	tile_x = hyd.get_tiling_x()
-	tile_y = hyd.get_tiling_y()
+    if height_base is not None:  # resize back to original size
+        height = heightmap.add_subres(
+            height, height_base, data.get_map(hyd.map_source).texture
+        )
 
-	if data.has_map(hyd.map_result):
-		height = data.get_map(hyd.map_result).texture
-	else:
-		height = data.get_map(hyd.map_source).texture
+    data.try_release_map(hyd.map_result)
 
-	height = texture.clone(height)
-	color = texture.create_texture(size, channels=4, image=bpy.data.images[hyd.color_src])
+    name = common.increment_layer(data.get_map(hyd.map_source).name, "Particle 1")
+    hmid = data.create_map(name, height, base=data.get_map(hyd.map_source))
+    hyd.map_result = hmid
 
-	if planet:
-		height_alt = height
-		height = texture.create_texture(height_alt.size)
-		heightmap.rotate_equirect_to(height_alt, height, 1, backwards=False)
+    print("Erosion finished")
 
-		color_alt = color
-		color = texture.create_texture(color_alt.size, channels=4)
-		heightmap.rotate_equirect_to(color_alt, color, 2, backwards=False)
-	
-	height.bind_to_image(1, read=True, write=True)
-	height.use(1)
-	height_sampler = ctx.sampler(texture=height, repeat_x=tile_x, repeat_y=tile_y)
-	height_sampler.use(1)
 
-	color.bind_to_image(2, read=True, write=True)
+def color(obj: bpy.types.Object | bpy.types.Image) -> bpy.types.Image:
+    """Simulates color transport on the specified entity.
 
-	prog = data.shaders["particle_color"]
+    :param obj: Object or image to simulate on.
+    :type obj: :class:`bpy.types.Object` or :class:`bpy.types.Image`
+    :return: Color map.
+    :rtype: :class:`bpy.types.Image`"""
 
-	prog["height_map"].value = 1
-	prog["height_sampler"] = 1
-	prog["color_map"].value = 2
+    print("Preparing for color transport")
+    data = common.data
 
-	prog["size"] = size
-	prog["tile_size"] = (math.ceil(size[0] / 32), math.ceil(size[1] / 32))
-	prog["tile_mult"] = (1 / size[0], 1 / size[1])
+    hyd = obj.hydra_erosion
+    if not data.has_map(hyd.map_base):
+        heightmap.prepare_heightmap(obj)
 
-	prog["erosion_strength"] = max(hyd.color_acceleration / 100, 0.01)
-	prog["deposition_strength"] = 1 - hyd.color_mixing / 100
-	prog["capacity_factor"] = max(1 - hyd.color_acceleration / 100, 0.01)
+    ctx = data.context
+    size = hyd.get_size()
 
-	prog["max_velocity"] = 2
-	prog["acceleration"] = hyd.color_acceleration / 100
-	prog["lateral_acceleration"] = 1
-	prog["lifetime"] = hyd.color_lifetime
-	prog["drag"] = max(1 - (hyd.color_detail / 100), 0.01)
+    planet = hyd.tiling == "planet"
+    tile_x = hyd.get_tiling_x()
+    tile_y = hyd.get_tiling_y()
 
-	prog["color_strength"] = hyd.color_mixing / 100
+    if data.has_map(hyd.map_result):
+        height = data.get_map(hyd.map_result).texture
+    else:
+        height = data.get_map(hyd.map_source).texture
 
-	prog["tile_x"] = tile_x
-	prog["tile_y"] = tile_y
-	prog["planet"] = planet
+    height = texture.clone(height)
+    color = texture.create_texture(
+        size, channels=4, image=bpy.data.images[hyd.color_src]
+    )
 
-	time = datetime.now()
-	if planet:
-		prog["iterations"] = hyd.color_iter_num * PARTICLE_MULTIPLIER // 2
-		prog.run(group_x=1,group_y=1)
+    if planet:
+        height_alt = height
+        height = texture.create_texture(height_alt.size)
+        heightmap.rotate_equirect_to(height_alt, height, 1, backwards=False)
 
-		heightmap.rotate_equirect_to(height, height_alt, 1, sampler_use=2, backwards=True)
-		height.release()
-		height = height_alt
-		height.use(1)
-		height.bind_to_image(1, True, True)
+        color_alt = color
+        color = texture.create_texture(color_alt.size, channels=4)
+        heightmap.rotate_equirect_to(color_alt, color, 2, backwards=False)
 
-		heightmap.rotate_equirect_to(color, color_alt, 2, sampler_use=2, backwards=True)
-		color.release()
-		color = color_alt
-		color.bind_to_image(2, read=True, write=True)
+    height.bind_to_image(1, read=True, write=True)
+    height.use(1)
+    height_sampler = ctx.sampler(texture=height, repeat_x=tile_x, repeat_y=tile_y)
+    height_sampler.use(1)
 
-		prog.run(group_x=1,group_y=1)
-	else:
-		prog["iterations"] = hyd.color_iter_num * PARTICLE_MULTIPLIER
-		prog.run(group_x=1,group_y=1)
+    color.bind_to_image(2, read=True, write=True)
 
-	ctx.finish()
+    prog = data.shaders["particle_color"]
 
-	print((datetime.now() - time).total_seconds())
-	
-	ret, _ = texture.write_image(f"HYD_{obj.name}_Color", color)
+    prog["height_map"].value = 1
+    prog["height_sampler"] = 1
+    prog["color_map"].value = 2
 
-	color.release()
-	height_sampler.release()
-	height.release()
+    TILE_SIZE = 256
+    X_TILES = math.ceil(size[0] / TILE_SIZE)
+    Y_TILES = math.ceil(size[1] / TILE_SIZE)
 
-	print("Simulation finished")
-	return ret
+    WORKGROUP_SIZE = 16
+
+    prog["size"] = size
+    prog["tile_size"] = (
+        math.ceil(TILE_SIZE / WORKGROUP_SIZE),
+        math.ceil(TILE_SIZE / WORKGROUP_SIZE),
+    )
+    prog["tile_mult"] = (1 / size[0], 1 / size[1])
+
+    prog["erosion_strength"] = max(hyd.color_acceleration / 100, 0.01)
+    prog["deposition_strength"] = 1 - hyd.color_mixing / 100
+    prog["capacity_factor"] = max(1 - hyd.color_acceleration / 100, 0.01)
+
+    prog["max_velocity"] = 2
+    prog["acceleration"] = hyd.color_acceleration / 100
+    prog["lateral_acceleration"] = 1
+    prog["lifetime"] = hyd.color_lifetime
+    prog["drag"] = max(1 - (hyd.color_detail / 100), 0.01)
+
+    prog["color_strength"] = hyd.color_mixing / 100
+
+    prog["tile_x"] = tile_x
+    prog["tile_y"] = tile_y
+    prog["planet"] = planet
+
+    time = datetime.now()
+    if planet:
+        prog["iterations"] = hyd.color_iter_num * PARTICLE_MULTIPLIER // 2
+        prog.run(group_x=X_TILES, group_y=Y_TILES)
+
+        heightmap.rotate_equirect_to(
+            height, height_alt, 1, sampler_use=2, backwards=True
+        )
+        height.release()
+        height = height_alt
+        height.use(1)
+        height.bind_to_image(1, True, True)
+
+        heightmap.rotate_equirect_to(color, color_alt, 2, sampler_use=2, backwards=True)
+        color.release()
+        color = color_alt
+        color.bind_to_image(2, read=True, write=True)
+
+        prog.run(group_x=X_TILES, group_y=Y_TILES)
+    else:
+        prog["iterations"] = hyd.color_iter_num * PARTICLE_MULTIPLIER
+        prog.run(group_x=X_TILES, group_y=Y_TILES)
+
+    ctx.finish()
+
+    print((datetime.now() - time).total_seconds())
+
+    ret, _ = texture.write_image(f"HYD_{obj.name}_Color", color)
+
+    color.release()
+    height_sampler.release()
+    height.release()
+
+    print("Simulation finished")
+    return ret
