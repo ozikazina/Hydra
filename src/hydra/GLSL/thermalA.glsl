@@ -1,6 +1,6 @@
 #version 430
 
-layout(local_size_x = 32, local_size_y = 32, local_size_z = 1) in;
+layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 
 layout (r32f) uniform image2D mapH;
 layout (r32f) uniform image2D offset;
@@ -24,6 +24,8 @@ uniform ivec2 size = ivec2(512,512);
 uniform bool tile_x = false;
 uniform bool tile_y = false;
 uniform bool planet = false;
+
+uniform float maxDif = 1.0;
 
 uniform float tile_mult_y = 1/512;
 
@@ -101,7 +103,7 @@ void main(void) {
 	p.w = dh + (dh > 0 ? -1 : 1) * alpha * ly;
 	p.w *= float(abs(dh) > alpha * ly);
 	
-	vec4 d = 0.5 * (p + abs(p));	//positive part
+	vec4 d = min(vec4(maxDif), 0.5 * (p + abs(p)));	//positive part
 	vec4 s = p - d;	//negative part
 
 	float mx = max(max(d.x, d.y), max(d.z, d.w));
